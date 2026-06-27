@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ROUTES } from '@/constants/routes';
 import { cn } from '@/utils/cn';
-import { logoutAction } from '@/features/auth/actions/logout';
+import { SignOutButton } from '@clerk/nextjs';
 import {
   Terminal,
   LayoutDashboard,
@@ -97,15 +97,15 @@ export default function AdminSidebar() {
 
       {/* Logout Footer */}
       <div className="p-4 border-t border-border">
-        <form action={logoutAction}>
+        <SignOutButton redirectUrl="/admin/login">
           <button
-            type="submit"
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
+            type="button"
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
             Logout
           </button>
-        </form>
+        </SignOutButton>
       </div>
     </aside>
   );
