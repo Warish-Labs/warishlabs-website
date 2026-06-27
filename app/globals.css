@@ -1,0 +1,190 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-sans: var(--font-geist-sans), Inter, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
+
+  /* Custom Colors - Premium Dark theme as base */
+  --color-background: #000000;
+  --color-foreground: #FFFFFF;
+  --color-bg-primary: #000000;
+  --color-bg-secondary: #0A0A0A;
+  --color-bg-card: #111111;
+  --color-bg-elevated: #161616;
+  --color-border-subtle: #141414;
+  --color-border: #1F1F1F;
+  --color-input: #1F1F1F;
+  --color-ring: #2563EB;
+  --color-accent: #2563EB;
+  --color-accent-hover: #3B82F6;
+  --color-accent-glow: rgba(37, 99, 235, 0.15);
+  --color-accent-subtle: rgba(37, 99, 235, 0.08);
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #A1A1AA;
+  --color-text-tertiary: #52525B;
+
+  /* Custom Shadows & Glows */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.6);
+  --shadow-elevated: 0 4px 24px rgba(0, 0, 0, 0.6);
+  --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.8);
+  --glow-accent: 0 0 20px rgba(37, 99, 235, 0.3), 0 0 60px rgba(37, 99, 235, 0.1);
+  --glow-accent-hover: 0 0 30px rgba(37, 99, 235, 0.5), 0 0 80px rgba(37, 99, 235, 0.15);
+  --glow-card: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(37, 99, 235, 0.2);
+
+  /* Spacing system enhancements */
+  --space-24: 6rem;
+  --space-32: 8rem;
+}
+
+/* Base style mappings matching shadcn with a dark-first color scale */
+:root {
+  --background: #000000;
+  --foreground: #FFFFFF;
+  --card: #111111;
+  --card-foreground: #A1A1AA;
+  --popover: #161616;
+  --popover-foreground: #A1A1AA;
+  --primary: #2563EB;
+  --primary-foreground: #FFFFFF;
+  --secondary: #0A0A0A;
+  --secondary-foreground: #A1A1AA;
+  --muted: #0A0A0A;
+  --muted-foreground: #52525B;
+  --accent: #2563EB;
+  --accent-foreground: #FFFFFF;
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
+  --border: #1F1F1F;
+  --input: #1F1F1F;
+  --ring: #2563EB;
+  --radius: 0.75rem;
+
+  --sidebar: #0A0A0A;
+  --sidebar-foreground: #A1A1AA;
+  --sidebar-primary: #2563EB;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #111111;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #1F1F1F;
+  --sidebar-ring: #2563EB;
+}
+
+/* In dark mode we keep variables same since Base is dark anyway */
+.dark {
+  --background: #000000;
+  --foreground: #FFFFFF;
+  --card: #111111;
+  --card-foreground: #A1A1AA;
+  --popover: #161616;
+  --popover-foreground: #A1A1AA;
+  --primary: #2563EB;
+  --primary-foreground: #FFFFFF;
+  --secondary: #0A0A0A;
+  --secondary-foreground: #A1A1AA;
+  --muted: #0A0A0A;
+  --muted-foreground: #52525B;
+  --accent: #2563EB;
+  --accent-foreground: #FFFFFF;
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
+  --border: #1F1F1F;
+  --input: #1F1F1F;
+  --ring: #2563EB;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground min-h-screen flex flex-col antialiased;
+    background-color: #000000;
+  }
+  html {
+    @apply font-sans h-full scroll-smooth;
+  }
+}
+
+/* Custom Utilities for Premium Visual Polish */
+
+/* 1. Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #000000;
+}
+::-webkit-scrollbar-thumb {
+  background: #1F1F1F;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2563EB;
+}
+
+/* 2. Custom blueprint grid background */
+.blueprint-grid {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(37, 99, 235, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(37, 99, 235, 0.04) 1px, transparent 1px);
+}
+
+/* 3. Subtle background mesh gradient animation */
+.bg-mesh-gradient {
+  background-color: #000000;
+  background-image: 
+    radial-gradient(at 10% 20%, rgba(3, 7, 18, 1) 0px, transparent 50%),
+    radial-gradient(at 90% 10%, rgba(10, 22, 40, 0.4) 0px, transparent 50%),
+    radial-gradient(at 50% 80%, rgba(37, 99, 235, 0.03) 0px, transparent 50%);
+}
+
+/* 4. Glassmorphism panel styling */
+.glass-panel {
+  background: rgba(10, 10, 10, 0.7);
+  backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+/* 5. Navigation glass */
+.nav-glass {
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* 6. Glow effects */
+.glow-accent-element {
+  box-shadow: 0 0 20px rgba(37, 99, 235, 0.25), 0 0 60px rgba(37, 99, 235, 0.08);
+}
+.glow-accent-hover-element:hover {
+  box-shadow: 0 0 35px rgba(37, 99, 235, 0.45), 0 0 80px rgba(37, 99, 235, 0.12);
+}
+
+/* 7. Hover Card Transition */
+.premium-card-transition {
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              box-shadow 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              border-color 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.premium-card-transition:hover {
+  transform: translateY(-4px);
+  border-color: rgba(37, 99, 235, 0.25);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(37, 99, 235, 0.15);
+}
+
+/* 8. Scanning line effect */
+@keyframes scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+.scan-line {
+  height: 2px;
+  background: linear-gradient(to right, transparent, rgba(37, 99, 235, 0.15), transparent);
+  animation: scan 8s linear infinite;
+}

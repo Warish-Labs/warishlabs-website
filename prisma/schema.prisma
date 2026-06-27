@@ -1,0 +1,295 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// 1. Admin & Authentication
+model Admin {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  sessions     Session[]
+  activityLogs ActivityLog[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  adminId   String
+  admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([adminId])
+}
+
+// 2. Categories & Products (Decoupled ER design)
+model Category {
+  id          String       @id @default(uuid())
+  name        String
+  slug        String       @unique
+  description String?
+  products    Product[]
+  seo         CategorySEO?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model CategorySEO {
+  id          String   @id @default(uuid())
+  categoryId  String   @unique
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  keywords    String?
+}
+
+model Product {
+  id           String              @id @default(uuid())
+  name         String
+  slug         String              @unique
+  tagline      String
+  description  String              @db.Text // HTML or Rich Text from Tiptap
+  status       String              // "active", "beta", "archived"
+  githubUrl    String?
+  visitUrl     String?
+  categoryId   String
+  category     Category            @relation(fields: [categoryId], references: [id])
+  technologies ProductTechnology[]
+  media        ProductMedia[]
+  faqs         ProductFAQ[]
+  seo          ProductSEO?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@index([categoryId])
+}
+
+model Technology {
+  id        String              @id @default(uuid())
+  name      String
+  slug      String              @unique
+  icon      String?             // SVG or Icon key
+  products  ProductTechnology[]
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+}
+
+model ProductTechnology {
+  productId    String
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  technologyId String
+  technology   Technology @relation(fields: [technologyId], references: [id], onDelete: Cascade)
+
+  @@id([productId, technologyId])
+  @@index([technologyId])
+}
+
+model ProductMedia {
+  id          String   @id @default(uuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url         String
+  type        String   // "image", "video"
+  alt         String?
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([productId])
+}
+
+model ProductSEO {
+  id          String  @id @default(uuid())
+  productId   String  @unique
+  product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  keywords    String?
+}
+
+// 3. Blog System
+model Blog {
+  id          String    @id @default(uuid())
+  title       String
+  slug        String    @unique
+  content     String    @db.Text
+  excerpt     String    @db.Text
+  coverImage  String?
+  category    String    // Category string (e.g. "Development", "AI")
+  published   Boolean   @default(false)
+  publishedAt DateTime?
+  seo         BlogSEO?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model BlogSEO {
+  id          String  @id @default(uuid())
+  blogId      String  @unique
+  blog        Blog    @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  keywords    String?
+}
+
+// 4. Forms & Subscriptions
+model ContactMessage {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  subject   String?
+  message   String   @db.Text
+  status    String   @default("unread") // "unread", "read", "archived"
+  createdAt DateTime @default(now())
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  active    Boolean  @default(true)
+  token     String   @unique // Token for one-click unsubscribe
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 5. Analytics (Includes 90-day cleanup retention rule)
+model Visitor {
+  id        String           @id @default(uuid())
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  events    AnalyticsEvent[]
+}
+
+model AnalyticsEvent {
+  id         String   @id @default(uuid())
+  visitorId  String
+  visitor    Visitor  @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+  eventName  String
+  eventData  Json?    // Stores unstructured analytics metadata
+  url        String
+  referrer   String?
+  userAgent  String?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  // Note: These events are deleted periodically if older than 90 days
+  @@index([visitorId])
+  @@index([createdAt])
+}
+
+// 6. Media Library
+model MediaAsset {
+  id        String   @id @default(uuid())
+  url       String
+  publicId  String   @unique // Cloudinary public_id
+  fileName  String
+  fileSize  Int
+  mimeType  String
+  createdAt DateTime @default(now())
+}
+
+// 7. Site Navigation & Settings
+model NavItem {
+  id        String    @id @default(uuid())
+  label     String
+  path      String
+  parentId  String?
+  parent    NavItem?  @relation("NavHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children  NavItem[] @relation("NavHierarchy")
+  sortOrder Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([parentId])
+}
+
+model SiteSetting {
+  id        String   @id // Config Key (e.g. "site_title", "maintenance_mode")
+  value     String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  adminId   String
+  admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  action    String   // Description of action (e.g. "CREATE_PRODUCT")
+  details   String?  @db.Text
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([adminId])
+}
+
+// 8. General FAQs
+model FAQ {
+  id        String   @id @default(uuid())
+  question  String
+  answer    String   @db.Text
+  sortOrder Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProductFAQ {
+  id        String   @id @default(uuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  question  String
+  answer    String   @db.Text
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+}
+
+// 9. Labs & Open Source
+model Lab {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String   @db.Text
+  url         String?
+  githubUrl   String?
+  status      String   // "active", "completed", "deprecated"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model OpenSourceProject {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String   @db.Text
+  githubUrl   String
+  stars       Int      @default(0)
+  forks       Int      @default(0)
+  status      String   // "active", "archived", "maintained"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// 10. Homepage Sections (CMS Customizer Layout)
+model HomepageSection {
+  id          String   @id @default(uuid())
+  sectionType String   @unique // e.g. "hero", "spotlight", "featured-products"
+  title       String?
+  subtitle    String?
+  config      Json     // Config stores arrays of slugs/IDs and display settings, preventing hard relationships
+  sortOrder   Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
