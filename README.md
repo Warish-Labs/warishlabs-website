@@ -1,5 +1,7 @@
 # WarishLabs Platform
 
+Live URL: [warishlabs.in](https://warishlabs.in) | Deployment URL: [warishlabs.vercel.app](https://warishlabs.vercel.app)
+
 A premium software engineering laboratory website constructed on Next.js 16 (Turbopack) and Tailwind CSS v4, featuring a high-performance database-seeded CMS, custom event analytics tracking, Clerk SSO integration, and hardware-accelerated 3D WebGL visuals.
 
 ---

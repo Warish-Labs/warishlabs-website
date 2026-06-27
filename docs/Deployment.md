@@ -13,7 +13,7 @@ Ensure the following variables are configured in your hosting platform (e.g. Ver
 | `DATABASE_URL` | Production PostgreSQL connection string | `postgresql://user:pass@host:5432/db?sslmode=require` |
 | `ADMIN_EMAIL` | Super admin user identity email | `warishlabs@gmail.com` |
 | `CRON_SECRET` | Header validation token for analytics pruner cron | Generate secure hex (e.g. `openssl rand -hex 32`) |
-| `NEXT_PUBLIC_APP_URL` | Fully qualified base domain url | `https://warishlabs.com` |
+| `NEXT_PUBLIC_APP_URL` | Fully qualified base domain url | `https://warishlabs.in` or `https://warishlabs.vercel.app` |
 | `CLOUDINARY_CLOUD_NAME` | Media library cloud identifier | Get from Cloudinary console |
 | `CLOUDINARY_API_KEY` | Media library API credentials key | Get from Cloudinary console |
 | `CLOUDINARY_API_SECRET` | Media library API credentials secret | Get from Cloudinary console |

@@ -41,6 +41,7 @@ export default function AdminLoginPage() {
 
         {/* Branded Clerk SignIn Component */}
         <SignIn
+          path="/admin/login"
           fallbackRedirectUrl="/admin/dashboard"
           appearance={{
             elements: {

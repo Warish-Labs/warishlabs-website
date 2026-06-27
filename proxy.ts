@@ -61,7 +61,7 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   }
 
   // 2. Admin Authentication
-  if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
+  if (pathname.startsWith('/admin') && !pathname.startsWith('/admin/login')) {
     const admin = await validateSession();
     if (!admin) {
       // Redirect to login page
