@@ -14,7 +14,12 @@ export default function Navbar() {
   const pathname = usePathname();
   const { user, isLoaded } = useUser();
   const adminEmail = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'warishlabs@gmail.com').toLowerCase().trim();
-  const isAdmin = !!(isLoaded && user && user.primaryEmailAddress?.emailAddress?.toLowerCase().trim() === adminEmail);
+  const isAdmin = !!(
+    isLoaded &&
+    user &&
+    (user.publicMetadata?.role === 'admin' ||
+      user.primaryEmailAddress?.emailAddress?.toLowerCase().trim() === adminEmail)
+  );
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
