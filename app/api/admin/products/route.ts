@@ -26,7 +26,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { name, tagline, description, status, visitUrl, categoryId } = body;
+    const { name, tagline, description, status, visitUrl, logoUrl, categoryId } = body;
 
     if (!name || !tagline || !description || !status || !categoryId) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
@@ -42,6 +42,7 @@ export async function POST(request: Request) {
       description,
       status,
       visitUrl,
+      logoUrl,
       categoryId,
     });
 
@@ -69,7 +70,7 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
-    const { id, name, tagline, description, status, visitUrl, categoryId } = body;
+    const { id, name, tagline, description, status, visitUrl, logoUrl, categoryId } = body;
 
     if (!id) {
       return NextResponse.json({ success: false, error: 'Missing product ID' }, { status: 400 });
@@ -84,6 +85,7 @@ export async function PUT(request: Request) {
     if (description !== undefined) updatedData.description = description;
     if (status !== undefined) updatedData.status = status;
     if (visitUrl !== undefined) updatedData.visitUrl = visitUrl;
+    if (logoUrl !== undefined) updatedData.logoUrl = logoUrl;
     if (categoryId !== undefined) updatedData.categoryId = categoryId;
 
     const product = await ProductService.update(id, updatedData);

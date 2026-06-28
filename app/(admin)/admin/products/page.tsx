@@ -18,6 +18,7 @@ interface Product {
   description: string;
   status: string;
   visitUrl: string | null;
+  logoUrl?: string | null;
   categoryId: string;
   category?: { name: string };
 }
@@ -41,6 +42,8 @@ export default function AdminProductsPage() {
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('active');
   const [visitUrl, setVisitUrl] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
+  const [isLogoUploading, setIsLogoUploading] = useState(false);
   const [categoryId, setCategoryId] = useState('');
 
   // Fetch initial data
@@ -73,6 +76,7 @@ export default function AdminProductsPage() {
     setDescription('');
     setStatus('active');
     setVisitUrl('');
+    setLogoUrl('');
     setCategoryId('');
     setIsFormOpen(false);
   };
@@ -84,8 +88,37 @@ export default function AdminProductsPage() {
     setDescription(product.description);
     setStatus(product.status);
     setVisitUrl(product.visitUrl || '');
+    setLogoUrl(product.logoUrl || '');
     setCategoryId(product.categoryId);
     setIsFormOpen(true);
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsLogoUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('folder', 'products');
+
+    try {
+      const res = await fetch('/api/admin/media/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success && data.asset) {
+        setLogoUrl(data.asset.url);
+        toast.success('Logo uploaded successfully');
+      } else {
+        toast.error(data.error || 'Failed to upload logo');
+      }
+    } catch (err) {
+      toast.error('Network error uploading logo');
+    } finally {
+      setIsLogoUploading(false);
+    }
   };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -103,6 +136,7 @@ export default function AdminProductsPage() {
       description,
       status,
       visitUrl: visitUrl || null,
+      logoUrl: logoUrl || null,
       categoryId
     };
 
@@ -283,6 +317,35 @@ export default function AdminProductsPage() {
                   />
                 </div>
 
+                {/* Brand Logo Upload */}
+                <div className="space-y-2">
+                  <Label htmlFor="prod-logo" className="text-xs font-semibold text-text-secondary">
+                    Product Brand Logo
+                  </Label>
+                  <div className="flex items-center gap-3">
+                    {logoUrl ? (
+                      <div className="w-10 h-10 rounded border border-border bg-bg-card flex items-center justify-center overflow-hidden shrink-0">
+                        <img src={logoUrl} alt="Logo preview" className="w-full h-full object-contain" />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded border border-dashed border-border flex items-center justify-center shrink-0">
+                        <span className="text-[9px] text-text-tertiary">No Logo</span>
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <Input
+                        id="prod-logo-file"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        disabled={isLogoUploading}
+                        className="bg-bg-primary border-border focus:border-accent text-white text-xs file:bg-bg-card file:border-border file:text-white file:rounded file:px-2 file:py-0.5 file:mr-2 file:cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                  {isLogoUploading && <p className="text-[10px] text-accent animate-pulse">Uploading logo to Cloudinary...</p>}
+                </div>
+
                 {/* Description Textarea */}
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="prod-desc" className="text-xs font-semibold text-text-secondary">
@@ -352,11 +415,22 @@ export default function AdminProductsPage() {
                   <tbody className="divide-y divide-border-subtle text-xs">
                     {products.map((product) => (
                       <tr key={product.id} className="hover:bg-bg-card/40 transition-colors">
-                        <td className="px-6 py-4 font-bold text-white">
-                          <p>{product.name}</p>
-                          <span className="text-[10px] font-normal text-text-secondary leading-relaxed line-clamp-1 max-w-[280px]">
-                            {product.tagline}
-                          </span>
+                        <td className="px-6 py-4 font-bold text-white flex items-center gap-3">
+                          {product.logoUrl ? (
+                            <div className="w-8 h-8 rounded border border-border bg-bg-card flex items-center justify-center overflow-hidden shrink-0">
+                              <img src={product.logoUrl} alt="" className="w-full h-full object-contain" />
+                            </div>
+                          ) : (
+                            <div className="w-8 h-8 rounded border border-dashed border-border flex items-center justify-center shrink-0">
+                              <span className="text-[8px] text-text-tertiary">Logo</span>
+                            </div>
+                          )}
+                          <div>
+                            <p>{product.name}</p>
+                            <span className="text-[10px] font-normal text-text-secondary leading-relaxed line-clamp-1 max-w-[280px]">
+                              {product.tagline}
+                            </span>
+                          </div>
                         </td>
                         <td className="px-6 py-4 text-text-secondary font-medium">
                           {product.category?.name || 'Unassigned'}

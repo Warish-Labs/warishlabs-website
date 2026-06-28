@@ -1,6 +1,13 @@
+<p align="center">
+  <img src="public/logo.gif" alt="WarishLabs Logo" width="120" height="120" />
+</p>
+
 # WarishLabs Website
 
 > Seriousness in Engineering, Modern Product Thinking. An engineering-first software laboratory showcasing premium SaaS platforms, developer tools, and interactive WebGL canvas playgrounds.
+
+**Live URL:** [warishlabs.vercel.app](https://warishlabs.vercel.app/)  
+**Canonical Domain:** [warishlabs.in](https://warishlabs.in/)
 
 ---
 
@@ -8,9 +15,11 @@
 
 - **WebGL Canvas Playground**: Full-bleed background Canvas rendering interactive 3D particle fields (Three.js + R3F) with mouse-repulsion physics, diagonal orbital rings, and dynamic floating shards.
 - **Relational Seeded CMS**: Layout components (Hero, dynamic About paragraphs, Contact addresses) are fully decoupled and driven dynamically by a PostgreSQL database via Prisma ORM.
-- **Robust Administrative Panel**: Dynamic analytics visitor tracking, logs, and complete, styled CRUD systems for cataloged Products, Categories, and experimental Sandbox Labs.
+- **Dynamic Site Statistics**: Hides fake numbers and dynamically queries the database for actual values: **Total Site Visitors** (linked to unique tracking visitor IDs) and **Active Projects** (linked to product catalogs).
+- **Robust Administrative Console**: Full operational CRUD dashboards for Categories, Products, Sandbox Labs, Blog Articles, Media Uploads, Newsletter subscribers, and Activity Trails.
+- **Dynamic Help Playbook**: Step-by-step console playbook built into the admin home interface explaining how to catalog products, preview sandbox labs, and customize CMS settings.
 - **Distributed Security rate-limiting**: Global Upstash Redis rate-limiter guards contacts, newsletter submissions, and tracking endpoints, falling back to local token buckets in development.
-- **Clerk Dark SSO Integration**: Integrated authentication that restricts console control to the owner address (`ADMIN_EMAIL`) styled with cohesive slate blue panels.
+- **Clerk SSO & User Profile integration**: Managed through Clerk's secure dynamic `<UserButton />` in the header, letting the admin configure security options, manage active devices, and log out securely. Hidden from regular public users.
 - **Media Asset Sync**: Automatically manages Cloudinary folder uploads (`warishlabs/products`, `warishlabs/labs`) and cleans up associated assets on delete.
 
 ---
@@ -39,18 +48,26 @@
 ├── app/                   # Next.js App Router root
 │   ├── (admin)/           # Clerk-protected administration console
 │   │   └── admin/         
-│   │       ├── dashboard/ # KPI panels & activity logs
-│   │       ├── labs/      # Labs CRUD page
-│   │       ├── login/     # Custom Sign-in routing
-│   │       ├── products/  # Products CRUD page
-│   │       └── settings/  # Centralized CMS customizer settings
+│   │       ├── activity-logs/ # Operational audit trails
+│   │       ├── analytics/     # Detailed visitor event tracking streams
+│   │       ├── blog/          # Blog composer CRUD
+│   │       ├── categories/    # Classification CRUD
+│   │       ├── dashboard/     # KPI panels, playbook guides & charts
+│   │       ├── faqs/          # Public FAQ accordion CRUD
+│   │       ├── homepage/      # Direct routing redirects to settings
+│   │       ├── labs/          # Labs CRUD page
+│   │       ├── login/         # Custom Sign-in routing
+│   │       ├── media/         # Cloudinary gallery view & deletion tools
+│   │       ├── newsletter/    # Subscriber lists
+│   │       ├── products/      # Products CRUD page
+│   │       └── settings/      # Centralized CMS customizer settings
 │   ├── api/               # Backend endpoint integrations
 │   ├── about/             # Dynamic laboratory profile
 │   ├── contact/           # Dynamic contact form & addresses
 │   ├── labs/              # Sandbox showcases
 │   └── products/          # Showcased platforms
 ├── components/            # UI components and 3D scenes
-│   ├── admin/             # Admin topbar, sidebar, charts
+│   ├── admin/             # Admin topbar (Clerk UserButton), sidebar, charts
 │   ├── hero/              # Full-bleed Hero Canvas & Cube
 │   └── ui/                # Base UI elements
 ├── docs/                  # Deployment & setup documentation (Gitignored)

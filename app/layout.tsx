@@ -7,6 +7,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { Suspense } from "react";
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,7 +28,7 @@ export const metadata: Metadata = {
   },
   description: 'WarishLabs builds production-grade SaaS platforms, developer tools, and distributed systems engineered for scale.',
   keywords: ['WarishLabs', 'SaaS', 'Next.js', 'TypeScript', 'Full Stack', 'Developer Tools'],
-  authors: [{ name: 'MD Warish Ansari', url: 'https://portfolio-warish.vercel.app' }],
+  authors: [{ name: 'MD Warish Ansari', url: 'https://portfolio.warishlabs.in' }],
   creator: 'MD Warish Ansari',
   openGraph: {
     type: 'website',
@@ -84,6 +86,8 @@ export default function RootLayout({
             </AnalyticsProvider>
           </Suspense>
           <Toaster theme="dark" position="top-right" />
+          <Analytics />
+          <SpeedInsights />
         </body>
       </html>
     </ClerkProvider>

@@ -8,9 +8,11 @@ import { cn } from '@/utils/cn';
 import { Search, Menu, X } from 'lucide-react';
 import { buttonVariants } from '@/components/ui/button';
 import SearchPanel from './SearchPanel';
+import { useAuth } from '@clerk/nextjs';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const { isSignedIn } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -89,15 +91,17 @@ export default function Navbar() {
             </button>
 
             {/* Console Link */}
-            <Link
-              href="/admin/dashboard"
-              className={cn(
-                buttonVariants({ variant: "outline" }),
-                "border-border hover:border-accent hover:bg-accent-subtle text-white font-semibold text-xs rounded-lg px-4 bg-bg-card flex items-center justify-center"
-              )}
-            >
-              Console
-            </Link>
+            {isSignedIn && (
+              <Link
+                href="/admin/dashboard"
+                className={cn(
+                  buttonVariants({ variant: "outline" }),
+                  "border-border hover:border-accent hover:bg-accent-subtle text-white font-semibold text-xs rounded-lg px-4 bg-bg-card flex items-center justify-center"
+                )}
+              >
+                Console
+              </Link>
+            )}
           </div>
 
           {/* Mobile Actions Menu Trigger */}
@@ -133,16 +137,18 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
-            <Link
-              href="/admin/dashboard"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className={cn(
-                buttonVariants({ variant: "default" }),
-                "w-full bg-accent hover:bg-accent-hover text-white py-6 flex items-center justify-center font-semibold text-sm"
-              )}
-            >
-              Console Access
-            </Link>
+            {isSignedIn && (
+              <Link
+                href="/admin/dashboard"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={cn(
+                  buttonVariants({ variant: "default" }),
+                  "w-full bg-accent hover:bg-accent-hover text-white py-6 flex items-center justify-center font-semibold text-sm"
+                )}
+              >
+                Console Access
+              </Link>
+            )}
           </div>
         )}
       </header>

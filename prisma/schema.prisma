@@ -62,6 +62,7 @@ model Product {
   status       String              // "active", "beta", "archived"
   githubUrl    String?
   visitUrl     String?
+  logoUrl      String?
   categoryId   String
   category     Category            @relation(fields: [categoryId], references: [id])
   technologies ProductTechnology[]

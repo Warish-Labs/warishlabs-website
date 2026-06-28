@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server';
 import type { NextRequest, NextFetchEvent } from 'next/server';
 import { validateSession } from '@/lib/auth';
 import { CONFIG } from '@/constants/config';
-import crypto from 'crypto';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 
@@ -61,7 +60,7 @@ async function checkRateLimit(ip: string, category: string, limit: number, windo
 }
 
 /**
- * Next.js 16 Proxy (renamed from Middleware)
+ * Next.js 16 Proxy
  */
 export async function proxy(request: NextRequest, event: NextFetchEvent) {
   const { pathname } = request.nextUrl;
@@ -141,6 +140,9 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
 
   return response;
 }
+
+// Export default for environments looking for default exports
+export default proxy;
 
 export const config = {
   matcher: [

@@ -2,11 +2,12 @@
 
 import React from 'react';
 import { usePathname } from 'next/navigation';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, Activity } from 'lucide-react';
+import { Activity } from 'lucide-react';
+import { UserButton, useUser } from '@clerk/nextjs';
 
 export default function AdminTopbar() {
   const pathname = usePathname();
+  const { user } = useUser();
   
   // Format page name from route (e.g. /admin/dashboard -> Dashboard)
   const getPageTitle = () => {
@@ -33,15 +34,17 @@ export default function AdminTopbar() {
 
         {/* User profile */}
         <div className="flex items-center gap-3">
-          <div className="text-right">
-            <p className="text-xs font-semibold text-white">Administrator</p>
-            <p className="text-[10px] text-text-tertiary">WarishLabs Console</p>
+          <div className="text-right hidden sm:block">
+            <p className="text-xs font-semibold text-white">{user?.fullName || 'Administrator'}</p>
+            <p className="text-[10px] text-text-tertiary">{user?.primaryEmailAddress?.emailAddress || 'WarishLabs Console'}</p>
           </div>
-          <Avatar className="h-8 w-8 border border-border bg-bg-card text-white">
-            <AvatarFallback className="bg-accent-subtle text-accent text-xs font-semibold">
-              AD
-            </AvatarFallback>
-          </Avatar>
+          <UserButton
+            appearance={{
+              elements: {
+                userButtonAvatarBox: 'h-8 w-8 border border-border bg-bg-card',
+              }
+            }}
+          />
         </div>
       </div>
     </header>

@@ -67,6 +67,7 @@ export class ProductService {
     status: string;
     githubUrl?: string | null;
     visitUrl?: string | null;
+    logoUrl?: string | null;
     categoryId: string;
     technologyIds?: string[];
     media?: { url: string; type: string; alt?: string; sortOrder?: number }[];
@@ -128,6 +129,7 @@ export class ProductService {
       status?: string;
       githubUrl?: string | null;
       visitUrl?: string | null;
+      logoUrl?: string | null;
       categoryId?: string;
       technologyIds?: string[];
       media?: { url: string; type: string; alt?: string; sortOrder?: number }[];
@@ -212,12 +214,22 @@ export class ProductService {
         include: { media: true },
       });
 
-      if (product && product.media.length > 0) {
-        // 2. Call deleteAsset for each media URL
-        for (const item of product.media) {
-          const publicId = MediaService.getPublicIdFromUrl(item.url);
-          if (publicId) {
-            await MediaService.deleteAsset(publicId);
+      if (product) {
+        // Delete logo from Cloudinary if it exists
+        if (product.logoUrl) {
+          const logoPublicId = MediaService.getPublicIdFromUrl(product.logoUrl);
+          if (logoPublicId) {
+            await MediaService.deleteAsset(logoPublicId);
+          }
+        }
+
+        if (product.media.length > 0) {
+          // 2. Call deleteAsset for each media URL
+          for (const item of product.media) {
+            const publicId = MediaService.getPublicIdFromUrl(item.url);
+            if (publicId) {
+              await MediaService.deleteAsset(publicId);
+            }
           }
         }
       }

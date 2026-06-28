@@ -29,7 +29,7 @@ const menuItems = [
     { label: 'Dashboard', path: ROUTES.ADMIN_DASHBOARD, icon: LayoutDashboard },
   ]},
   { group: 'Content Management', items: [
-    { label: 'Homepage', path: ROUTES.ADMIN_HOMEPAGE, icon: Home },
+    { label: 'Homepage', path: ROUTES.ADMIN_SETTINGS, icon: Home },
     { label: 'Products', path: ROUTES.ADMIN_PRODUCTS, icon: Briefcase },
     { label: 'Categories', path: ROUTES.ADMIN_CATEGORIES, icon: FolderTree },
     { label: 'Blog Articles', path: ROUTES.ADMIN_BLOG, icon: FileText },
@@ -94,19 +94,6 @@ export default function AdminSidebar() {
           </div>
         ))}
       </nav>
-
-      {/* Logout Footer */}
-      <div className="p-4 border-t border-border">
-        <SignOutButton redirectUrl="/admin/login">
-          <button
-            type="button"
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
-          >
-            <LogOut className="w-4 h-4" />
-            Logout
-          </button>
-        </SignOutButton>
-      </div>
     </aside>
   );
 }

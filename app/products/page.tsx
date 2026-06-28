@@ -63,6 +63,11 @@ export default async function ProductsPage() {
                       >
                         {product.status}
                       </Badge>
+                      {product.logoUrl && (
+                        <div className="w-10 h-10 rounded border border-border bg-bg-card flex items-center justify-center p-1.5 overflow-hidden shadow-sm shrink-0">
+                          <img src={product.logoUrl} alt="" className="w-full h-full object-contain" />
+                        </div>
+                      )}
                     </div>
                     <CardTitle className="text-2xl font-black tracking-tight text-white">
                       {product.name}

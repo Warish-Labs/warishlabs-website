@@ -1,5 +1,6 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
 import type { Admin } from '@prisma/client';
+import prisma from '@/lib/prisma';
 
 /**
  * Validates the current session using ONLY Clerk auth.
@@ -15,15 +16,22 @@ export async function validateSession(): Promise<Admin | null> {
       const adminEmail = process.env.ADMIN_EMAIL || 'warishlabs@gmail.com';
 
       if (email && email.toLowerCase().trim() === adminEmail.toLowerCase().trim()) {
-        // Construct and return a compatible Admin model
-        return {
-          id: clerkAuth.userId,
-          email: email,
-          name: `${user.firstName || 'WarishLabs'} ${user.lastName || 'Owner'}`.trim(),
-          passwordHash: '',
-          createdAt: new Date(user.createdAt),
-          updatedAt: new Date(user.updatedAt),
-        };
+        // Lookup locally by email to get a database-backed Admin row (maintaining FK references)
+        let dbAdmin = await prisma.admin.findUnique({
+          where: { email: email.toLowerCase().trim() }
+        });
+
+        if (!dbAdmin) {
+          dbAdmin = await prisma.admin.create({
+            data: {
+              id: clerkAuth.userId,
+              email: email.toLowerCase().trim(),
+              name: `${user.firstName || 'WarishLabs'} ${user.lastName || 'Owner'}`.trim(),
+              passwordHash: '',
+            }
+          });
+        }
+        return dbAdmin;
       }
     }
   } catch (error) {

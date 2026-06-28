@@ -4,9 +4,12 @@ import DashboardCharts from '@/components/admin/DashboardCharts';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Briefcase, FolderTree, Mail, MailWarning, UserCheck, Terminal, ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
-
+import { cookies } from 'next/headers';
 
 export default async function AdminDashboardPage() {
+  // Opt-out of static rendering to execute dynamic queries
+  await cookies();
+
   // 1. Fetch KPI Metrics
   const [productCount, categoryCount, subscriberCount, unreadMessagesCount] = await Promise.all([
     prisma.product.count(),
@@ -202,24 +205,64 @@ export default async function AdminDashboardPage() {
             >
               <span>Compose Blog Post</span>
               <ArrowUpRight className="w-4 h-4 text-text-tertiary" />
-            </Link>
-            <Link
-              href="/admin/homepage"
-              className="flex items-center justify-between p-3 rounded-lg bg-bg-card border border-border hover:border-accent/20 transition-all text-xs font-semibold text-white"
-            >
-              <span>Modify Hero Section</span>
-              <ArrowUpRight className="w-4 h-4 text-text-tertiary" />
-            </Link>
-            <Link
-              href="/admin/settings"
-              className="flex items-center justify-between p-3 rounded-lg bg-bg-card border border-border hover:border-accent/20 transition-all text-xs font-semibold text-white"
-            >
-              <span>Console Configurations</span>
-              <ArrowUpRight className="w-4 h-4 text-text-tertiary" />
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-}
+             </Link>
+             <Link
+               href="/admin/settings"
+               className="flex items-center justify-between p-3 rounded-lg bg-bg-card border border-border hover:border-accent/20 transition-all text-xs font-semibold text-white"
+             >
+               <span>Modify Hero Section</span>
+               <ArrowUpRight className="w-4 h-4 text-text-tertiary" />
+             </Link>
+             <Link
+               href="/admin/settings"
+               className="flex items-center justify-between p-3 rounded-lg bg-bg-card border border-border hover:border-accent/20 transition-all text-xs font-semibold text-white"
+             >
+               <span>Console Configurations</span>
+               <ArrowUpRight className="w-4 h-4 text-text-tertiary" />
+             </Link>
+           </CardContent>
+         </Card>
+       </div>
+
+       {/* Playbook Guidelines */}
+       <Card className="glass-panel border-border shadow-card overflow-hidden">
+         <CardHeader className="border-b border-border/40 pb-4">
+           <CardTitle className="text-xs font-bold uppercase tracking-widest text-text-tertiary flex items-center gap-2">
+             <Terminal className="w-4 h-4 text-accent" /> Console Playbook & Guidelines
+           </CardTitle>
+         </CardHeader>
+         <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-3 gap-8">
+           <div className="space-y-2">
+             <h4 className="text-sm font-bold text-white flex items-center gap-2">
+               <span className="w-5 h-5 rounded-full bg-accent/15 border border-accent/20 flex items-center justify-center text-xs text-accent">1</span>
+               How to Add a Product
+             </h4>
+             <p className="text-xs text-text-secondary leading-relaxed">
+               Navigate to the <strong>Products</strong> tab and click <em>Create Product</em>. Enter the name, dynamic slug, category classification, status, and taglines. Be sure to link media assets by copying their secure URLs from the <strong>Media Library</strong>.
+             </p>
+           </div>
+
+           <div className="space-y-2">
+             <h4 className="text-sm font-bold text-white flex items-center gap-2">
+               <span className="w-5 h-5 rounded-full bg-accent/15 border border-accent/20 flex items-center justify-center text-xs text-accent">2</span>
+               What is Sandbox Labs?
+             </h4>
+             <p className="text-xs text-text-secondary leading-relaxed">
+               <strong>Labs</strong> are sandbox experiments, 3D prototypes (e.g. three.js canvas trials), and utility code scripts. When creating a Lab entry, provide a short summary description and supply the external live preview URL (or staging subpath).
+             </p>
+           </div>
+
+           <div className="space-y-2">
+             <h4 className="text-sm font-bold text-white flex items-center gap-2">
+               <span className="w-5 h-5 rounded-full bg-accent/15 border border-accent/20 flex items-center justify-center text-xs text-accent">3</span>
+               Controlling Content CMS
+             </h4>
+             <p className="text-xs text-text-secondary leading-relaxed">
+               Modify page-wide text fields like Hero subheaders, About philosophy paragraphs, and Contact addresses under the <strong>System Settings</strong> panel. Modifications instantly write to the DB and propagate to visitors.
+             </p>
+           </div>
+         </CardContent>
+       </Card>
+     </div>
+   );
+ }

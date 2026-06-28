@@ -11,6 +11,7 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/
 import { ArrowLeft, ExternalLink, Cpu, Info } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { cookies } from 'next/headers';
+import prisma from '@/lib/prisma';
 
 import { Metadata } from 'next';
 
@@ -38,13 +39,26 @@ export async function generateMetadata({ params }: ProductDetailPageProps): Prom
 
 export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
   // Opt-out of static rendering for dynamic date queries
-  await cookies();
+  const cookieJar = await cookies();
 
   const { slug } = await params;
   const product = await ProductService.getBySlug(slug);
 
   if (!product) {
     notFound();
+  }
+
+  // Track product view on the server using visitor cookie
+  const visitorId = cookieJar.get('wl_visitor')?.value;
+  if (visitorId) {
+    await prisma.analyticsEvent.create({
+      data: {
+        visitorId,
+        eventName: 'product_view',
+        eventData: { slug },
+        url: `/products/${slug}`,
+      },
+    }).catch(err => console.error('Failed to log product view event:', err));
   }
 
   return (
