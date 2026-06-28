@@ -1,5 +1,6 @@
 import prisma from '@/lib/prisma';
 import type { Product, Category, Technology, ProductMedia, ProductFAQ, ProductSEO } from '@prisma/client';
+import { MediaService } from './MediaService';
 
 export type ProductWithDetails = Product & {
   category: Category;
@@ -203,11 +204,25 @@ export class ProductService {
     });
   }
 
-  /**
-   * Admin: Deletes a product (cascade delete for media, faqs, tech links, and seo)
-   */
   static async delete(id: string): Promise<boolean> {
     try {
+      // 1. Fetch associated media first to get Cloudinary URLs
+      const product = await prisma.product.findUnique({
+        where: { id },
+        include: { media: true },
+      });
+
+      if (product && product.media.length > 0) {
+        // 2. Call deleteAsset for each media URL
+        for (const item of product.media) {
+          const publicId = MediaService.getPublicIdFromUrl(item.url);
+          if (publicId) {
+            await MediaService.deleteAsset(publicId);
+          }
+        }
+      }
+
+      // 3. Delete the product DB record (which cascades to media, faqs, seo, etc.)
       await prisma.product.delete({
         where: { id },
       });

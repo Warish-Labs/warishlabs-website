@@ -6,6 +6,7 @@ import { AnalyticsProvider } from "@/components/AnalyticsProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { Suspense } from "react";
 import { ClerkProvider } from "@clerk/nextjs";
+import { dark } from "@clerk/themes";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,10 +19,34 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "WarishLabs — Premium Software Engineering Laboratory",
-  description: "Constructing immersive 3D architectures, developer utilities, and resilient distributed platforms.",
-  icons: {
-    icon: "/favicon.ico",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://warishlabs.in'),
+  title: {
+    default: 'WarishLabs — Engineering-First Software Laboratory',
+    template: '%s | WarishLabs',
+  },
+  description: 'WarishLabs builds production-grade SaaS platforms, developer tools, and distributed systems engineered for scale.',
+  keywords: ['WarishLabs', 'SaaS', 'Next.js', 'TypeScript', 'Full Stack', 'Developer Tools'],
+  authors: [{ name: 'MD Warish Ansari', url: 'https://portfolio-warish.vercel.app' }],
+  creator: 'MD Warish Ansari',
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://warishlabs.in',
+    siteName: 'WarishLabs',
+    title: 'WarishLabs — Engineering-First Software Laboratory',
+    description: 'Production-grade SaaS platforms, developer tools, and distributed systems.',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'WarishLabs' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'WarishLabs',
+    description: 'Engineering-First Software Laboratory',
+    images: ['/og-image.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, 'max-image-preview': 'large' },
   },
 };
 
@@ -31,10 +56,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      appearance={{
+        theme: dark,
+        variables: {
+          colorPrimary: '#3B82F6',        // Blue primary
+          colorBackground: '#020b1a',     // Dark slate blue bg
+          borderRadius: '0.5rem',
+        },
+        elements: {
+          card: 'shadow-[0_0_40px_rgba(59,130,246,0.15)] border border-white/8 bg-[#020b1a]',
+          formButtonPrimary: 'bg-blue-600 hover:bg-blue-500 font-semibold transition-all',
+        }
+      }}
+    >
       <html
         lang="en"
         className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+        data-scroll-behavior="smooth"
       >
         <body className="min-h-full flex flex-col bg-black text-white">
           <Suspense fallback={null}>

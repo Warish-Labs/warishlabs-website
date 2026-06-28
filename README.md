@@ -1,77 +1,110 @@
-# WarishLabs Platform
+# WarishLabs Website
 
-Live URL: [warishlabs.in](https://warishlabs.in) | Deployment URL: [warishlabs.vercel.app](https://warishlabs.vercel.app)
-
-A premium software engineering laboratory website constructed on Next.js 16 (Turbopack) and Tailwind CSS v4, featuring a high-performance database-seeded CMS, custom event analytics tracking, Clerk SSO integration, and hardware-accelerated 3D WebGL visuals.
+> Seriousness in Engineering, Modern Product Thinking. An engineering-first software laboratory showcasing premium SaaS platforms, developer tools, and interactive WebGL canvas playgrounds.
 
 ---
 
-## Technical Stack
+## ⚡ Technical Highlights
 
-- **Framework**: [Next.js 16](https://nextjs.org/) (App Router with Partial Prerendering and Turbopack compiler)
-- **UI & Layout**: [Tailwind CSS v4](https://tailwindcss.com/) (CSS-first configurations), Lucide React, Shadcn v4 base components
-- **3D Renderings**: React Three Fiber, `@react-three/drei`, Three.js
-- **Database ORM**: [Prisma 7](https://www.prisma.io/) (PostgreSQL client via PG connection pool and adapter driver)
-- **User Authentication**: [Clerk SSO](https://clerk.com/)
-- **Email Delivery**: Resend SDK
-- **Media Uploads**: Cloudinary SDK
-- **Rate Limiting**: Token bucket rate limit caches (Upstash Redis optionally)
+- **WebGL Canvas Playground**: Full-bleed background Canvas rendering interactive 3D particle fields (Three.js + R3F) with mouse-repulsion physics, diagonal orbital rings, and dynamic floating shards.
+- **Relational Seeded CMS**: Layout components (Hero, dynamic About paragraphs, Contact addresses) are fully decoupled and driven dynamically by a PostgreSQL database via Prisma ORM.
+- **Robust Administrative Panel**: Dynamic analytics visitor tracking, logs, and complete, styled CRUD systems for cataloged Products, Categories, and experimental Sandbox Labs.
+- **Distributed Security rate-limiting**: Global Upstash Redis rate-limiter guards contacts, newsletter submissions, and tracking endpoints, falling back to local token buckets in development.
+- **Clerk Dark SSO Integration**: Integrated authentication that restricts console control to the owner address (`ADMIN_EMAIL`) styled with cohesive slate blue panels.
+- **Media Asset Sync**: Automatically manages Cloudinary folder uploads (`warishlabs/products`, `warishlabs/labs`) and cleans up associated assets on delete.
 
 ---
 
-## Architectural Features
+## 🛠 Tech Stack
 
-### 1. Unified Authentication Layer
-The system uses custom middleware proxy handlers (`proxy.ts`) to validate database sessions. Admin routing validates both custom db session cookies and Clerk SSO tokens. If the Clerk user email matches `process.env.ADMIN_EMAIL` (defaulting to `warishlabs@gmail.com`), the user is authenticated as the super admin/owner of the site.
-
-### 2. Immersive 3D Graphics
-The hero canvas integrates a custom React Three Fiber orbital visual system:
-- **Core Cube**: Interactive semi-transparent glass physical material mesh tilting on mouse gestures.
-- **Orbital Rings**: Multi-axis wireframe torus rings surrounding the core.
-- **Glow Nodes**: Satellite satellites orbiting the core dynamically using custom frame time animations.
-- **Rotating Starfield**: Slow-spinning background point cloud generator.
-
-### 3. Database Seeded Layout
-Site configurations, homepage titles, statistics counters, FAQs, products catalog, categories, and technical stack badges are seeded and queried dynamically from PostgreSQL database schemas.
+| Layer | Technology | Description |
+|---|---|---|
+| **Framework** | Next.js 16 (App Router) | React 19 server-side rendering, routing, API endpoints |
+| **Language** | TypeScript | Strong typing contracts |
+| **Database** | PostgreSQL | Relational transactional database |
+| **ORM** | Prisma | Typesafe schema modeling and queries |
+| **Auth** | Clerk | Multi-tenant SSO authentication |
+| **Media** | Cloudinary | Asset optimization and folder management |
+| **Email** | Resend | Transactional templates (Contact / Newsletters) |
+| **Cache** | Redis (Upstash) | Global distributed rate-limiting sliding windows |
+| **3D Graphics**| Three.js + R3F | Hardware-accelerated WebGL visuals |
+| **Animation** | Framer Motion | Fluid spring transitions and hover micro-animations |
+| **Testing** | Vitest + jsdom | Fast utility unit tests and mocked DOM renders |
 
 ---
 
-## Getting Started
+## 📂 Project Structure
 
-### 1. Configure Local Environment
-Create a `.env` file in the root of the project:
-```bash
-cp .env.example .env
 ```
-Ensure PostgreSQL `DATABASE_URL` is set.
-Add your Clerk API keys (`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY`).
-Configure `ADMIN_EMAIL` (e.g. `warishlabs@gmail.com`).
-
-### 2. Install Dependencies
-```bash
-npm install --legacy-peer-deps
+├── app/                   # Next.js App Router root
+│   ├── (admin)/           # Clerk-protected administration console
+│   │   └── admin/         
+│   │       ├── dashboard/ # KPI panels & activity logs
+│   │       ├── labs/      # Labs CRUD page
+│   │       ├── login/     # Custom Sign-in routing
+│   │       ├── products/  # Products CRUD page
+│   │       └── settings/  # Centralized CMS customizer settings
+│   ├── api/               # Backend endpoint integrations
+│   ├── about/             # Dynamic laboratory profile
+│   ├── contact/           # Dynamic contact form & addresses
+│   ├── labs/              # Sandbox showcases
+│   └── products/          # Showcased platforms
+├── components/            # UI components and 3D scenes
+│   ├── admin/             # Admin topbar, sidebar, charts
+│   ├── hero/              # Full-bleed Hero Canvas & Cube
+│   └── ui/                # Base UI elements
+├── docs/                  # Deployment & setup documentation (Gitignored)
+├── prisma/                # Relational schema models and seed scripts
+├── services/              # Core business layers (Emails, Cloudinary, Products)
+├── tests/                 # Vitest test files & setups
+└── proxy.ts               # Security middleware & rate limit routing
 ```
 
-### 3. Sync & Seed Database
-Use Prisma 7 commands to push the schema and run database seeding:
+---
+
+## 🚀 Development Setup
+
+### 1. Configure local environment
+Create a `.env` file in the root directory:
+```env
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/warishlabs"
+ADMIN_EMAIL="warishlabs@gmail.com"
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_..."
+CLERK_SECRET_KEY="sk_test_..."
+```
+
+### 2. Install dependencies
 ```bash
-npx prisma generate
+npm install
+```
+
+### 3. Initialize databases
+Apply migrations and seed initial CMS layouts:
+```bash
 npx prisma db push
-npx tsx prisma/seed.ts
+npx -y tsx prisma/seed.ts
 ```
 
-### 4. Run Development Server
+### 4. Execute dev server
 ```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open `http://localhost:3000` to review the application.
 
 ---
 
-## Operations & Production Deployment
+## 🧪 Testing
 
-To package the application for optimized edge rendering:
+We use **Vitest** and **React Testing Library** for automated checks.
+
 ```bash
-npm run build
+npm run test:run     # Run all tests once
+npm run test         # Run in watch mode
 ```
-See [docs/Deployment.md](docs/Deployment.md) for more info on deploying database seeds, media configurations, and analytics pruner crons.
+
+---
+
+## 🌍 Production Deployment
+
+For full deployment instructions (Neon DB poolers, DNS CNAME setups, Clerk configurations), refer to:
+👉 [Vercel Deployment Guide](file:///home/md-warish-ansari/Projects/warishlabs-website/docs/VERCEL_DEPLOYMENT.md)

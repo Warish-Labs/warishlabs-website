@@ -1,15 +1,25 @@
 import { clerkMiddleware } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import type { NextRequest, NextFetchEvent } from 'next/server';
 import { validateSession } from '@/lib/auth';
 import { CONFIG } from '@/constants/config';
 import crypto from 'crypto';
-
-import type { NextFetchEvent } from 'next/server';
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
 
 const clerk = clerkMiddleware();
 
-// In-memory token bucket rate limiter for development/fallback
+// 1. Upstash Redis Setup (if env variables exist)
+let redisClient: Redis | null = null;
+if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+  try {
+    redisClient = Redis.fromEnv();
+  } catch (err) {
+    console.error('[RateLimit] Failed to initialize Upstash Redis from env:', err);
+  }
+}
+
+// 2. Local In-Memory Fallback rate limiter
 const rateLimitCache = new Map<string, { tokens: number; lastRefill: number }>();
 
 function devRateLimit(ip: string, limit: number, windowSec: number): boolean {
@@ -17,7 +27,6 @@ function devRateLimit(ip: string, limit: number, windowSec: number): boolean {
   const key = `${ip}:${limit}:${windowSec}`;
   const bucket = rateLimitCache.get(key) || { tokens: limit, lastRefill: now };
   
-  // Refill tokens
   const elapsedMs = now - bucket.lastRefill;
   const refillAmount = (elapsedMs / 1000) * (limit / windowSec);
   bucket.tokens = Math.min(limit, bucket.tokens + refillAmount);
@@ -26,11 +35,29 @@ function devRateLimit(ip: string, limit: number, windowSec: number): boolean {
   if (bucket.tokens >= 1) {
     bucket.tokens -= 1;
     rateLimitCache.set(key, bucket);
-    return true; // Allowed
+    return true;
   }
   
   rateLimitCache.set(key, bucket);
-  return false; // Rate limited
+  return false;
+}
+
+// Helper to handle rate limiting dynamically
+async function checkRateLimit(ip: string, category: string, limit: number, windowSec: number): Promise<boolean> {
+  if (redisClient) {
+    try {
+      const limiter = new Ratelimit({
+        redis: redisClient,
+        limiter: Ratelimit.slidingWindow(limit, `${windowSec} s`),
+        prefix: `ratelimit:${category}`,
+      });
+      const { success } = await limiter.limit(ip);
+      return success;
+    } catch (err) {
+      console.error(`[RateLimit] Upstash execution error on ${category}, fallback to local:`, err);
+    }
+  }
+  return devRateLimit(ip, limit, windowSec);
 }
 
 /**
@@ -44,7 +71,6 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
     return clerkResponse;
   }
   
-  // Proceed with default next response
   let response = (clerkResponse as NextResponse) || NextResponse.next();
 
   // 1. Visitor Tracking (Set UUID if not present)
@@ -64,23 +90,22 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   if (pathname.startsWith('/admin') && !pathname.startsWith('/admin/login')) {
     const admin = await validateSession();
     if (!admin) {
-      // Redirect to login page
       return NextResponse.redirect(new URL('/admin/login', request.url));
     }
   }
 
-  // 3. Rate Limiting (Dev-fallback or production via Upstash)
+  // 3. Security-focused Rate Limiting
   const ip = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for') || '127.0.0.1';
   let allowed = true;
   
   if (pathname === '/api/contact') {
-    allowed = devRateLimit(ip, CONFIG.RATE_LIMITS.CONTACT_LIMIT, CONFIG.RATE_LIMITS.CONTACT_WINDOW);
+    allowed = await checkRateLimit(ip, 'contact', CONFIG.RATE_LIMITS.CONTACT_LIMIT, CONFIG.RATE_LIMITS.CONTACT_WINDOW);
   } else if (pathname === '/api/newsletter/subscribe') {
-    allowed = devRateLimit(ip, CONFIG.RATE_LIMITS.NEWSLETTER_LIMIT, CONFIG.RATE_LIMITS.NEWSLETTER_WINDOW);
+    allowed = await checkRateLimit(ip, 'newsletter', CONFIG.RATE_LIMITS.NEWSLETTER_LIMIT, CONFIG.RATE_LIMITS.NEWSLETTER_WINDOW);
   } else if (pathname === '/api/search') {
-    allowed = devRateLimit(ip, CONFIG.RATE_LIMITS.SEARCH_LIMIT, CONFIG.RATE_LIMITS.SEARCH_WINDOW);
+    allowed = await checkRateLimit(ip, 'search', CONFIG.RATE_LIMITS.SEARCH_LIMIT, CONFIG.RATE_LIMITS.SEARCH_WINDOW);
   } else if (pathname === '/api/analytics/event') {
-    allowed = devRateLimit(visitorId || ip, CONFIG.RATE_LIMITS.ANALYTICS_LIMIT, CONFIG.RATE_LIMITS.ANALYTICS_WINDOW);
+    allowed = await checkRateLimit(visitorId || ip, 'analytics', CONFIG.RATE_LIMITS.ANALYTICS_LIMIT, CONFIG.RATE_LIMITS.ANALYTICS_WINDOW);
   }
 
   if (!allowed) {
@@ -98,11 +123,11 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   // Content Security Policy
   const csp = `
     default-src 'self';
-    script-src 'self' 'unsafe-inline' 'unsafe-eval';
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' *.clerk.accounts.dev;
     style-src 'self' 'unsafe-inline';
-    img-src 'self' data: blob: res.cloudinary.com;
+    img-src 'self' data: blob: res.cloudinary.com img.clerk.com;
     media-src 'self' data: blob: res.cloudinary.com;
-    connect-src 'self';
+    connect-src 'self' *.clerk.accounts.dev;
     font-src 'self' data:;
     object-src 'none';
     frame-ancestors 'none';
@@ -119,11 +144,8 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
     '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for Clerk's auto-proxy path
     '/__clerk/:path*',
-    // Always run for API routes
     '/(api|trpc)(.*)',
   ],
 };

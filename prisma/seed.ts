@@ -239,6 +239,37 @@ async function main() {
       },
       sortOrder: 3,
     },
+    {
+      sectionType: 'about',
+      title: 'About WarishLabs',
+      subtitle: 'WarishLabs is a software engineering laboratory focused on building high-performance, beautiful, and highly stable developer tools and full-stack systems.',
+      config: {
+        philosophy: [
+          "We believe that modern web applications should feel like hardware. They should be responsive, tactile, and built with extreme restraint. We avoid flashy, decorative widgets that slow down load times or distract the user.",
+          "Our architectural direction is centered around strict type guarantees, relational data integrity, database-backed security systems, and highly optimized edge rendering pipelines."
+        ],
+        highlights: [
+          { title: 'Obsessive Quality', description: 'We believe that software should be built with absolute care, strict type contracts, and solid execution guarantees.', icon: 'Shield' },
+          { title: 'Modern Stack', description: 'Next.js 16 App Router, Tailwind CSS, Prisma 7, PostgreSQL, Cloudinary, and React Three Fiber.', icon: 'Cpu' },
+          { title: 'WebGL Systems', description: 'Interactive visual layers rendered using hardware-accelerated 3D graphics in the browser.', icon: 'Globe' },
+          { title: 'Seeded CMS', description: 'Decoupled relational schema configuration that puts content control securely in the administrative console.', icon: 'Code2' },
+        ]
+      },
+      sortOrder: 4,
+    },
+    {
+      sectionType: 'contact',
+      title: 'Contact Us',
+      subtitle: 'Have a technical inquiry, feedback, or need collaboration? Get in touch with our engineering team directly.',
+      config: {
+        email: 'contact@warishlabs.in',
+        phone: '',
+        address: 'New Delhi, India',
+        responseTime: 'Under 24 hours',
+        secureRouting: 'Messages are stored inside a TLS encrypted datastore and sent to resend relays.'
+      },
+      sortOrder: 5,
+    },
   ];
 
   for (const sec of sections) {

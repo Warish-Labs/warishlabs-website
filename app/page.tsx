@@ -28,8 +28,21 @@ export default async function Home() {
 
   const heroConfig = heroSection?.config as any;
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'WarishLabs',
+    url: 'https://warishlabs.in',
+    description: 'Engineering-first software laboratory constructing immersive 3D architectures, developer utilities, and resilient distributed platforms.',
+    founder: { '@type': 'Person', name: 'MD Warish Ansari' },
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Navbar />
       <main className="flex-1">
         {/* Dynamic Hero Section */}

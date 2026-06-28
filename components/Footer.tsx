@@ -136,10 +136,7 @@ export default function Footer() {
         {/* Footer bottom */}
         <div className="mt-12 pt-8 border-t border-border/40 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-text-tertiary">
-            © {currentYear} WarishLabs. All rights reserved. Live at{' '}
-            <a href="https://warishlabs.in" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline font-semibold">warishlabs.in</a>
-            {' '}and{' '}
-            <a href="https://warishlabs.vercel.app" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline font-semibold">warishlabs.vercel.app</a>.
+            © {currentYear} WarishLabs. All rights reserved.
           </p>
           <div className="flex items-center gap-6">
             <span className="text-xs text-text-tertiary">

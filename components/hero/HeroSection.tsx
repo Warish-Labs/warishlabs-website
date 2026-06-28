@@ -33,18 +33,33 @@ export default function HeroSection({ title, subtitle, config }: HeroProps) {
     { value: '100%', label: 'Typesafe Code', icon: Terminal },
   ];
 
-  return (
-    <section className="bg-mesh-gradient blueprint-grid min-h-[90vh] flex items-center justify-center pt-24 pb-16 relative overflow-hidden">
-      {/* Glow halos */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-accent/5 blur-3xl -z-10 pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-accent-glow/3 blur-3xl -z-10 pointer-events-none" />
+  // Staff-grade inline gradient vignette legibility styling
+  const vignetteStyle = {
+    background: `
+      radial-gradient(ellipse 55% 70% at 30% 50%, rgba(2,11,26,0.78) 0%, transparent 100%),
+      linear-gradient(to right, rgba(2,11,26,0.88) 0%, rgba(2,11,26,0.45) 45%, transparent 70%),
+      linear-gradient(to top, rgba(2,11,26,0.75) 0%, transparent 40%),
+      linear-gradient(to bottom, rgba(2,11,26,0.55) 0%, transparent 30%)
+    `
+  };
 
-      {/* Decorative scanline overlay */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden -z-5 opacity-20">
+  return (
+    <section className="relative min-h-screen flex items-center justify-center pt-24 pb-16 bg-[#020b1a] overflow-hidden select-none">
+      {/* 1. Full-Bleed 3D WebGL Canvas Layer */}
+      <HeroCanvas />
+
+      {/* 2. Gradient Vignette Overlay for Text Legibility */}
+      <div 
+        style={vignetteStyle}
+        className="absolute inset-0 pointer-events-none z-10" 
+      />
+
+      {/* 3. Scanline overlay */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-10 opacity-[0.04] bg-black">
         <div className="scan-line" />
       </div>
 
-      <div className="container mx-auto px-6 max-w-7xl">
+      <div className="container mx-auto px-6 max-w-7xl relative z-20 h-full">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           {/* Left Content column */}
           <motion.div
@@ -53,11 +68,10 @@ export default function HeroSection({ title, subtitle, config }: HeroProps) {
             variants={STAGGER_CONTAINER}
             className="lg:col-span-7 space-y-8 text-left"
           >
-            {/* Version Badge */}
+            {/* Laboratory Badge */}
             <motion.div variants={FADE_UP} transition={SPRING_DEFAULT}>
-              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent-subtle border border-accent/20 text-xs font-semibold text-accent tracking-wide uppercase">
-                <Terminal className="w-3.5 h-3.5" />
-                CONSTRUCTING SYSTEM V2.0
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/25 text-xs font-semibold text-blue-400 tracking-wide uppercase">
+                ◈ LABS · BUILD ACTIVE
               </span>
             </motion.div>
 
@@ -89,7 +103,7 @@ export default function HeroSection({ title, subtitle, config }: HeroProps) {
                 href={ctaPrimaryUrl}
                 className={cn(
                   buttonVariants({ variant: 'default' }),
-                  "bg-accent hover:bg-accent-hover text-white px-6 py-6 shadow-accent hover:shadow-accent-hover active:scale-[0.97] transition-all font-semibold rounded-lg text-sm flex items-center gap-2"
+                  "bg-blue-600 hover:bg-blue-500 text-white px-6 py-6 shadow-[0_0_24px_rgba(59,130,246,0.35)] hover:shadow-[0_0_30px_rgba(59,130,246,0.5)] active:scale-[0.97] transition-all font-semibold rounded-lg text-sm flex items-center gap-2"
                 )}
               >
                 {ctaPrimaryText}
@@ -100,25 +114,25 @@ export default function HeroSection({ title, subtitle, config }: HeroProps) {
                 href={ctaSecondaryUrl}
                 className={cn(
                   buttonVariants({ variant: 'outline' }),
-                  "border-border hover:border-accent hover:bg-accent-subtle text-white px-6 py-6 active:scale-[0.97] transition-all font-semibold rounded-lg text-sm bg-bg-card flex items-center gap-2"
+                  "border border-white/12 bg-white/4 backdrop-blur-sm hover:border-blue-500 hover:bg-blue-500/10 text-white px-6 py-6 active:scale-[0.97] transition-all font-semibold rounded-lg text-sm flex items-center gap-2"
                 )}
               >
                 {ctaSecondaryText}
               </Link>
             </motion.div>
 
-            {/* Simple Key Stats */}
+            {/* Key Stats */}
             <motion.div
               variants={FADE_UP}
               transition={SPRING_DEFAULT}
-              className="grid grid-cols-3 gap-6 pt-6 border-t border-border/60"
+              className="grid grid-cols-3 gap-6 pt-6 border-t border-white/8"
             >
               {stats.map((stat, idx) => {
                 const StatIcon = stat.icon;
                 return (
                   <div key={idx} className="space-y-1">
                     <div className="flex items-center gap-1.5 text-text-tertiary">
-                      <StatIcon className="w-3.5 h-3.5 text-accent" />
+                      <StatIcon className="w-3.5 h-3.5 text-blue-400" />
                       <span className="text-[10px] uppercase font-bold tracking-widest">{stat.label}</span>
                     </div>
                     <p className="text-2xl font-black text-white tracking-tight">{stat.value}</p>
@@ -128,21 +142,44 @@ export default function HeroSection({ title, subtitle, config }: HeroProps) {
             </motion.div>
           </motion.div>
 
-          {/* Right 3D Visual column */}
-          <div className="lg:col-span-5 h-[350px] lg:h-[480px] w-full relative">
-            {/* 3D Canvas element - Hidden on mobile to prioritize loading and frame rates */}
-            <div className="hidden md:block w-full h-full">
-              <HeroCanvas />
-            </div>
-
-            {/* Mobile Visual Graphic Fallback */}
-            <div className="md:hidden w-full h-full flex items-center justify-center">
-              <div className="relative w-64 h-64 border border-border bg-bg-card rounded-2xl flex items-center justify-center glow-accent-element">
-                <div className="absolute inset-2 border border-border-subtle rounded-xl flex items-center justify-center bg-black">
-                  <span className="text-5xl font-black text-accent tracking-tighter">&lt;WL/&gt;</span>
-                </div>
+          {/* Right Floating Console Info Cards (Desktop Only) */}
+          <div className="hidden lg:flex lg:col-span-5 flex-col gap-6 justify-end items-end h-[480px]">
+            {/* Status Card */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5, duration: 0.6 }}
+              className="glass-panel border border-white/8 bg-white/4 backdrop-blur-md p-4 rounded-xl shadow-card flex items-center gap-4 w-72 hover:border-blue-500/30 transition-all duration-200"
+            >
+              <div className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
               </div>
-            </div>
+              <div>
+                <p className="text-xs font-bold text-white uppercase tracking-wider">All Systems Operational</p>
+                <p className="text-[10px] text-text-secondary">WarishLabs Nodes Online & Verifying</p>
+              </div>
+            </motion.div>
+
+            {/* Core Stack Pill */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.6, duration: 0.6 }}
+              className="glass-panel border border-white/8 bg-white/4 backdrop-blur-md p-4 rounded-xl shadow-card w-72 hover:border-blue-500/30 transition-all duration-200"
+            >
+              <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider mb-2">Core Engineering Stack</p>
+              <div className="flex flex-wrap gap-1.5">
+                {['Next.js 16', 'Prisma 7', 'PostgreSQL', 'TypeScript'].map((tech) => (
+                  <span
+                    key={tech}
+                    className="px-2 py-0.5 bg-black/40 border border-white/6 rounded text-[9px] font-mono text-blue-300 uppercase tracking-wider"
+                  >
+                    {tech}
+                  </span>
+                ))}
+              </div>
+            </motion.div>
           </div>
         </div>
       </div>

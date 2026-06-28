@@ -12,8 +12,28 @@ import { ArrowLeft, ExternalLink, Cpu, Info } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { cookies } from 'next/headers';
 
+import { Metadata } from 'next';
+
 interface ProductDetailPageProps {
   params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({ params }: ProductDetailPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const product = await ProductService.getBySlug(slug);
+  if (!product) return { title: 'Product Not Found' };
+  
+  return {
+    title: product.seo?.title || `${product.name} | WarishLabs`,
+    description: product.seo?.description || product.tagline,
+    keywords: product.seo?.keywords ? product.seo.keywords.split(',').map(k => k.trim()) : undefined,
+    openGraph: {
+      title: product.name,
+      description: product.tagline,
+      type: 'website',
+      url: `https://warishlabs.in/products/${slug}`,
+    },
+  };
 }
 
 export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
