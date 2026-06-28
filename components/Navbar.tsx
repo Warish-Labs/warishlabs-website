@@ -8,11 +8,13 @@ import { cn } from '@/utils/cn';
 import { Search, Menu, X } from 'lucide-react';
 import { buttonVariants } from '@/components/ui/button';
 import SearchPanel from './SearchPanel';
-import { useAuth } from '@clerk/nextjs';
+import { useUser } from '@clerk/nextjs';
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { isSignedIn } = useAuth();
+  const { user, isLoaded } = useUser();
+  const adminEmail = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'warishlabs@gmail.com').toLowerCase().trim();
+  const isAdmin = !!(isLoaded && user && user.primaryEmailAddress?.emailAddress?.toLowerCase().trim() === adminEmail);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -91,7 +93,7 @@ export default function Navbar() {
             </button>
 
             {/* Console Link */}
-            {isSignedIn && (
+            {isAdmin && (
               <Link
                 href="/admin/dashboard"
                 className={cn(
@@ -137,7 +139,7 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
-            {isSignedIn && (
+            {isAdmin && (
               <Link
                 href="/admin/dashboard"
                 onClick={() => setIsMobileMenuOpen(false)}
