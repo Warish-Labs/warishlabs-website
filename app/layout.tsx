@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     template: '%s | WarishLabs',
   },
   description: 'WarishLabs builds production-grade SaaS platforms, developer tools, and distributed systems engineered for scale.',
-  keywords: ['WarishLabs', 'SaaS', 'Next.js', 'TypeScript', 'Full Stack', 'Developer Tools'],
+  keywords: ['WarishLabs', 'warishlabs', 'warish labs', 'warish','SaaS', 'Next.js', 'TypeScript', 'Full Stack', 'Developer Tools'],
   authors: [{ name: 'MD Warish Ansari', url: 'https://portfolio.warishlabs.in' }],
   creator: 'MD Warish Ansari',
   openGraph: {
