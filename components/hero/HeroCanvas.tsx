@@ -180,40 +180,71 @@ export default function HeroCanvas() {
   }
 
   return (
-    <div className="absolute inset-0 w-full h-full pointer-events-none select-none z-0">
-      <Canvas
-        camera={{ position: [0, 0, 6], fov: 50 }}
-        dpr={[1, 2]}
-        gl={{ antialias: true, alpha: true }}
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
-      >
-        <Suspense fallback={null}>
-          {/* Lighting Rig */}
-          <ambientLight intensity={0.2} />
-          <pointLight position={[4, 4, 4]} intensity={2.8} color="#2563EB" distance={15} decay={2} />
-          <pointLight position={[-5, -3, 2]} intensity={0.8} color="#FFFFFF" distance={12} decay={2} />
-          <pointLight position={[0, 6, -3]} intensity={1.5} color="#1D4ED8" distance={15} decay={2} />
-          <directionalLight position={[0, 5, -2]} intensity={0.4} color="#3B82F6" />
+    <CanvasErrorBoundary>
+      <div className="absolute inset-0 w-full h-full pointer-events-none select-none z-0">
+        <Canvas
+          camera={{ position: [0, 0, 6], fov: 50 }}
+          dpr={[1, 2]}
+          gl={{ antialias: true, alpha: true }}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+        >
+          <Suspense fallback={null}>
+            {/* Lighting Rig */}
+            <ambientLight intensity={0.2} />
+            <pointLight position={[4, 4, 4]} intensity={2.8} color="#2563EB" distance={15} decay={2} />
+            <pointLight position={[-5, -3, 2]} intensity={0.8} color="#FFFFFF" distance={12} decay={2} />
+            <pointLight position={[0, 6, -3]} intensity={1.5} color="#1D4ED8" distance={15} decay={2} />
+            <directionalLight position={[0, 5, -2]} intensity={0.4} color="#3B82F6" />
 
-          {/* Interactive Core Cube & Orbital System */}
-          <HeroCube />
+            {/* Interactive Core Cube & Orbital System */}
+            <HeroCube />
 
-          {/* Particle layers */}
-          <MouseReactiveParticles />
-          <BackgroundDust />
+            {/* Particle layers */}
+            <MouseReactiveParticles />
+            <BackgroundDust />
 
-          {/* Connection Lines */}
-          <lineSegments>
-            <bufferGeometry>
-              <bufferAttribute
-                attach="attributes-position"
-                args={[linePositions, 3]}
-              />
-            </bufferGeometry>
-            <lineBasicMaterial color="#3B82F6" transparent opacity={0.08} />
-          </lineSegments>
-        </Suspense>
-      </Canvas>
-    </div>
+            {/* Connection Lines */}
+            <lineSegments>
+              <bufferGeometry>
+                <bufferAttribute
+                  attach="attributes-position"
+                  args={[linePositions, 3]}
+                />
+              </bufferGeometry>
+              <lineBasicMaterial color="#3B82F6" transparent opacity={0.08} />
+            </lineSegments>
+          </Suspense>
+        </Canvas>
+      </div>
+    </CanvasErrorBoundary>
   );
+}
+
+class CanvasErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error("[CanvasErrorBoundary] Caught R3F rendering crash:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="absolute inset-0 bg-[#020b1a] flex items-center justify-center opacity-60">
+          <div className="absolute inset-0 blueprint-grid opacity-[0.03] pointer-events-none" />
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }

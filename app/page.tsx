@@ -16,10 +16,10 @@ export default async function Home() {
   const [heroSection, statsSection, visitorCount, activeProjectsCount] = await Promise.all([
     prisma.homepageSection.findUnique({
       where: { sectionType: 'hero' },
-    }),
+    }).catch(() => null),
     prisma.homepageSection.findUnique({
       where: { sectionType: 'stats' },
-    }),
+    }).catch(() => null),
     prisma.visitor.count().catch(() => 0),
     prisma.product.count().catch(() => 0),
   ]);
