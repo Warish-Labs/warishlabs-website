@@ -3,6 +3,8 @@ import prisma from '@/lib/prisma';
 import { validateSession } from '@/lib/auth';
 import { MediaService } from '@/services/MediaService';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   const admin = await validateSession();
   if (!admin) {

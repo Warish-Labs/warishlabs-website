@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
     ],
   },
   // Next.js 16 Cache Components / PPR configuration
-  cacheComponents: true,
+  // cacheComponents: true,
 };
 
 export default nextConfig;
