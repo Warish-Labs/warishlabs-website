@@ -14,7 +14,7 @@ export class BlogService {
       where: publishedOnly ? { published: true } : undefined,
       include: { seo: true },
       orderBy: { publishedAt: 'desc' },
-    }) as unknown as BlogWithDetails[];
+    }).catch(() => []) as unknown as BlogWithDetails[];
   }
 
   /**
@@ -24,7 +24,7 @@ export class BlogService {
     return prisma.blog.findUnique({
       where: { slug },
       include: { seo: true },
-    }) as unknown as BlogWithDetails | null;
+    }).catch(() => null) as unknown as BlogWithDetails | null;
   }
 
   /**

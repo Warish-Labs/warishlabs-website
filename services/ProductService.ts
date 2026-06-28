@@ -31,7 +31,7 @@ export class ProductService {
         seo: true,
       },
       orderBy: { createdAt: 'desc' },
-    }) as unknown as ProductWithDetails[];
+    }).catch(() => []) as unknown as ProductWithDetails[];
   }
 
   /**
@@ -53,7 +53,7 @@ export class ProductService {
         },
         seo: true,
       },
-    }) as unknown as ProductWithDetails | null;
+    }).catch(() => null) as unknown as ProductWithDetails | null;
   }
 
   /**

@@ -13,7 +13,7 @@ export default async function LabsPage() {
 
   const labs = await prisma.lab.findMany({
     orderBy: { createdAt: 'desc' },
-  });
+  }).catch(() => []);
 
   // Fallback mock labs for local development
   const displayLabs = labs.length > 0 ? labs : [
