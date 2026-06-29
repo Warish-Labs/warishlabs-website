@@ -3,12 +3,21 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Eye, Clock, FileText } from 'lucide-react';
 
-export const metadata = {
-  title: 'Cookie Policy',
-  description: 'Detailed information about how cookies are used on the WarishLabs website.',
-};
+import { getBusinessConfig } from '@/lib/config';
 
-export default function CookiePolicyPage() {
+export async function generateMetadata() {
+  const config = await getBusinessConfig();
+  return {
+    title: `Cookie Policy | ${config.companyName}`,
+    description: `Detailed information about how cookies are used on the ${config.companyName} website.`,
+    alternates: {
+      canonical: `${config.siteUrl}/cookies`,
+    },
+  };
+}
+
+export default async function CookiePolicyPage() {
+  const config = await getBusinessConfig();
   const lastUpdated = 'June 29, 2026';
 
   return (
@@ -77,7 +86,7 @@ export default function CookiePolicyPage() {
                       <td className="p-3">Maintains administrative dashboard sessions. Expires after session close.</td>
                     </tr>
                     <tr className="border-b border-border hover:bg-white/2">
-                      <td className="p-3 border-r border-border font-mono text-white">warishlabs_visitor_id (WarishLabs)</td>
+                      <td className="p-3 border-r border-border font-mono text-white">{config.companyName.toLowerCase()}_visitor_id ({config.companyName})</td>
                       <td className="p-3 border-r border-border text-white">Persistent Analytics</td>
                       <td className="p-3">Anonymous UUID cookie used to count total site visitors. Retained for 1 year.</td>
                     </tr>

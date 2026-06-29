@@ -3,12 +3,21 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { ShieldAlert, Clock, FileText } from 'lucide-react';
 
-export const metadata = {
-  title: 'Terms & Conditions',
-  description: 'Terms and conditions governing the use of WarishLabs website and services.',
-};
+import { getBusinessConfig } from '@/lib/config';
 
-export default function TermsConditionsPage() {
+export async function generateMetadata() {
+  const config = await getBusinessConfig();
+  return {
+    title: `Terms & Conditions | ${config.companyName}`,
+    description: `Terms and conditions governing the use of the ${config.companyName} website and services.`,
+    alternates: {
+      canonical: `${config.siteUrl}/terms`,
+    },
+  };
+}
+
+export default async function TermsConditionsPage() {
+  const config = await getBusinessConfig();
   const lastUpdated = 'June 29, 2026';
 
   return (
@@ -42,8 +51,8 @@ export default function TermsConditionsPage() {
               </h2>
               <p>
                 By accessing or using our website located at{' '}
-                <a href="https://warishlabs.in" className="text-accent hover:underline font-mono">https://warishlabs.in</a>{' '}
-                (the &ldquo;Site&rdquo;) or any services provided by WarishLabs, you agree to be bound by these Terms & Conditions. If you do not agree to all of these terms, do not access or use the Site.
+                <a href={config.siteUrl} className="text-accent hover:underline font-mono">{config.siteUrl}</a>{' '}
+                (the &ldquo;Site&rdquo;) or any services provided by {config.companyName}, you agree to be bound by these Terms & Conditions. If you do not agree to all of these terms, do not access or use the Site.
               </p>
             </section>
 
@@ -52,7 +61,7 @@ export default function TermsConditionsPage() {
                 <FileText className="w-4 h-4 text-accent" /> 2. Intellectually Property & Content License
               </h2>
               <p>
-                Unless otherwise indicated, the Site, its code (including WebGL configurations, Three.js shaders, custom component logic), brand names, logos, databases, articles, and product catalogs are the property of WarishLabs and MD Warish Ansari. They are protected by copyright, trademark, and other intellectual property laws.
+                Unless otherwise indicated, the Site, its code (including WebGL configurations, Three.js shaders, custom component logic), brand names, logos, databases, articles, and product catalogs are the property of {config.companyName}. They are protected by copyright, trademark, and other intellectual property laws.
               </p>
               <p>
                 You are granted a limited, non-exclusive, non-transferable license to access the Site for informational and evaluation purposes. You may not distribute, scrape, re-host, copy, or commercialize any proprietary assets without our explicit written permission.
@@ -88,7 +97,7 @@ export default function TermsConditionsPage() {
                 <FileText className="w-4 h-4 text-accent" /> 5. Limitation of Liability
               </h2>
               <p>
-                In no event shall WarishLabs, MD Warish Ansari, or our service providers be liable for any direct, indirect, special, incidental, or consequential damages (including loss of profits, data corruption, or system interruptions) arising out of or in connection with your use or inability to use the Site.
+                In no event shall {config.companyName} or our service providers be liable for any direct, indirect, special, incidental, or consequential damages (including loss of profits, data corruption, or system interruptions) arising out of or in connection with your use or inability to use the Site.
               </p>
             </section>
 
@@ -106,7 +115,7 @@ export default function TermsConditionsPage() {
                 <FileText className="w-4 h-4 text-accent" /> 7. Governing Law and Jurisdiction
               </h2>
               <p>
-                These Terms & Conditions shall be governed by and construed in accordance with the laws of India, without regard to its conflict of law principles. Any dispute arising under these terms shall be subject to the exclusive jurisdiction of the courts located in New Delhi, India.
+                These Terms & Conditions shall be governed by and construed in accordance with the laws of India, without regard to its conflict of law principles. Any dispute arising under these terms shall be subject to the exclusive jurisdiction of the courts located in {config.address}.
               </p>
             </section>
 

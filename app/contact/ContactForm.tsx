@@ -15,6 +15,7 @@ export default function ContactForm() {
   const [isPending, setIsPending] = useState(false);
   const [isSent, setIsSent] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,7 +78,14 @@ export default function ContactForm() {
           </div>
         </div>
       ) : (
-        <form onSubmit={handleSubmit}>
+        <form 
+          onSubmit={handleSubmit}
+          onFocus={() => setHasInteracted(true)}
+          onChange={() => setHasInteracted(true)}
+          onMouseEnter={() => setHasInteracted(true)}
+          onKeyDown={() => setHasInteracted(true)}
+          onTouchStart={() => setHasInteracted(true)}
+        >
           <CardContent className="space-y-4 pt-8">
             <div className="space-y-2">
               <Label htmlFor="name" className="text-text-secondary text-[10px] font-bold uppercase tracking-wider">
@@ -140,11 +148,13 @@ export default function ContactForm() {
               />
             </div>
 
-            <Turnstile 
-              onVerify={(token) => setTurnstileToken(token)} 
-              onError={() => setTurnstileToken(null)}
-              onExpire={() => setTurnstileToken(null)}
-            />
+            {hasInteracted && (
+              <Turnstile 
+                onVerify={(token) => setTurnstileToken(token)} 
+                onError={() => setTurnstileToken(null)}
+                onExpire={() => setTurnstileToken(null)}
+              />
+            )}
           </CardContent>
 
           <CardFooter className="pb-8 pt-2 flex flex-col gap-2">

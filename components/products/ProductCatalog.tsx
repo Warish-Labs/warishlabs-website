@@ -53,7 +53,7 @@ export default function ProductCatalog({ initialProducts, categories }: ProductC
   const statusParam = searchParams.get('status') || 'all';
   const typeParam = searchParams.get('type') || 'all';
   const sortParam = searchParams.get('sort') || 'default';
-  const searchParam = searchParams.get('q') || '';
+  const searchParam = searchParams.get('search') || searchParams.get('q') || '';
 
   // Local filter states
   const [searchQuery, setSearchQuery] = useState(searchParam);
@@ -65,7 +65,7 @@ export default function ProductCatalog({ initialProducts, categories }: ProductC
   // Sync state if URL search parameters change
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    setSearchQuery(searchParams.get('q') || '');
+    setSearchQuery(searchParams.get('search') || searchParams.get('q') || '');
     setSelectedCategory(searchParams.get('category') || 'all');
     setSelectedStatus(searchParams.get('status') || 'all');
     setSelectedType(searchParams.get('type') || 'all');
@@ -83,6 +83,16 @@ export default function ProductCatalog({ initialProducts, categories }: ProductC
         params.set(key, val);
       }
     });
+    // Normalize search query parameter key to 'search'
+    if ('search' in updates || 'q' in updates) {
+      const val = updates.search || updates.q;
+      params.delete('q');
+      if (val) {
+        params.set('search', val);
+      } else {
+        params.delete('search');
+      }
+    }
     router.push(`/products?${params.toString()}`);
   };
 
@@ -177,7 +187,7 @@ export default function ProductCatalog({ initialProducts, categories }: ProductC
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
-                  updateParams({ q: e.target.value });
+                  updateParams({ search: e.target.value });
                 }}
                 className="pl-9 bg-black/40 border-white/10 text-white rounded-lg focus-visible:ring-accent"
               />

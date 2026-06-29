@@ -3,12 +3,21 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Shield, Clock, FileText } from 'lucide-react';
 
-export const metadata = {
-  title: 'Privacy Policy',
-  description: 'Privacy Policy and data protection terms for WarishLabs.',
-};
+import { getBusinessConfig } from '@/lib/config';
 
-export default function PrivacyPolicyPage() {
+export async function generateMetadata() {
+  const config = await getBusinessConfig();
+  return {
+    title: `Privacy Policy | ${config.companyName}`,
+    description: `Privacy Policy and data protection terms for ${config.companyName}.`,
+    alternates: {
+      canonical: `${config.siteUrl}/privacy`,
+    },
+  };
+}
+
+export default async function PrivacyPolicyPage() {
+  const config = await getBusinessConfig();
   const lastUpdated = 'June 29, 2026';
 
   return (
@@ -41,8 +50,8 @@ export default function PrivacyPolicyPage() {
                 <FileText className="w-4 h-4 text-accent" /> 1. Introduction
               </h2>
               <p>
-                Welcome to WarishLabs (&ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;). We operate the website located at{' '}
-                <a href="https://warishlabs.in" className="text-accent hover:underline font-mono">https://warishlabs.in</a>{' '}
+                Welcome to {config.companyName} (&ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;). We operate the website located at{' '}
+                <a href={config.siteUrl} className="text-accent hover:underline font-mono">{config.siteUrl}</a>{' '}
                 and are committed to protecting your personal data and respecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit and use our services.
               </p>
             </section>
@@ -88,7 +97,7 @@ export default function PrivacyPolicyPage() {
               </p>
               <ul className="list-disc pl-5 space-y-1">
                 <li><strong className="text-white">Essential Cookies:</strong> Clerk session tokens and CSRF verification cookies required for system operations.</li>
-                <li><strong className="text-white">Visitor Tracking Cookie:</strong> A local cookie named <code className="text-white bg-white/5 px-1 py-0.5 rounded font-mono text-xs">warishlabs_visitor_id</code> stores an anonymous UUID for traffic analytics.</li>
+                <li><strong className="text-white">Visitor Tracking Cookie:</strong> A local cookie named <code className="text-white bg-white/5 px-1 py-0.5 rounded font-mono text-xs">{config.companyName.toLowerCase()}_visitor_id</code> stores an anonymous UUID for traffic analytics.</li>
                 <li><strong className="text-white">Security Cookies:</strong> Cloudflare Turnstile token checks and rate limiter buckets to secure endpoint submissions.</li>
               </ul>
             </section>
@@ -127,8 +136,8 @@ export default function PrivacyPolicyPage() {
                 If you have questions, concerns, or requests regarding this Privacy Policy, please contact our data team directly:
               </p>
               <div className="bg-bg-primary/60 border border-border p-4 rounded-xl space-y-1 font-mono text-[11px] text-white">
-                <p>Email: contact@warishlabs.in</p>
-                <p>Mailing Address: New Delhi, India</p>
+                <p>Email: {config.contactEmail}</p>
+                <p>Mailing Address: {config.address}</p>
                 <p>Encryption: Transport Layer Security (TLS v1.3)</p>
               </div>
             </section>

@@ -16,6 +16,7 @@ export default function Footer() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [hasInteracted, setHasInteracted] = useState(false);
   const [socialLinks, setSocialLinks] = useState<{
     githubUrl: string;
     twitterUrl: string;
@@ -184,7 +185,15 @@ export default function Footer() {
                 <p>Mailing list active. Check inbox.</p>
               </div>
             ) : (
-              <form onSubmit={handleSubscribe} className="space-y-3">
+              <form 
+                onSubmit={handleSubscribe} 
+                className="space-y-3"
+                onFocus={() => setHasInteracted(true)}
+                onChange={() => setHasInteracted(true)}
+                onMouseEnter={() => setHasInteracted(true)}
+                onKeyDown={() => setHasInteracted(true)}
+                onTouchStart={() => setHasInteracted(true)}
+              >
                 <div className="flex gap-2">
                   <Input
                     type="email"
@@ -204,11 +213,13 @@ export default function Footer() {
                   </Button>
                 </div>
                 
-                <Turnstile 
-                  onVerify={(token) => setTurnstileToken(token)} 
-                  onError={() => setTurnstileToken(null)}
-                  onExpire={() => setTurnstileToken(null)}
-                />
+                {hasInteracted && (
+                  <Turnstile 
+                    onVerify={(token) => setTurnstileToken(token)} 
+                    onError={() => setTurnstileToken(null)}
+                    onExpire={() => setTurnstileToken(null)}
+                  />
+                )}
               </form>
             )}
           </div>

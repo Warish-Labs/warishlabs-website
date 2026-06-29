@@ -12,6 +12,7 @@ export default function NewsletterCTA() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +70,15 @@ export default function NewsletterCTA() {
             <p className="font-semibold">Verification complete! Check your inbox for updates.</p>
           </div>
         ) : (
-          <form onSubmit={handleSubscribe} className="flex flex-col gap-3 max-w-md mx-auto pt-2">
+          <form 
+            onSubmit={handleSubscribe} 
+            className="flex flex-col gap-3 max-w-md mx-auto pt-2"
+            onFocus={() => setHasInteracted(true)}
+            onChange={() => setHasInteracted(true)}
+            onMouseEnter={() => setHasInteracted(true)}
+            onKeyDown={() => setHasInteracted(true)}
+            onTouchStart={() => setHasInteracted(true)}
+          >
             <div className="flex flex-col sm:flex-row gap-3">
               <Input
                 type="email"
@@ -95,11 +104,13 @@ export default function NewsletterCTA() {
               </Button>
             </div>
             
-            <Turnstile 
-              onVerify={(token) => setTurnstileToken(token)} 
-              onError={() => setTurnstileToken(null)}
-              onExpire={() => setTurnstileToken(null)}
-            />
+            {hasInteracted && (
+              <Turnstile 
+                onVerify={(token) => setTurnstileToken(token)} 
+                onError={() => setTurnstileToken(null)}
+                onExpire={() => setTurnstileToken(null)}
+              />
+            )}
           </form>
         )}
       </div>

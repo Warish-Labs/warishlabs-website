@@ -129,10 +129,24 @@ export default function SearchPanel({ isOpen, onClose }: SearchPanelProps) {
         placeholder="Type a command or search path..." 
         value={searchQuery}
         onValueChange={setSearchQuery}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && searchQuery.trim()) {
+            e.preventDefault();
+            handleSelect(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+          }
+        }}
       />
       <CommandList>
         {isLoading && <div className="p-4 text-center text-xs text-text-tertiary">Searching database...</div>}
         
+        {!isLoading && searchQuery.trim() && (
+          <CommandGroup heading="Actions">
+            <CommandItem onSelect={() => handleSelect(`/products?search=${encodeURIComponent(searchQuery.trim())}`)}>
+              <span className="font-semibold text-accent">Search products for &quot;{searchQuery}&quot;</span>
+            </CommandItem>
+          </CommandGroup>
+        )}
+
         {!isLoading && !searchQuery.trim() && (
           <>
             {/* Navigation Group */}

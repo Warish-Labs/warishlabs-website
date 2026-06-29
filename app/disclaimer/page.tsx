@@ -3,12 +3,21 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { HelpCircle, Clock, FileText } from 'lucide-react';
 
-export const metadata = {
-  title: 'Disclaimer',
-  description: 'Legal disclaimer for WarishLabs products and website services.',
-};
+import { getBusinessConfig } from '@/lib/config';
 
-export default function DisclaimerPage() {
+export async function generateMetadata() {
+  const config = await getBusinessConfig();
+  return {
+    title: `Disclaimer | ${config.companyName}`,
+    description: `Legal disclaimer for ${config.companyName} products and website services.`,
+    alternates: {
+      canonical: `${config.siteUrl}/disclaimer`,
+    },
+  };
+}
+
+export default async function DisclaimerPage() {
+  const config = await getBusinessConfig();
   const lastUpdated = 'June 29, 2026';
 
   return (
@@ -41,7 +50,7 @@ export default function DisclaimerPage() {
                 <FileText className="w-4 h-4 text-accent" /> 1. Professional Portfolio Nature
               </h2>
               <p>
-                WarishLabs is an engineering portfolio, content publication site, and software laboratory operated by MD Warish Ansari. The products listed (e.g. WarishLabs Cloud, Antigravity Engine) may range from active SaaS tools to conceptual engineering projects, beta-stage developer frameworks, or open-source prototypes. 
+                {config.companyName} is an engineering portfolio, content publication site, and software laboratory. The products listed (e.g. {config.companyName} Cloud, Antigravity Engine) may range from active SaaS tools to conceptual engineering projects, beta-stage developer frameworks, or open-source prototypes. 
               </p>
             </section>
 
@@ -77,7 +86,7 @@ export default function DisclaimerPage() {
                 <FileText className="w-4 h-4 text-accent" /> 5. Limitation of Liability
               </h2>
               <p>
-                Under no circumstances shall WarishLabs or MD Warish Ansari be liable to you or any third party for any decisions made or actions taken in reliance on the information on this Site, or for any consequential, special, or similar damages, even if advised of the possibility of such damages.
+                Under no circumstances shall {config.companyName} be liable to you or any third party for any decisions made or actions taken in reliance on the information on this Site, or for any consequential, special, or similar damages, even if advised of the possibility of such damages.
               </p>
             </section>
 

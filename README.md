@@ -178,16 +178,16 @@ npm run dev
 ```
 Open `http://localhost:3000` to review the application.
 
----
-
 ## 🧪 Testing
 
 We use **Vitest** and **React Testing Library** for automated checks.
 
 ```bash
-npm run test:run     # Run all tests once
-npm run test         # Run in watch mode
+npm run test         # Run all tests once
+npm run test:watch   # Run in watch mode
+npm run ci:test      # Run the local verification pipeline (lint + typecheck + test + build)
 ```
+
 
 ---
 
@@ -195,3 +195,33 @@ npm run test         # Run in watch mode
 
 For full deployment instructions (Neon DB poolers, DNS CNAME setups, Clerk configurations), refer to:
 👉 [Vercel Deployment Guide](file:///home/md-warish-ansari/Projects/warishlabs-website/docs/VERCEL_DEPLOYMENT.md)
+
+---
+
+## 🏗️ Production Architecture
+
+The application is engineered as a highly resilient, modern web system:
+- **Hosting & Edge Routing**: Hosted on Vercel with serverless and Edge handler execution, ensuring sub-100ms global latency.
+- **Relational Datastore**: Neon Serverless PostgreSQL with pg poolers, optimized for dynamic schemas and low connection times.
+- **Caching & Rate Limiting**: Global Upstash Redis instance managing real-time API call rate thresholds client-side and server-side.
+- **Media CDN**: Cloudinary serves highly compressed images and files using global edge CDNs.
+- **Identity & Authentication**: Clerk SSO manages administrative sessions.
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please read our [CONTRIBUTING.md](file:///home/md-warish-ansari/Projects/warishlabs-website/CONTRIBUTING.md) guide for guidelines, git workflow standards, and branch requirements.
+
+---
+
+## 🛡️ Security
+
+To report security vulnerabilities, review the policies and responsible disclosure guidelines in [SECURITY.md](file:///home/md-warish-ansari/Projects/warishlabs-website/SECURITY.md).
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License. See [LICENSE](file:///home/md-warish-ansari/Projects/warishlabs-website/LICENSE) for details.
+
