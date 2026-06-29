@@ -2,7 +2,7 @@ import React from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import prisma from '@/lib/prisma';
-import { Product, Category, Lab, Blog } from '@prisma/client';
+import { Category, Lab, Blog } from '@prisma/client';
 import Link from 'next/link';
 import ProductCard from '@/components/products/ProductCard';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
