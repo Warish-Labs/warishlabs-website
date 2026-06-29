@@ -1,0 +1,57 @@
+# GitHub Actions CodeQL Security Analysis Workflow
+# Configured for JavaScript and TypeScript security scanning.
+
+name: "CodeQL Analysis"
+
+on:
+  # Trigger analysis on push to main or feature branches
+  push:
+    branches: [ "main", "feature/*" ]
+  # Trigger analysis on pull requests targeting main
+  pull_request:
+    branches: [ "main" ]
+  # Trigger weekly analysis on Sunday mornings
+  schedule:
+    - cron: '30 4 * * 0' # 04:30 UTC on Sunday
+
+jobs:
+  analyze:
+    name: Analyze Code base
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'javascript-typescript' ] # Scan JS and TS
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # Set up Node.js 22 for JS/TS scanning environment compatibility
+    - name: Set up Node.js 22
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+
+    # Initialize the CodeQL tools for scanning
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        # Query suites: security-extended and security-and-quality are recommended for production
+        queries: security-extended,security-and-quality
+
+    # Autobuild attempts to build the project if necessary (runs simple compiler detection)
+    - name: Autobuild CodeQL
+      uses: github/codeql-action/autobuild@v3
+
+    # Execute analysis on the gathered database
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{matrix.language}}"
