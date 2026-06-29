@@ -10,6 +10,7 @@ import { dark } from "@clerk/themes";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import Script from "next/script";
+import Clarity from "@/components/Clarity";
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
@@ -84,7 +85,7 @@ export const metadata: Metadata = {
       "Production-grade SaaS platforms, developer tools, and distributed systems.",
     images: [
       {
-        url: "/og-image.png",
+        url: "/og-banner.png",
         width: 1200,
         height: 630,
         alt: "WarishLabs",
@@ -96,7 +97,10 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "WarishLabs",
     description: "Engineering-First Software Laboratory",
-    images: ["/og-image.png"],
+    images: ["/og-banner.png"],
+  },
+  other: {
+    "google-adsense-account": "ca-pub-1871155403737905",
   },
 };
 
@@ -138,9 +142,7 @@ export default function RootLayout({
                 'url': 'https://www.warishlabs.in',
                 'logo': 'https://www.warishlabs.in/logo.gif',
                 'sameAs': [
-                  'https://github.com/warishlabs',
-                  'https://twitter.com/warishlabs',
-                  'https://linkedin.com/company/warishlabs'
+                  'https://github.com/warishlabs'
                 ],
                 'contactPoint': {
                   '@type': 'ContactPoint',
@@ -175,6 +177,7 @@ export default function RootLayout({
           </Suspense>
 
           <Toaster theme="dark" position="top-right" />
+          <Clarity />
 
           <Analytics />
           <SpeedInsights />
