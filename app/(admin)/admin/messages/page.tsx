@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { MailQuestion, Trash2, Check, Eye } from 'lucide-react';
+import { MailQuestion, Trash2, Check, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDate } from '@/utils/formatters';
 
@@ -10,6 +10,10 @@ export default function AdminMessagesPage() {
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMessage, setSelectedMessage] = useState<any | null>(null);
+
+  // Reply States
+  const [replyText, setReplyText] = useState('');
+  const [isReplying, setIsReplying] = useState(false);
 
   const fetchMessages = async () => {
     try {
@@ -30,6 +34,11 @@ export default function AdminMessagesPage() {
   useEffect(() => {
     fetchMessages();
   }, []);
+
+  const handleSelectMessage = (msg: any) => {
+    setSelectedMessage(msg);
+    setReplyText('');
+  };
 
   const handleToggleStatus = async (id: string, currentStatus: string) => {
     const nextStatus = currentStatus === 'unread' ? 'read' : 'unread';
@@ -73,6 +82,34 @@ export default function AdminMessagesPage() {
       }
     } catch (err) {
       toast.error('Network error deleting message');
+    }
+  };
+
+  const handleSendReply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedMessage || !replyText.trim()) return;
+
+    setIsReplying(true);
+    try {
+      const res = await fetch('/api/admin/messages/reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: selectedMessage.id, replyText }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Reply email sent successfully');
+        setReplyText('');
+        fetchMessages();
+        // Update local state to read as the backend automatically marks replied emails as read
+        setSelectedMessage({ ...selectedMessage, status: 'read' });
+      } else {
+        toast.error(data.error || 'Failed to send reply');
+      }
+    } catch (err) {
+      toast.error('Network error sending reply');
+    } finally {
+      setIsReplying(false);
     }
   };
 
@@ -125,7 +162,7 @@ export default function AdminMessagesPage() {
                           className={`hover:bg-bg-card/30 transition-colors cursor-pointer ${
                             msg.status === 'unread' ? 'bg-accent/5 font-semibold' : ''
                           } ${selectedMessage?.id === msg.id ? 'bg-bg-card border-l-2 border-accent' : ''}`}
-                          onClick={() => setSelectedMessage(msg)}
+                          onClick={() => handleSelectMessage(msg)}
                         >
                           <td className="px-6 py-4">
                             <p className="text-white">{msg.name}</p>
@@ -205,10 +242,32 @@ export default function AdminMessagesPage() {
                   </div>
                 </div>
 
+                {/* Reply Form */}
+                <div className="border-t border-border/40 pt-4 space-y-3">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Compose Email Reply</label>
+                  <form onSubmit={handleSendReply} className="space-y-3">
+                    <textarea
+                      required
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      placeholder="Type response back to sender..."
+                      className="w-full bg-bg-secondary border border-border rounded-md px-3 py-2 text-xs text-white focus:outline-none focus:border-accent h-28 resize-none"
+                    />
+                    <button
+                      type="submit"
+                      disabled={isReplying || !replyText.trim()}
+                      className="w-full bg-accent hover:bg-accent-hover text-white font-semibold text-xs uppercase tracking-wider py-2 rounded-md transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      {isReplying ? 'Sending Reply...' : 'Send Reply'}
+                    </button>
+                  </form>
+                </div>
+
                 {selectedMessage.status === 'unread' && (
                   <button
                     onClick={() => handleToggleStatus(selectedMessage.id, selectedMessage.status)}
-                    className="w-full bg-accent hover:bg-accent/80 text-white font-semibold text-xs uppercase tracking-wider py-2.5 rounded-md transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full bg-zinc-900 border border-border hover:bg-zinc-800 text-white font-semibold text-xs uppercase tracking-wider py-2 rounded-md transition-colors flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Check className="w-4 h-4" />
                     Mark as read

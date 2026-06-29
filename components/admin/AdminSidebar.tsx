@@ -29,7 +29,6 @@ const menuItems = [
     { label: 'Dashboard', path: ROUTES.ADMIN_DASHBOARD, icon: LayoutDashboard },
   ]},
   { group: 'Content Management', items: [
-    { label: 'Homepage', path: ROUTES.ADMIN_SETTINGS, icon: Home },
     { label: 'Products', path: ROUTES.ADMIN_PRODUCTS, icon: Briefcase },
     { label: 'Categories', path: ROUTES.ADMIN_CATEGORIES, icon: FolderTree },
     { label: 'Blog Articles', path: ROUTES.ADMIN_BLOG, icon: FileText },

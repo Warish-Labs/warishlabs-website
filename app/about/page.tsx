@@ -78,11 +78,16 @@ export default async function AboutPage() {
           {/* Features Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
             {highlights.map((item, idx) => {
-              const IconComponent = iconMap[item.icon] || Shield;
+              const isEmoji = /[\uD800-\uDFFF\u2600-\u27BF]/.test(item.icon) || item.icon.length <= 2;
+              const IconComponent = !isEmoji ? (iconMap[item.icon] || Shield) : null;
               return (
                 <Card key={idx} className="glass-panel border-border shadow-card p-6 space-y-3">
-                  <div className="w-10 h-10 rounded-lg bg-accent-subtle border border-accent/10 flex items-center justify-center text-accent">
-                    <IconComponent className="w-5 h-5" />
+                  <div className="w-10 h-10 rounded-lg bg-accent-subtle border border-accent/10 flex items-center justify-center text-accent text-base select-none">
+                    {isEmoji ? (
+                      <span>{item.icon}</span>
+                    ) : IconComponent ? (
+                      <IconComponent className="w-5 h-5" />
+                    ) : null}
                   </div>
                   <CardTitle className="text-base font-bold text-white tracking-tight">
                     {item.title}

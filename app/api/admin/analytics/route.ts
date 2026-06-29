@@ -4,26 +4,59 @@ import { validateSession } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
   const admin = await validateSession();
   if (!admin) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    // Get aggregate counts
-    const totalEvents = await prisma.analyticsEvent.count();
+    const { searchParams } = new URL(request.url);
+    const range = searchParams.get('range') || '7d';
+
+    // 1. Build date range filter
+    const dateFilter: any = {};
+    if (range === '7d' || range === '30d') {
+      const limitDate = new Date();
+      limitDate.setDate(limitDate.getDate() - (range === '7d' ? 7 : 30));
+      dateFilter.createdAt = { gte: limitDate };
+    }
+
+    // 2. Query total events under date range
+    const totalEvents = await prisma.analyticsEvent.count({
+      where: dateFilter,
+    });
     
-    // Group events by eventName
+    // 3. Group events by eventName
     const eventCounts = await prisma.analyticsEvent.groupBy({
       by: ['eventName'],
+      where: dateFilter,
       _count: {
         id: true,
       },
     });
 
-    // Get recent 100 events
+    // 4. Group events by referrer (Top 10 referrers)
+    const referrers = await prisma.analyticsEvent.groupBy({
+      by: ['referrer'],
+      where: {
+        ...dateFilter,
+        referrer: { not: null },
+      },
+      _count: {
+        id: true,
+      },
+      orderBy: {
+        _count: {
+          id: 'desc',
+        },
+      },
+      take: 10,
+    });
+
+    // 5. Query recent events (Last 100) under date filter
     const recentEvents = await prisma.analyticsEvent.findMany({
+      where: dateFilter,
       take: 100,
       orderBy: { createdAt: 'desc' },
       include: {
@@ -33,8 +66,10 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
+      range,
       totalEvents,
       eventCounts,
+      referrers,
       recentEvents,
     });
   } catch (error) {

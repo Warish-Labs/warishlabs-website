@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FlaskConical, Plus, Edit2, Trash2, X, Terminal, Loader2, ExternalLink } from 'lucide-react';
+import { FlaskConical, Plus, Edit2, Trash2, X, Terminal, Loader2, ExternalLink, Play, Image } from 'lucide-react';
+import Github from '@/components/icons/GithubIcon';
 import { toast } from 'sonner';
 
 interface Lab {
@@ -16,7 +17,12 @@ interface Lab {
   slug: string;
   description: string;
   status: string;
+  type: string;
   url: string | null;
+  githubUrl: string | null;
+  demoUrl: string | null;
+  mediaUrl: string | null;
+  techStack: string | null;
 }
 
 export default function AdminLabsPage() {
@@ -30,7 +36,12 @@ export default function AdminLabsPage() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('active');
+  const [type, setType] = useState('experiment');
   const [url, setUrl] = useState('');
+  const [githubUrl, setGithubUrl] = useState('');
+  const [demoUrl, setDemoUrl] = useState('');
+  const [mediaUrl, setMediaUrl] = useState('');
+  const [techStack, setTechStack] = useState('');
 
   // Fetch initial data
   useEffect(() => {
@@ -53,7 +64,12 @@ export default function AdminLabsPage() {
     setName('');
     setDescription('');
     setStatus('active');
+    setType('experiment');
     setUrl('');
+    setGithubUrl('');
+    setDemoUrl('');
+    setMediaUrl('');
+    setTechStack('');
     setIsFormOpen(false);
   };
 
@@ -62,7 +78,12 @@ export default function AdminLabsPage() {
     setName(lab.name);
     setDescription(lab.description);
     setStatus(lab.status);
+    setType(lab.type || 'experiment');
     setUrl(lab.url || '');
+    setGithubUrl(lab.githubUrl || '');
+    setDemoUrl(lab.demoUrl || '');
+    setMediaUrl(lab.mediaUrl || '');
+    setTechStack(lab.techStack || '');
     setIsFormOpen(true);
   };
 
@@ -79,7 +100,12 @@ export default function AdminLabsPage() {
       name,
       description,
       status,
+      type,
       url: url || null,
+      githubUrl: githubUrl || null,
+      demoUrl: demoUrl || null,
+      mediaUrl: mediaUrl || null,
+      techStack: techStack || null,
     };
 
     try {
@@ -182,7 +208,7 @@ export default function AdminLabsPage() {
                 {/* Lab Name */}
                 <div className="space-y-2">
                   <Label htmlFor="lab-name" className="text-xs font-semibold text-text-secondary">
-                    Experiment Name <span className="text-destructive">*</span>
+                    Experiment Title / Name <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="lab-name"
@@ -211,16 +237,90 @@ export default function AdminLabsPage() {
                   </Select>
                 </div>
 
+                {/* Type select */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold text-text-secondary">
+                    Sandbox Type <span className="text-destructive">*</span>
+                  </Label>
+                  <Select value={type} onValueChange={(val) => setType(val || 'experiment')}>
+                    <SelectTrigger className="bg-bg-primary border-border text-white focus:border-accent">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-bg-card border-border text-white">
+                      <SelectItem value="experiment">Experiment</SelectItem>
+                      <SelectItem value="tool">Utility Tool</SelectItem>
+                      <SelectItem value="sandbox">Sandbox Canvas</SelectItem>
+                      <SelectItem value="prototype">Prototype Build</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Tech Stack Comma separated */}
+                <div className="space-y-2">
+                  <Label htmlFor="lab-tech" className="text-xs font-semibold text-text-secondary">
+                    Tech Stack (Comma-separated)
+                  </Label>
+                  <Input
+                    id="lab-tech"
+                    value={techStack}
+                    onChange={(e) => setTechStack(e.target.value)}
+                    placeholder="e.g. React, Three.js, WebGL"
+                    className="bg-bg-primary border-border focus:border-accent text-white"
+                  />
+                </div>
+
                 {/* Launch/Demo URL */}
-                <div className="space-y-2 md:col-span-2">
+                <div className="space-y-2">
                   <Label htmlFor="lab-url" className="text-xs font-semibold text-text-secondary">
-                    Live Demo URL (Optional)
+                    Live URL (Optional)
                   </Label>
                   <Input
                     id="lab-url"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
                     placeholder="e.g. https://particles.warishlabs.in"
+                    className="bg-bg-primary border-border focus:border-accent text-white"
+                  />
+                </div>
+
+                {/* Repository URL */}
+                <div className="space-y-2">
+                  <Label htmlFor="lab-repo" className="text-xs font-semibold text-text-secondary">
+                    Repository URL (Optional)
+                  </Label>
+                  <Input
+                    id="lab-repo"
+                    value={githubUrl}
+                    onChange={(e) => setGithubUrl(e.target.value)}
+                    placeholder="e.g. https://github.com/warishlabs/starfield"
+                    className="bg-bg-primary border-border focus:border-accent text-white"
+                  />
+                </div>
+
+                {/* Demo Video URL */}
+                <div className="space-y-2">
+                  <Label htmlFor="lab-demo" className="text-xs font-semibold text-text-secondary">
+                    Demo Video URL (Optional)
+                  </Label>
+                  <Input
+                    id="lab-demo"
+                    value={demoUrl}
+                    onChange={(e) => setDemoUrl(e.target.value)}
+                    placeholder="e.g. https://youtube.com/watch?v=..."
+                    className="bg-bg-primary border-border focus:border-accent text-white"
+                  />
+                </div>
+
+                {/* Media Screenshot URL */}
+                <div className="space-y-2">
+                  <Label htmlFor="lab-media" className="text-xs font-semibold text-text-secondary">
+                    Media Screenshot URL (Optional)
+                  </Label>
+                  <Input
+                    id="lab-media"
+                    value={mediaUrl}
+                    onChange={(e) => setMediaUrl(e.target.value)}
+                    placeholder="e.g. Cloudinary Image Link"
                     className="bg-bg-primary border-border focus:border-accent text-white"
                   />
                 </div>
@@ -285,8 +385,9 @@ export default function AdminLabsPage() {
                   <thead>
                     <tr className="border-b border-border bg-bg-secondary text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
                       <th className="px-6 py-4">Experiment Name</th>
+                      <th className="px-6 py-4">Type</th>
                       <th className="px-6 py-4">Sandbox Status</th>
-                      <th className="px-6 py-4">Live Demo Link</th>
+                      <th className="px-6 py-4">Resources</th>
                       <th className="px-6 py-4 text-right">Actions</th>
                     </tr>
                   </thead>
@@ -298,6 +399,9 @@ export default function AdminLabsPage() {
                           <span className="text-[10px] font-normal text-text-secondary leading-relaxed line-clamp-1 max-w-[280px]">
                             {lab.description}
                           </span>
+                        </td>
+                        <td className="px-6 py-4 capitalize text-text-secondary font-mono">
+                          {lab.type}
                         </td>
                         <td className="px-6 py-4">
                           <span
@@ -313,18 +417,50 @@ export default function AdminLabsPage() {
                             {lab.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 font-mono text-text-tertiary">
-                          {lab.url ? (
+                        <td className="px-6 py-4 text-text-tertiary flex gap-3 items-center">
+                          {lab.url && (
                             <a
                               href={lab.url}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-accent hover:underline flex items-center gap-1"
+                              title="Launch Lab"
                             >
-                              Launch Demo <ExternalLink className="w-3.5 h-3.5" />
+                              <ExternalLink className="w-3.5 h-3.5" />
                             </a>
-                          ) : (
-                            'N/A'
+                          )}
+                          {lab.githubUrl && (
+                            <a
+                              href={lab.githubUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-white hover:text-accent flex items-center gap-1"
+                              title="GitHub Code"
+                            >
+                              <Github className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                          {lab.demoUrl && (
+                            <a
+                              href={lab.demoUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-zinc-400 hover:text-accent flex items-center gap-1"
+                              title="Watch Demo"
+                            >
+                              <Play className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                          {lab.mediaUrl && (
+                            <a
+                              href={lab.mediaUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-zinc-500 hover:text-accent flex items-center gap-1"
+                              title="Screenshot"
+                            >
+                              <Image className="w-3.5 h-3.5" />
+                            </a>
                           )}
                         </td>
                         <td className="px-6 py-4 text-right space-x-2">

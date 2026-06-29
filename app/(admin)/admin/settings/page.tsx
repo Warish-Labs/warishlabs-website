@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Settings, Save, Loader2, Info, Mail, Phone, MapPin, Eye } from 'lucide-react';
+import { Settings, Save, Loader2, Info, Mail, Phone, MapPin, Eye, Trash2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface SectionSettings {
@@ -24,6 +24,11 @@ export default function AdminSettingsPage() {
   const [hero, setHero] = useState<SectionSettings>({ title: '', subtitle: '', config: {} });
   const [about, setAbout] = useState<SectionSettings>({ title: '', subtitle: '', config: { philosophy: [], highlights: [] } });
   const [contact, setContact] = useState<SectionSettings>({ title: '', subtitle: '', config: {} });
+
+  // Add About Card input states
+  const [newHighlightTitle, setNewHighlightTitle] = useState('');
+  const [newHighlightDesc, setNewHighlightDesc] = useState('');
+  const [newHighlightIcon, setNewHighlightIcon] = useState('🚀');
 
   // Fetch settings on mount
   useEffect(() => {
@@ -71,6 +76,47 @@ export default function AdminSettingsPage() {
     } finally {
       setIsSubmitPending(false);
     }
+  };
+
+  const handleAddHighlight = () => {
+    if (!newHighlightTitle.trim() || !newHighlightDesc.trim()) {
+      toast.error('Please specify a title and description for the card.');
+      return;
+    }
+
+    const currentHighlights = about.config.highlights || [];
+    const newItem = {
+      title: newHighlightTitle.trim(),
+      description: newHighlightDesc.trim(),
+      icon: newHighlightIcon.trim() || '🚀',
+    };
+
+    setAbout({
+      ...about,
+      config: {
+        ...about.config,
+        highlights: [...currentHighlights, newItem],
+      },
+    });
+
+    setNewHighlightTitle('');
+    setNewHighlightDesc('');
+    setNewHighlightIcon('🚀');
+    toast.success('About card item staged. Click "Save About Settings" to write changes to the DB.');
+  };
+
+  const handleRemoveHighlight = (idx: number) => {
+    const currentHighlights = [...(about.config.highlights || [])];
+    currentHighlights.splice(idx, 1);
+
+    setAbout({
+      ...about,
+      config: {
+        ...about.config,
+        highlights: currentHighlights,
+      },
+    });
+    toast.success('Staged deletion of card. Click "Save About Settings" to apply changes.');
   };
 
   return (
@@ -220,7 +266,7 @@ export default function AdminSettingsPage() {
                     />
                   </div>
 
-                  {/* Philosophy Editor (Single Text Area, splitting on linebreaks) */}
+                  {/* Philosophy Editor */}
                   <div className="space-y-2">
                     <Label htmlFor="about-phil" className="text-xs font-semibold text-text-secondary">Our Philosophy Paragraphs (One per line)</Label>
                     <Textarea
@@ -233,10 +279,82 @@ export default function AdminSettingsPage() {
                           philosophy: e.target.value.split('\n').filter(p => p.trim() !== '') 
                         } 
                       })}
-                      rows={6}
+                      rows={5}
                       placeholder="Paragraph 1&#13;Paragraph 2"
                       className="bg-bg-primary border-border focus:border-accent text-white text-xs leading-relaxed"
                     />
+                  </div>
+
+                  {/* About Highlight Cards CRUD manager */}
+                  <div className="space-y-4 border-t border-border/40 pt-6">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-white">About Profile Highlight Cards</h3>
+                    
+                    {/* Staged Cards List */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {(about.config.highlights || []).map((hl: any, idx: number) => (
+                        <div key={idx} className="p-4 bg-bg-secondary border border-border rounded-lg flex items-start justify-between gap-4">
+                          <div className="space-y-1.5 flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-base select-none">{hl.icon}</span>
+                              <h4 className="text-xs font-bold text-white truncate">{hl.title}</h4>
+                            </div>
+                            <p className="text-[11px] text-text-secondary leading-relaxed line-clamp-3">
+                              {hl.description}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveHighlight(idx)}
+                            className="p-1 rounded text-destructive hover:bg-destructive/10 transition-colors"
+                            title="Remove Card Item"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Staging Fields Form */}
+                    <div className="p-4 bg-black/40 border border-white/5 rounded-lg space-y-4">
+                      <h4 className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">Add Highlight Card</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                        <div className="md:col-span-3 space-y-1.5">
+                          <Label className="text-[10px] text-zinc-400">Card Symbol / Emoji</Label>
+                          <Input
+                            value={newHighlightIcon}
+                            onChange={(e) => setNewHighlightIcon(e.target.value)}
+                            placeholder="e.g. 🚀"
+                            className="bg-bg-primary border-border focus:border-accent text-white"
+                          />
+                        </div>
+                        <div className="md:col-span-9 space-y-1.5">
+                          <Label className="text-[10px] text-zinc-400">Card Title</Label>
+                          <Input
+                            value={newHighlightTitle}
+                            onChange={(e) => setNewHighlightTitle(e.target.value)}
+                            placeholder="e.g. High-Performance APIs"
+                            className="bg-bg-primary border-border focus:border-accent text-white"
+                          />
+                        </div>
+                        <div className="md:col-span-12 space-y-1.5">
+                          <Label className="text-[10px] text-zinc-400">Card Description</Label>
+                          <Textarea
+                            value={newHighlightDesc}
+                            onChange={(e) => setNewHighlightDesc(e.target.value)}
+                            placeholder="Provide specifications, Philosophy, or highlight details for this card..."
+                            rows={2}
+                            className="bg-bg-primary border-border focus:border-accent text-white text-xs"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleAddHighlight}
+                        className="px-4 py-1.5 bg-white/5 border border-white/10 hover:border-accent hover:text-white rounded text-xs font-semibold text-zinc-300 transition-colors flex items-center gap-1 cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Stage Card Item
+                      </button>
+                    </div>
                   </div>
                 </div>
 

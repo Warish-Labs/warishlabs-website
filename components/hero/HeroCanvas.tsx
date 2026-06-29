@@ -1,7 +1,7 @@
 'use client';
 
 import React, { Suspense, useEffect, useState, useMemo, useRef } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import HeroCube from './HeroCube';
 import * as THREE from 'three';
 
@@ -139,6 +139,28 @@ function BackgroundDust() {
   );
 }
 
+function CanvasCleanup() {
+  const { gl, scene } = useThree();
+  useEffect(() => {
+    return () => {
+      scene?.traverse?.((obj: any) => {
+        if (obj.geometry) {
+          obj.geometry.dispose();
+        }
+        if (obj.material) {
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach((mat: any) => mat.dispose());
+          } else {
+            obj.material.dispose();
+          }
+        }
+      });
+      gl?.dispose?.();
+    };
+  }, [gl, scene]);
+  return null;
+}
+
 export default function HeroCanvas() {
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -185,10 +207,13 @@ export default function HeroCanvas() {
         <Canvas
           camera={{ position: [0, 0, 6], fov: 50 }}
           dpr={[1, 2]}
-          gl={{ antialias: true, alpha: true }}
+          gl={{ antialias: true, alpha: true, preserveDrawingBuffer: true }}
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+          frameloop="always"
         >
+          <CanvasCleanup />
           <Suspense fallback={null}>
+
             {/* Lighting Rig */}
             <ambientLight intensity={0.2} />
             <pointLight position={[4, 4, 4]} intensity={2.8} color="#2563EB" distance={15} decay={2} />

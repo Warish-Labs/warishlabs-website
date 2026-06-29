@@ -13,14 +13,18 @@
 
 ## ⚡ Technical Highlights
 
-- **WebGL Canvas Playground**: Full-bleed background Canvas rendering interactive 3D particle fields (Three.js + R3F) with mouse-repulsion physics, diagonal orbital rings, and dynamic floating shards.
+- **WebGL Canvas Playground**: Full-bleed background Canvas rendering interactive 3D particle fields (Three.js + R3F) with mouse-repulsion physics, diagonal orbital rings, and dynamic floating shards. Protected with safe cleanup and memory disposal handlers.
 - **Relational Seeded CMS**: Layout components (Hero, dynamic About paragraphs, Contact addresses) are fully decoupled and driven dynamically by a PostgreSQL database via Prisma ORM.
+- **About Highlights CRUD Manager**: Allows admin configuration of values/about highlights cards with custom emoji support.
 - **Dynamic Site Statistics**: Hides fake numbers and dynamically queries the database for actual values: **Total Site Visitors** (linked to unique tracking visitor IDs) and **Active Projects** (linked to product catalogs).
 - **Robust Administrative Console**: Full operational CRUD dashboards for Categories, Products, Sandbox Labs, Blog Articles, Media Uploads, Newsletter subscribers, and Activity Trails.
 - **Dynamic Help Playbook**: Step-by-step console playbook built into the admin home interface explaining how to catalog products, preview sandbox labs, and customize CMS settings.
-- **Distributed Security rate-limiting**: Global Upstash Redis rate-limiter guards contacts, newsletter submissions, and tracking endpoints, falling back to local token buckets in development.
+- **Distributed Security rate-limiting**: Global Upstash Redis rate-limiter guards contacts, newsletter submissions, search, and tracking endpoints, with custom rate limits on administrative routes (`/api/admin/*`). Falls back to local token buckets in development.
 - **Clerk SSO & User Profile integration**: Managed through Clerk's secure dynamic `<UserButton />` in the header, letting the admin configure security options, manage active devices, and log out securely. Hidden from regular public users.
-- **Media Asset Sync**: Automatically manages Cloudinary folder uploads (`warishlabs/products`, `warishlabs/labs`) and cleans up associated assets on delete.
+- **Media Asset Sync**: Automatically manages Cloudinary folder uploads (`warishlabs/products`, `warishlabs/labs`), cleans up associated assets on delete, and reconciles DB records with Cloudinary asset registries via dynamic Cloudinary Admin API synchronization.
+- **Communications Engine**: Includes tools to reply to visitor inquiries using Resend templates, compile HTML newsletter broadcast campaigns using Resend Batch API, and download client-side audience registry CSV files.
+- **Traffic Analytics Filters**: Extends traffic logs with date selectors (7 Days, 30 Days, All Time) and referral source channel breakdowns (Google Search, GitHub, LinkedIn, X/Twitter).
+- **Hardened SEO & Open Graph Banners**: Configures dynamic `sitemap.xml` listing blogs, products, and labs, organization schema JSON-LD metadata, and Edge runtime-rendered dynamic Open Graph image banner generators (`/api/og`).
 
 ---
 
@@ -34,10 +38,11 @@
 | **ORM** | Prisma | Typesafe schema modeling and queries |
 | **Auth** | Clerk | Multi-tenant SSO authentication |
 | **Media** | Cloudinary | Asset optimization and folder management |
-| **Email** | Resend | Transactional templates (Contact / Newsletters) |
+| **Email** | Resend | Transactional templates (Contact / Newsletters / Replies) |
 | **Cache** | Redis (Upstash) | Global distributed rate-limiting sliding windows |
 | **3D Graphics**| Three.js + R3F | Hardware-accelerated WebGL visuals |
 | **Animation** | Framer Motion | Fluid spring transitions and hover micro-animations |
+| **Sanitizer** | Isomorphic DOMPurify | Dynamic XSS sanitizer protection layer |
 | **Testing** | Vitest + jsdom | Fast utility unit tests and mocked DOM renders |
 
 ---
@@ -58,10 +63,17 @@
 │   │       ├── labs/          # Labs CRUD page
 │   │       ├── login/         # Custom Sign-in routing
 │   │       ├── media/         # Cloudinary gallery view & deletion tools
-│   │       ├── newsletter/    # Subscriber lists
+│   │       ├── newsletter/    # Subscriber lists & campaigns
 │   │       ├── products/      # Products CRUD page
 │   │       └── settings/      # Centralized CMS customizer settings
 │   ├── api/               # Backend endpoint integrations
+│   │   ├── admin/         # Clerk-secured administrative operations
+│   │   │   ├── analytics/ # Traffic logs aggregates
+│   │   │   ├── media/     # Assets upload & sync controllers
+│   │   │   ├── messages/  # Inbound review & email reply routers
+│   │   │   └── newsletter/# Custom broadcast campaigns & mailing
+│   │   ├── og/            # Dynamic Edge banner image generator
+│   │   └── stats/         # Dynamic homepage statistic numbers
 │   ├── about/             # Dynamic laboratory profile
 │   ├── contact/           # Dynamic contact form & addresses
 │   ├── labs/              # Sandbox showcases
@@ -124,4 +136,5 @@ npm run test         # Run in watch mode
 ## 🌍 Production Deployment
 
 For full deployment instructions (Neon DB poolers, DNS CNAME setups, Clerk configurations), refer to:
+Directly read the vercel deployment guide in:
 👉 [Vercel Deployment Guide](file:///home/md-warish-ansari/Projects/warishlabs-website/docs/VERCEL_DEPLOYMENT.md)

@@ -13,6 +13,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     select: { slug: true, updatedAt: true } 
   }).catch(() => []);
 
+  const blogs = await prisma.blog.findMany({
+    where: { published: true },
+    select: { slug: true, updatedAt: true }
+  }).catch(() => []);
+
   const staticRoutes = ['', '/about', '/products', '/labs', '/blog', '/contact'].map(route => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date(),
@@ -34,5 +39,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...staticRoutes, ...productRoutes, ...labRoutes];
+  const blogRoutes = blogs.map(b => ({
+    url: `${baseUrl}/blog/${b.slug}`,
+    lastModified: b.updatedAt,
+    changeFrequency: 'monthly' as const,
+    priority: 0.7,
+  }));
+
+  return [...staticRoutes, ...productRoutes, ...labRoutes, ...blogRoutes];
 }

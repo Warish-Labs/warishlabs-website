@@ -13,6 +13,7 @@ export async function GET() {
 
   try {
     const blogs = await prisma.blog.findMany({
+      include: { seo: true },
       orderBy: { createdAt: 'desc' },
     });
     return NextResponse.json({ success: true, blogs });

@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { FADE_UP, STAGGER_CONTAINER, SPRING_DEFAULT } from '@/constants/motion';
 import { buttonVariants } from '@/components/ui/button';
@@ -26,11 +27,32 @@ export default function HeroSection({ title, subtitle, config }: HeroProps) {
   const ctaPrimaryUrl = config?.ctaPrimaryUrl || '/products';
   const ctaSecondaryText = 'Learn More';
   const ctaSecondaryUrl = '/about';
+  const pathname = usePathname();
+
+  const [statsData, setStatsData] = useState<{ products: number; visitors: number } | null>(null);
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+        if (data.success) {
+          setStatsData({
+            products: data.products,
+            visitors: data.visitors,
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch hero stats:', err);
+      }
+    }
+    fetchStats();
+  }, []);
 
   const stats = [
-    { value: '12+', label: 'Products Shipped', icon: Code },
+    { value: statsData ? (statsData.products > 0 ? `${statsData.products}+` : '—') : '—', label: 'Products Shipped', icon: Code },
+    { value: statsData ? (statsData.visitors > 0 ? `${statsData.visitors}+` : '—') : '—', label: 'Total Site Visitors', icon: Terminal },
     { value: '99.9%', label: 'Systems Uptime', icon: Shield },
-    { value: '100%', label: 'Typesafe Code', icon: Terminal },
   ];
 
   // Staff-grade inline gradient vignette legibility styling
@@ -46,7 +68,7 @@ export default function HeroSection({ title, subtitle, config }: HeroProps) {
   return (
     <section className="relative min-h-screen flex items-center justify-center pt-24 pb-16 bg-[#020b1a] overflow-hidden select-none">
       {/* 1. Full-Bleed 3D WebGL Canvas Layer */}
-      <HeroCanvas />
+      <HeroCanvas key={pathname} />
 
       {/* 2. Gradient Vignette Overlay for Text Legibility */}
       <div 
@@ -160,29 +182,10 @@ export default function HeroSection({ title, subtitle, config }: HeroProps) {
                 <p className="text-[10px] text-text-secondary">WarishLabs Nodes Online & Verifying</p>
               </div>
             </motion.div>
-
-            {/* Core Stack Pill */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.6, duration: 0.6 }}
-              className="glass-panel border border-white/8 bg-white/4 backdrop-blur-md p-4 rounded-xl shadow-card w-72 hover:border-blue-500/30 transition-all duration-200"
-            >
-              <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider mb-2">Core Engineering Stack</p>
-              <div className="flex flex-wrap gap-1.5">
-                {['Next.js 16', 'Prisma 7', 'PostgreSQL', 'TypeScript'].map((tech) => (
-                  <span
-                    key={tech}
-                    className="px-2 py-0.5 bg-black/40 border border-white/6 rounded text-[9px] font-mono text-blue-300 uppercase tracking-wider"
-                  >
-                    {tech}
-                  </span>
-                ))}
-              </div>
-            </motion.div>
           </div>
         </div>
       </div>
     </section>
   );
 }
+

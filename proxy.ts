@@ -105,6 +105,8 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
     allowed = await checkRateLimit(ip, 'search', CONFIG.RATE_LIMITS.SEARCH_LIMIT, CONFIG.RATE_LIMITS.SEARCH_WINDOW);
   } else if (pathname === '/api/analytics/event') {
     allowed = await checkRateLimit(visitorId || ip, 'analytics', CONFIG.RATE_LIMITS.ANALYTICS_LIMIT, CONFIG.RATE_LIMITS.ANALYTICS_WINDOW);
+  } else if (pathname.startsWith('/api/admin')) {
+    allowed = await checkRateLimit(ip, 'admin', 60, 60);
   }
 
   if (!allowed) {
@@ -122,14 +124,16 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   // Content Security Policy
   const csp = `
     default-src 'self';
-    script-src 'self' 'unsafe-inline' 'unsafe-eval' *.clerk.accounts.dev;
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' *.clerk.accounts.dev clerk.warishlabs.in https://www.googletagmanager.com;
     style-src 'self' 'unsafe-inline';
-    img-src 'self' data: blob: res.cloudinary.com img.clerk.com;
+    img-src 'self' data: blob: res.cloudinary.com img.clerk.com *.clerk.accounts.dev;
     media-src 'self' data: blob: res.cloudinary.com;
-    connect-src 'self' *.clerk.accounts.dev;
+    connect-src 'self' *.clerk.accounts.dev clerk.warishlabs.in https://api.clerk.com https://vitals.vercel-insights.com;
     font-src 'self' data:;
     object-src 'none';
     frame-ancestors 'none';
+    worker-src 'self' blob:;
+    upgrade-insecure-requests;
   `.replace(/\s+/g, ' ').trim();
   
   response.headers.set('Content-Security-Policy', csp);

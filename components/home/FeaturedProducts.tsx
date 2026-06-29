@@ -1,17 +1,66 @@
 import React from 'react';
-import Link from 'next/link';
-import { ProductService } from '@/services/ProductService';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ArrowRight, ExternalLink } from 'lucide-react';
+import prisma from '@/lib/prisma';
+import FeaturedProductsList from './FeaturedProductsList';
 
 export default async function FeaturedProducts() {
-  // Fetch active products
-  const products = await ProductService.getAll(true);
+  // Fetch products that are featured and should be shown on the homepage
+  const products = await prisma.product.findMany({
+    where: {
+      status: 'active',
+      featured: true,
+      showOnHomepage: true,
+    } as any,
+    include: {
+      category: {
+        select: {
+          name: true,
+          slug: true,
+        },
+      },
+      technologies: {
+        include: {
+          technology: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      displayOrder: 'asc',
+    } as any,
+  }).catch((err) => {
+    console.error('[FeaturedProducts] Failed to fetch products:', err);
+    return [];
+  });
 
   if (products.length === 0) {
     return null;
   }
+
+  // Map to matching props type
+  const typedProducts = products.map((p: any) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    tagline: p.tagline,
+    description: p.description,
+    status: p.status,
+    visitUrl: p.visitUrl,
+    logoUrl: p.logoUrl,
+    category: {
+      name: p.category.name,
+      slug: p.category.slug,
+    },
+    technologies: p.technologies.map((t: any) => ({
+      technology: {
+        id: t.technology.id,
+        name: t.technology.name,
+      },
+    })),
+  }));
 
   return (
     <section className="py-24 bg-bg-primary relative border-t border-border/40 select-none">
@@ -26,93 +75,9 @@ export default async function FeaturedProducts() {
           </p>
         </div>
 
-        {/* Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {products.map((product) => (
-            <Card
-              key={product.id}
-              className="glass-panel border-border shadow-card premium-card-transition relative overflow-hidden flex flex-col min-h-[320px]"
-            >
-              {/* Product Info */}
-              <CardHeader className="space-y-3 pt-8 pb-4">
-                <div className="flex items-center justify-between">
-                  {/* Status Badge */}
-                  <Badge
-                    className={cn(
-                      "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border",
-                      product.status === 'active'
-                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-                        : "bg-blue-500/10 border-blue-500/20 text-blue-400"
-                    )}
-                  >
-                    {product.status}
-                  </Badge>
-                  {product.logoUrl && (
-                    <div className="w-10 h-10 rounded border border-border bg-bg-card flex items-center justify-center p-1.5 overflow-hidden shadow-sm shrink-0">
-                      <img src={product.logoUrl} alt="" className="w-full h-full object-contain" />
-                    </div>
-                  )}
-                </div>
-                <CardTitle className="text-2xl font-black tracking-tight text-white">
-                  {product.name}
-                </CardTitle>
-                <p className="text-text-secondary text-sm font-semibold leading-relaxed">
-                  {product.tagline}
-                </p>
-              </CardHeader>
-
-              <CardContent className="flex-1 flex flex-col justify-between pt-2 pb-8">
-                {/* Description snippet */}
-                <div 
-                  className="text-text-tertiary text-xs leading-relaxed max-w-prose mb-6 line-clamp-3"
-                  dangerouslySetInnerHTML={{ __html: product.description }}
-                />
-
-                {/* Tech tags and action links */}
-                <div className="space-y-6">
-                  {/* Tech stack badges */}
-                  <div className="flex flex-wrap gap-2">
-                    {product.technologies.map((t) => (
-                      <span
-                        key={t.technology.id}
-                        className="px-2 py-1 bg-bg-secondary border border-border-subtle rounded text-[10px] font-semibold text-text-secondary uppercase tracking-wider"
-                      >
-                        {t.technology.name}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Actions links */}
-                  <div className="flex items-center gap-4 pt-2">
-                    <Link
-                      href={`/products/${product.slug}`}
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-accent hover:text-accent-hover transition-colors"
-                    >
-                      Learn Details <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-
-                    {product.visitUrl && (
-                      <a
-                        href={product.visitUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-xs font-bold text-text-tertiary hover:text-white transition-colors"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" /> Launch
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {/* Animated Cards Grid Component */}
+        <FeaturedProductsList products={typedProducts} />
       </div>
     </section>
   );
-}
-
-// Inline class merger wrapper for server components
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(' ');
 }

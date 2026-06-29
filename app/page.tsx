@@ -3,8 +3,11 @@ import prisma from '@/lib/prisma';
 import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/hero/HeroSection';
 import FeaturedProducts from '@/components/home/FeaturedProducts';
+import CategoryGrid from '@/components/home/CategoryGrid';
 import StatsSection from '@/components/home/StatsSection';
+import LatestBlogPosts from '@/components/home/LatestBlogPosts';
 import WhyWarishLabs from '@/components/home/WhyWarishLabs';
+import FAQSection from '@/components/shared/FAQSection';
 import Footer from '@/components/Footer';
 import { cookies } from 'next/headers';
 
@@ -12,25 +15,15 @@ export default async function Home() {
   // Opt-out of static rendering for dynamic date queries
   await cookies();
 
-  // Fetch hero settings from database (seeded config) and DB counts
-  const [heroSection, statsSection, visitorCount, activeProjectsCount] = await Promise.all([
+  // Fetch hero settings from database (seeded config)
+  const [heroSection, statsSection] = await Promise.all([
     prisma.homepageSection.findUnique({
       where: { sectionType: 'hero' },
     }).catch(() => null),
     prisma.homepageSection.findUnique({
       where: { sectionType: 'stats' },
     }).catch(() => null),
-    prisma.visitor.count().catch(() => 0),
-    prisma.product.count().catch(() => 0),
   ]);
-
-  // Construct dynamic real database statistics
-  const stats = [
-    { value: activeProjectsCount || 12, label: 'Active Projects', suffix: '+' },
-    { value: visitorCount || 180, label: 'Total Site Visitors', suffix: '+' },
-    { value: 50, label: 'Million Requests', suffix: 'M+' },
-    { value: 5, label: 'Global Regions', suffix: '' },
-  ];
 
   const heroConfig = heroSection?.config as any;
 
@@ -38,7 +31,7 @@ export default async function Home() {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'WarishLabs',
-    url: 'https://warishlabs.in',
+    url: 'https://www.warishlabs.in',
     description: 'Engineering-first software laboratory constructing immersive 3D architectures, developer utilities, and resilient distributed platforms.',
     founder: { '@type': 'Person', name: 'MD Warish Ansari' },
   };
@@ -61,13 +54,28 @@ export default async function Home() {
         {/* Featured Products Showcase */}
         <FeaturedProducts />
 
+        {/* Categories Grid */}
+        <CategoryGrid />
+
         {/* Live Statistics */}
-        <StatsSection stats={stats} />
+        <StatsSection />
+
+        {/* Latest Blog Bulletins */}
+        <LatestBlogPosts />
 
         {/* Engineering Philosophy */}
         <WhyWarishLabs />
+
+        {/* FAQ Section */}
+        <div className="py-24 bg-bg-primary border-t border-border/40">
+          <div className="container mx-auto px-6 max-w-7xl">
+            <FAQSection showViewAll />
+          </div>
+        </div>
       </main>
       <Footer />
     </>
   );
 }
+
+

@@ -4,6 +4,24 @@ import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
+import { z } from 'zod';
+
+const labInputSchema = z.object({
+  name: z.string().min(1, 'Name/Title is required'),
+  description: z.string().min(1, 'Description is required'),
+  status: z.string().min(1, 'Status is required'),
+  type: z.string().optional().default('experiment'),
+  url: z.string().nullable().optional(),       // liveUrl
+  githubUrl: z.string().nullable().optional(), // repoUrl
+  demoUrl: z.string().nullable().optional(),
+  mediaUrl: z.string().nullable().optional(),   // Cloudinary screenshot
+  techStack: z.string().nullable().optional(),  // comma-separated tags
+});
+
+const labUpdateSchema = labInputSchema.partial().extend({
+  id: z.string().min(1, 'Lab ID is required'),
+});
+
 export async function GET() {
   const admin = await validateSession();
   if (!admin) {
@@ -29,21 +47,24 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { name, description, status, url } = body;
-
-    if (!name || !description || !status) {
-      return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
+    
+    // Validate schema
+    const validation = labInputSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { success: false, error: 'Validation failed', errors: validation.error.flatten().fieldErrors },
+        { status: 400 }
+      );
     }
 
+    const { name, ...restData } = validation.data;
     const slug = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
     const lab = await prisma.lab.create({
       data: {
         name,
         slug,
-        description,
-        status,
-        url,
+        ...restData,
       },
     });
 
@@ -71,24 +92,25 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
-    const { id, name, description, status, url } = body;
 
-    if (!id) {
-      return NextResponse.json({ success: false, error: 'Missing lab ID' }, { status: 400 });
+    // Validate schema
+    const validation = labUpdateSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { success: false, error: 'Validation failed', errors: validation.error.flatten().fieldErrors },
+        { status: 400 }
+      );
     }
 
-    const updatedData: any = {};
-    if (name) {
-      updatedData.name = name;
-      updatedData.slug = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const { id, ...updatedFields } = validation.data;
+
+    if (updatedFields.name) {
+      (updatedFields as any).slug = updatedFields.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     }
-    if (description !== undefined) updatedData.description = description;
-    if (status !== undefined) updatedData.status = status;
-    if (url !== undefined) updatedData.url = url;
 
     const lab = await prisma.lab.update({
       where: { id },
-      data: updatedData,
+      data: updatedFields,
     });
 
     // Log Activity

@@ -123,7 +123,7 @@ export default function HeroCube() {
   });
 
   return (
-    <group ref={outerGroupRef} position={[1.2, 0, 0]}>
+    <group ref={outerGroupRef} position={[1.5, 0, 0]}>
       {/* 1. Core Glass Cube */}
       <mesh ref={coreCubeRef} castShadow>
         <boxGeometry args={[2.0, 2.0, 2.0]} />

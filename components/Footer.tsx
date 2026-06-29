@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ROUTES } from '@/constants/routes';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
+import Github from '@/components/icons/GithubIcon';
+import { Twitter, Linkedin, Youtube } from '@/components/icons/SocialIcons';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +14,27 @@ export default function Footer() {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [socialLinks, setSocialLinks] = useState<{
+    githubUrl: string;
+    twitterUrl: string;
+    linkedinUrl: string;
+    youtubeUrl: string;
+  } | null>(null);
+
+  useEffect(() => {
+    async function loadSocial() {
+      try {
+        const res = await fetch('/api/settings');
+        const data = await res.json();
+        if (data.success && data.social) {
+          setSocialLinks(data.social);
+        }
+      } catch (err) {
+        console.error('[Footer] Failed to load social settings:', err);
+      }
+    }
+    loadSocial();
+  }, []);
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,8 +161,28 @@ export default function Footer() {
           <p className="text-xs text-text-tertiary">
             © {currentYear} WarishLabs. All rights reserved.
           </p>
-          <div className="flex items-center gap-6">
-            <span className="text-xs text-text-tertiary">
+          <div className="flex items-center gap-4 md:gap-6">
+            {socialLinks?.githubUrl && (
+              <a href={socialLinks.githubUrl} target="_blank" rel="noopener noreferrer" className="text-text-tertiary hover:text-white transition-colors" title="GitHub">
+                <Github className="w-4 h-4" />
+              </a>
+            )}
+            {socialLinks?.twitterUrl && (
+              <a href={socialLinks.twitterUrl} target="_blank" rel="noopener noreferrer" className="text-text-tertiary hover:text-white transition-colors" title="Twitter">
+                <Twitter className="w-4 h-4" />
+              </a>
+            )}
+            {socialLinks?.linkedinUrl && (
+              <a href={socialLinks.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-text-tertiary hover:text-white transition-colors" title="LinkedIn">
+                <Linkedin className="w-4 h-4" />
+              </a>
+            )}
+            {socialLinks?.youtubeUrl && (
+              <a href={socialLinks.youtubeUrl} target="_blank" rel="noopener noreferrer" className="text-text-tertiary hover:text-white transition-colors" title="YouTube">
+                <Youtube className="w-4 h-4" />
+              </a>
+            )}
+            <span className="text-xs text-text-tertiary border-l border-white/10 pl-4">
               Constructed with Precision
             </span>
           </div>

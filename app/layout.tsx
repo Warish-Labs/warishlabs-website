@@ -128,6 +128,28 @@ export default function RootLayout({
         data-scroll-behavior="smooth"
       >
         <body className="min-h-full flex flex-col bg-black text-white">
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                '@context': 'https://schema.org',
+                '@type': 'Organization',
+                'name': 'WarishLabs',
+                'url': 'https://www.warishlabs.in',
+                'logo': 'https://www.warishlabs.in/logo.gif',
+                'sameAs': [
+                  'https://github.com/warishlabs',
+                  'https://twitter.com/warishlabs',
+                  'https://linkedin.com/company/warishlabs'
+                ],
+                'contactPoint': {
+                  '@type': 'ContactPoint',
+                  'email': 'contact@warishlabs.in',
+                  'contactType': 'customer support'
+                }
+              })
+            }}
+          />
           {GA_MEASUREMENT_ID && (
             <>
               <Script

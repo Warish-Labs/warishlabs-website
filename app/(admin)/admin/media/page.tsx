@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Image as ImageIcon, Trash2, Plus, Copy } from 'lucide-react';
+import { Image as ImageIcon, Trash2, Plus, Copy, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatBytes, formatDate } from '@/utils/formatters';
 
@@ -14,6 +14,7 @@ export default function AdminMediaPage() {
   const [file, setFile] = useState<File | null>(null);
   const [folder, setFolder] = useState('products');
   const [isUploading, setIsUploading] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const fetchAssets = async () => {
     try {
@@ -86,6 +87,26 @@ export default function AdminMediaPage() {
     }
   };
 
+  const handleSync = async () => {
+    setIsSyncing(true);
+    try {
+      const res = await fetch('/api/admin/media/sync', {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message || 'Media library synchronized successfully.');
+        fetchAssets();
+      } else {
+        toast.error(data.error || 'Failed to sync media library.');
+      }
+    } catch (err) {
+      toast.error('Network error during synchronization.');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const copyUrl = (url: string) => {
     navigator.clipboard.writeText(url);
     toast.success('Asset URL copied to clipboard');
@@ -155,8 +176,16 @@ export default function AdminMediaPage() {
         {/* Gallery Column */}
         <div className="lg:col-span-8">
           <Card className="glass-panel border-border shadow-card overflow-hidden">
-            <CardHeader className="border-b border-border/40 pb-4">
+            <CardHeader className="border-b border-border/40 pb-4 flex flex-row items-center justify-between">
               <CardTitle className="text-sm font-semibold text-white">Cloud Asset Registry</CardTitle>
+              <button
+                onClick={handleSync}
+                disabled={isSyncing}
+                className="px-3 py-1.5 bg-white/5 border border-white/10 hover:border-accent hover:text-white rounded text-[10px] font-bold uppercase text-zinc-300 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
+                {isSyncing ? 'Syncing...' : 'Sync Cloudinary'}
+              </button>
             </CardHeader>
             <CardContent className="pt-6">
               {loading ? (

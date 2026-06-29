@@ -12,6 +12,7 @@ import { ArrowLeft, ExternalLink, Cpu, Info } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
+import DOMPurify from 'isomorphic-dompurify';
 
 import { Metadata } from 'next';
 
@@ -106,7 +107,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-6 prose prose-invert max-w-none text-text-secondary text-sm leading-relaxed space-y-4">
-                  <div dangerouslySetInnerHTML={{ __html: product.description }} />
+                  <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(product.description) }} />
                 </CardContent>
               </Card>
 

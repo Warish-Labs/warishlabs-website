@@ -5,6 +5,45 @@ import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
+import { z } from 'zod';
+
+const productInputSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  tagline: z.string().min(1, 'Tagline is required'),
+  description: z.string().min(1, 'Description is required'),
+  status: z.string().min(1, 'Status is required'),
+  type: z.string().optional().default('Tool'),
+  githubUrl: z.string().nullable().optional(),
+  visitUrl: z.string().nullable().optional(),
+  logoUrl: z.string().nullable().optional(),
+  bannerUrl: z.string().nullable().optional(),
+  featured: z.boolean().optional().default(false),
+  showOnHomepage: z.boolean().optional().default(false),
+  displayOrder: z.number().int().optional().default(0),
+  categoryId: z.string().min(1, 'Category is required'),
+  technologyIds: z.array(z.string()).optional(),
+  media: z.array(z.object({
+    url: z.string(),
+    type: z.string(),
+    alt: z.string().optional(),
+    sortOrder: z.number().optional()
+  })).optional(),
+  faqs: z.array(z.object({
+    question: z.string(),
+    answer: z.string(),
+    sortOrder: z.number().optional()
+  })).optional(),
+  seo: z.object({
+    title: z.string(),
+    description: z.string(),
+    keywords: z.string().optional()
+  }).nullable().optional()
+});
+
+const productUpdateSchema = productInputSchema.partial().extend({
+  id: z.string().min(1, 'Product ID is required')
+});
+
 export async function GET() {
   const admin = await validateSession();
   if (!admin) {
@@ -28,11 +67,17 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { name, tagline, description, status, visitUrl, logoUrl, categoryId } = body;
-
-    if (!name || !tagline || !description || !status || !categoryId) {
-      return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
+    
+    // Validate request body
+    const validation = productInputSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { success: false, error: 'Validation failed', errors: validation.error.flatten().fieldErrors },
+        { status: 400 }
+      );
     }
+
+    const { name, ...restData } = validation.data;
 
     // Auto-generate slug
     const slug = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -40,12 +85,7 @@ export async function POST(request: Request) {
     const product = await ProductService.create({
       name,
       slug,
-      tagline,
-      description,
-      status,
-      visitUrl,
-      logoUrl,
-      categoryId,
+      ...restData,
     });
 
     // Log Activity
@@ -72,25 +112,23 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
-    const { id, name, tagline, description, status, visitUrl, logoUrl, categoryId } = body;
-
-    if (!id) {
-      return NextResponse.json({ success: false, error: 'Missing product ID' }, { status: 400 });
+    
+    // Validate request body
+    const validation = productUpdateSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { success: false, error: 'Validation failed', errors: validation.error.flatten().fieldErrors },
+        { status: 400 }
+      );
     }
 
-    const updatedData: any = {};
-    if (name) {
-      updatedData.name = name;
-      updatedData.slug = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    }
-    if (tagline !== undefined) updatedData.tagline = tagline;
-    if (description !== undefined) updatedData.description = description;
-    if (status !== undefined) updatedData.status = status;
-    if (visitUrl !== undefined) updatedData.visitUrl = visitUrl;
-    if (logoUrl !== undefined) updatedData.logoUrl = logoUrl;
-    if (categoryId !== undefined) updatedData.categoryId = categoryId;
+    const { id, ...updatedFields } = validation.data;
 
-    const product = await ProductService.update(id, updatedData);
+    if (updatedFields.name) {
+      (updatedFields as any).slug = updatedFields.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    }
+
+    const product = await ProductService.update(id, updatedFields);
 
     // Log Activity
     await prisma.activityLog.create({

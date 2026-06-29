@@ -2,8 +2,11 @@ import React from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Mail, Phone, MapPin, ShieldCheck, Clock } from 'lucide-react';
+import Github from '@/components/icons/GithubIcon';
+import { Twitter, Linkedin, Youtube } from '@/components/icons/SocialIcons';
 import prisma from '@/lib/prisma';
 import ContactForm from './ContactForm';
+import FAQSection from '@/components/shared/FAQSection';
 import { cookies } from 'next/headers';
 
 export default async function ContactPage() {
@@ -11,9 +14,14 @@ export default async function ContactPage() {
   await cookies();
 
   // Fetch CMS settings from the DB
-  const contactSection = await prisma.homepageSection.findUnique({
-    where: { sectionType: 'contact' },
-  }).catch(() => null);
+  const [contactSection, socialSection] = await Promise.all([
+    prisma.homepageSection.findUnique({
+      where: { sectionType: 'contact' },
+    }).catch(() => null),
+    prisma.homepageSection.findUnique({
+      where: { sectionType: 'social' },
+    }).catch(() => null),
+  ]);
 
   const title = contactSection?.title || 'Contact Us';
   const subtitle = contactSection?.subtitle || 'Have a technical inquiry, feedback, or need collaboration? Get in touch with our engineering team directly.';
@@ -24,6 +32,12 @@ export default async function ContactPage() {
   const address = config.address || 'New Delhi, India';
   const responseTime = config.responseTime || 'Under 24 hours';
   const secureRouting = config.secureRouting || 'Messages are stored inside a TLS encrypted datastore and sent to resend relays.';
+
+  const socialConfig = (socialSection?.config as any) || {};
+  const githubUrl = socialConfig.githubUrl || '';
+  const twitterUrl = socialConfig.twitterUrl || '';
+  const linkedinUrl = socialConfig.linkedinUrl || '';
+  const youtubeUrl = socialConfig.youtubeUrl || '';
 
   return (
     <>
@@ -65,6 +79,32 @@ export default async function ContactPage() {
                 </div>
               </div>
 
+              {/* Social Channels */}
+              {(githubUrl || twitterUrl || linkedinUrl || youtubeUrl) && (
+                <div className="flex gap-4 pt-6 border-t border-border/40 items-center">
+                  {githubUrl && (
+                    <a href={githubUrl} target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-white transition-colors" title="GitHub">
+                      <Github className="w-4.5 h-4.5 text-accent" />
+                    </a>
+                  )}
+                  {twitterUrl && (
+                    <a href={twitterUrl} target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-white transition-colors" title="Twitter">
+                      <Twitter className="w-4.5 h-4.5 text-accent" />
+                    </a>
+                  )}
+                  {linkedinUrl && (
+                    <a href={linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-white transition-colors" title="LinkedIn">
+                      <Linkedin className="w-4.5 h-4.5 text-accent" />
+                    </a>
+                  )}
+                  {youtubeUrl && (
+                    <a href={youtubeUrl} target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-white transition-colors" title="YouTube">
+                      <Youtube className="w-4.5 h-4.5 text-accent" />
+                    </a>
+                  )}
+                </div>
+              )}
+
               {/* Assurances */}
               <div className="space-y-3 pt-6 border-t border-border/40 text-[10px] text-text-tertiary">
                 <div className="flex items-center gap-2 text-text-secondary">
@@ -83,9 +123,15 @@ export default async function ContactPage() {
               <ContactForm />
             </div>
           </div>
+
+          {/* FAQ Accordion Section */}
+          <div id="faq" className="mt-20 pt-16 border-t border-border/40">
+            <FAQSection />
+          </div>
         </div>
       </main>
       <Footer />
     </>
   );
 }
+

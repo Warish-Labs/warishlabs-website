@@ -6,13 +6,18 @@ import { describe, it, expect, vi } from 'vitest';
 vi.mock('@react-three/fiber', () => ({
   Canvas: ({ children }: any) => <div>{children}</div>,
   useFrame: vi.fn(),
-  useThree: () => ({ pointer: { x: 0, y: 0 } }),
+  useThree: () => ({ pointer: { x: 0, y: 0 }, gl: { dispose: vi.fn() }, scene: { traverse: vi.fn() } }),
 }));
 vi.mock('@react-three/drei', () => ({
   Edges: () => null,
   Suspense: ({ children }: any) => children,
 }));
-vi.mock('../../components/hero/HeroCanvas', () => {
+vi.mock('@/components/hero/HeroCanvas', () => {
+  return {
+    default: () => <div data-testid="hero-canvas" />
+  };
+});
+vi.mock('./HeroCanvas', () => {
   return {
     default: () => <div data-testid="hero-canvas" />
   };

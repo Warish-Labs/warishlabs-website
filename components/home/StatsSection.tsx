@@ -11,13 +11,6 @@ interface StatItem {
   suffix?: string;
 }
 
-const defaultStats: StatItem[] = [
-  { value: 12, label: 'Active Projects', suffix: '+' },
-  { value: 1800, label: 'Star Rating', suffix: '+' },
-  { value: 50000000, label: 'Million Requests', suffix: '' },
-  { value: 5, label: 'Global Regions', suffix: '' },
-];
-
 function AnimatedCounter({ value, suffix }: { value: number; suffix?: string }) {
   const nodeRef = useRef<HTMLParagraphElement>(null);
   const isInView = useInView(nodeRef, { once: true, margin: '-50px' });
@@ -47,7 +40,35 @@ function AnimatedCounter({ value, suffix }: { value: number; suffix?: string }) 
   );
 }
 
-export default function StatsSection({ stats = defaultStats }: { stats?: StatItem[] }) {
+export default function StatsSection() {
+  const [statsData, setStatsData] = useState<{ products: number; visitors: number; labs: number } | null>(null);
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+        if (data.success) {
+          setStatsData({
+            products: data.products,
+            visitors: data.visitors,
+            labs: data.labs,
+          });
+        }
+      } catch (err) {
+        console.error('[StatsSection] Failed to fetch stats:', err);
+      }
+    }
+    fetchStats();
+  }, []);
+
+  const stats = [
+    { value: statsData?.products || 0, label: 'Active Projects', suffix: '+' },
+    { value: statsData?.visitors || 0, label: 'Total Site Visitors', suffix: '+' },
+    { value: statsData?.labs || 0, label: 'Sandbox Experiments', suffix: '+' },
+    { value: 12, label: 'Global Regions', suffix: '+' },
+  ];
+
   return (
     <section className="py-24 bg-bg-secondary border-t border-border/40 select-none relative overflow-hidden">
       {/* Decorative Blueprint grid backdrop */}
@@ -79,3 +100,4 @@ export default function StatsSection({ stats = defaultStats }: { stats?: StatIte
     </section>
   );
 }
+

@@ -2,15 +2,17 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { FileText, Plus, Trash2, Eye, EyeOff, Edit } from 'lucide-react';
+import { FileText, Plus, Trash2, Eye, EyeOff, Edit, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDate } from '@/utils/formatters';
+import { Button } from '@/components/ui/button';
 
 export default function AdminBlogPage() {
   const [blogs, setBlogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Form states
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [excerpt, setExcerpt] = useState('');
   const [content, setContent] = useState('');
@@ -18,6 +20,12 @@ export default function AdminBlogPage() {
   const [published, setPublished] = useState(false);
   const [coverImage, setCoverImage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Collapsible SEO Panel states
+  const [showSeo, setShowSeo] = useState(false);
+  const [seoTitle, setSeoTitle] = useState('');
+  const [seoDescription, setSeoDescription] = useState('');
+  const [seoKeywords, setSeoKeywords] = useState('');
 
   const fetchBlogs = async () => {
     try {
@@ -39,39 +47,83 @@ export default function AdminBlogPage() {
     fetchBlogs();
   }, []);
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleEditClick = (blog: any) => {
+    setEditingId(blog.id);
+    setTitle(blog.title);
+    setExcerpt(blog.excerpt);
+    setContent(blog.content);
+    setCategory(blog.category);
+    setPublished(blog.published);
+    setCoverImage(blog.coverImage || '');
+    
+    // Populate SEO values if they exist
+    if (blog.seo) {
+      setSeoTitle(blog.seo.title || '');
+      setSeoDescription(blog.seo.description || '');
+      setSeoKeywords(blog.seo.keywords || '');
+    } else {
+      setSeoTitle('');
+      setSeoDescription('');
+      setSeoKeywords('');
+    }
+    
+    // Auto-expand SEO panel if edited blog has custom SEO metadata
+    setShowSeo(!!blog.seo);
+  };
+
+  const resetForm = () => {
+    setEditingId(null);
+    setTitle('');
+    setExcerpt('');
+    setContent('');
+    setCategory('Engineering');
+    setPublished(false);
+    setCoverImage('');
+    setSeoTitle('');
+    setSeoDescription('');
+    setSeoKeywords('');
+    setShowSeo(false);
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !content.trim() || !excerpt.trim()) return;
+    if (!title.trim() || !content.trim() || !excerpt.trim()) {
+      toast.error('Please fill in all required fields.');
+      return;
+    }
 
     setIsSubmitting(true);
+    const payload = {
+      id: editingId,
+      title,
+      content,
+      excerpt,
+      category,
+      published,
+      coverImage: coverImage || 'https://res.cloudinary.com/placeholder.jpg',
+      seo: {
+        title: seoTitle || title,
+        description: seoDescription || excerpt,
+        keywords: seoKeywords,
+      }
+    };
+
     try {
       const res = await fetch('/api/admin/blog', {
-        method: 'POST',
+        method: editingId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title,
-          content,
-          excerpt,
-          category,
-          published,
-          coverImage: coverImage || 'https://res.cloudinary.com/placeholder.jpg',
-        }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (data.success) {
-        toast.success('Blog article created successfully');
-        setTitle('');
-        setExcerpt('');
-        setContent('');
-        setCategory('Engineering');
-        setPublished(false);
-        setCoverImage('');
+        toast.success(editingId ? 'Blog article updated successfully' : 'Blog article created successfully');
+        resetForm();
         fetchBlogs();
       } else {
-        toast.error(data.error || 'Failed to create blog');
+        toast.error(data.error || 'Failed to submit article');
       }
     } catch (err) {
-      toast.error('Network error creating blog');
+      toast.error('Network error submitting article');
     } finally {
       setIsSubmitting(false);
     }
@@ -87,6 +139,7 @@ export default function AdminBlogPage() {
       const data = await res.json();
       if (data.success) {
         toast.success('Article deleted successfully');
+        if (editingId === id) resetForm();
         fetchBlogs();
       } else {
         toast.error(data.error || 'Failed to delete article');
@@ -132,14 +185,26 @@ export default function AdminBlogPage() {
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Create Form */}
+        {/* Create / Edit Form */}
         <div className="lg:col-span-5">
           <Card className="glass-panel border-border shadow-card overflow-hidden">
-            <CardHeader className="border-b border-border/40 pb-4">
-              <CardTitle className="text-sm font-semibold text-white">Write New Article</CardTitle>
+            <CardHeader className="border-b border-border/40 pb-4 flex flex-row items-center justify-between">
+              <CardTitle className="text-sm font-semibold text-white">
+                {editingId ? 'Edit Article Build' : 'Write New Article'}
+              </CardTitle>
+              {editingId && (
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="p-1 rounded bg-white/5 border border-white/10 hover:border-accent text-zinc-300 hover:text-white"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </CardHeader>
             <CardContent className="pt-6">
-              <form onSubmit={handleCreate} className="space-y-4">
+              <form onSubmit={handleFormSubmit} className="space-y-4">
+                {/* Title */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Article Title</label>
                   <input
@@ -152,6 +217,7 @@ export default function AdminBlogPage() {
                   />
                 </div>
 
+                {/* Category & Cover Image */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Category</label>
@@ -180,6 +246,7 @@ export default function AdminBlogPage() {
                   </div>
                 </div>
 
+                {/* Excerpt */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Excerpt Summary</label>
                   <textarea
@@ -191,6 +258,7 @@ export default function AdminBlogPage() {
                   />
                 </div>
 
+                {/* Content */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Content (Markdown supported)</label>
                   <textarea
@@ -202,7 +270,53 @@ export default function AdminBlogPage() {
                   />
                 </div>
 
-                <div className="flex items-center gap-2">
+                {/* Collapsible SEO Panel */}
+                <div className="border border-white/5 bg-black/20 rounded-lg overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setShowSeo(!showSeo)}
+                    className="w-full px-4 py-2.5 bg-white/5 hover:bg-white/10 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-zinc-300"
+                  >
+                    <span>Collapsible SEO Metadata Settings</span>
+                    {showSeo ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                  </button>
+                  {showSeo && (
+                    <div className="p-4 space-y-3 border-t border-white/5">
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold uppercase tracking-widest text-text-tertiary">Meta Title</label>
+                        <input
+                          type="text"
+                          value={seoTitle}
+                          onChange={(e) => setSeoTitle(e.target.value)}
+                          placeholder="If left empty, defaults to article title"
+                          className="w-full bg-bg-secondary border border-border rounded-md px-2 py-1.5 text-xs text-white focus:outline-none focus:border-accent"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold uppercase tracking-widest text-text-tertiary">Meta Description</label>
+                        <textarea
+                          value={seoDescription}
+                          onChange={(e) => setSeoDescription(e.target.value)}
+                          placeholder="If left empty, defaults to excerpt summary"
+                          className="w-full bg-bg-secondary border border-border rounded-md px-2 py-1.5 text-xs text-white focus:outline-none focus:border-accent h-16 resize-none"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold uppercase tracking-widest text-text-tertiary">Meta Keywords</label>
+                        <input
+                          type="text"
+                          value={seoKeywords}
+                          onChange={(e) => setSeoKeywords(e.target.value)}
+                          placeholder="comma, separated, tags"
+                          className="w-full bg-bg-secondary border border-border rounded-md px-2 py-1.5 text-xs text-white focus:outline-none focus:border-accent"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Publish Immediately */}
+                <div className="flex items-center gap-2 pt-2">
                   <input
                     type="checkbox"
                     id="published"
@@ -215,13 +329,14 @@ export default function AdminBlogPage() {
                   </label>
                 </div>
 
+                {/* Actions */}
                 <button
                   type="submit"
                   disabled={isSubmitting}
                   className="w-full bg-accent hover:bg-accent/80 text-white font-semibold text-xs uppercase tracking-wider py-2.5 rounded-md transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  {isSubmitting ? 'Creating...' : 'Create Article'}
+                  {isSubmitting ? 'Submitting...' : editingId ? 'Update Article' : 'Create Article'}
                 </button>
               </form>
             </CardContent>
@@ -289,13 +404,24 @@ export default function AdminBlogPage() {
                             </button>
                           </td>
                           <td className="px-6 py-4 text-right space-x-2">
-                            <button
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditClick(blog)}
+                              className="border-border hover:border-accent hover:text-white p-2 h-8 w-8 cursor-pointer inline-flex"
+                              title="Edit Article"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
                               onClick={() => handleDelete(blog.id)}
-                              className="text-destructive hover:bg-destructive/10 p-1.5 rounded transition-colors cursor-pointer inline-flex"
+                              className="border-border hover:border-destructive hover:text-destructive p-2 h-8 w-8 text-destructive/80 cursor-pointer inline-flex"
                               title="Delete Article"
                             >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
                           </td>
                         </tr>
                       ))}

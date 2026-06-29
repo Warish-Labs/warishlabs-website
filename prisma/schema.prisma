@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,7 +6,6 @@ datasource db {
   provider = "postgresql"
 }
 
-// 1. Admin & Authentication
 model Admin {
   id           String        @id @default(uuid())
   email        String        @unique
@@ -17,60 +13,64 @@ model Admin {
   name         String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  sessions     Session[]
   activityLogs ActivityLog[]
+  sessions     Session[]
 }
 
 model Session {
   id        String   @id @default(uuid())
   adminId   String
-  admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
   token     String   @unique
   expiresAt DateTime
   createdAt DateTime @default(now())
+  admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
 
   @@index([adminId])
 }
 
-// 2. Categories & Products (Decoupled ER design)
 model Category {
   id          String       @id @default(uuid())
   name        String
   slug        String       @unique
   description String?
-  products    Product[]
-  seo         CategorySEO?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  seo         CategorySEO?
+  products    Product[]
 }
 
 model CategorySEO {
   id          String   @id @default(uuid())
   categoryId  String   @unique
-  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   title       String
   description String
   keywords    String?
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 }
 
 model Product {
-  id           String              @id @default(uuid())
-  name         String
-  slug         String              @unique
-  tagline      String
-  description  String              @db.Text // HTML or Rich Text from Tiptap
-  status       String              // "active", "beta", "archived"
-  githubUrl    String?
-  visitUrl     String?
-  logoUrl      String?
-  categoryId   String
-  category     Category            @relation(fields: [categoryId], references: [id])
-  technologies ProductTechnology[]
-  media        ProductMedia[]
-  faqs         ProductFAQ[]
-  seo          ProductSEO?
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
+  id             String              @id @default(uuid())
+  name           String
+  slug           String              @unique
+  tagline        String
+  description    String              @db.Text // HTML or Rich Text from Tiptap
+  status         String              // "active", "beta", "archived"
+  type           String              @default("Tool")
+  githubUrl      String?
+  visitUrl       String?
+  logoUrl        String?
+  bannerUrl      String?
+  featured       Boolean             @default(false)
+  showOnHomepage Boolean             @default(false)
+  displayOrder   Int                 @default(0)
+  categoryId     String
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  category       Category            @relation(fields: [categoryId], references: [id])
+  faqs           ProductFAQ[]
+  media          ProductMedia[]
+  seo            ProductSEO?
+  technologies   ProductTechnology[]
 
   @@index([categoryId])
 }
@@ -79,16 +79,16 @@ model Technology {
   id        String              @id @default(uuid())
   name      String
   slug      String              @unique
-  icon      String?             // SVG or Icon key
-  products  ProductTechnology[]
+  icon      String?
   createdAt DateTime            @default(now())
   updatedAt DateTime            @updatedAt
+  products  ProductTechnology[]
 }
 
 model ProductTechnology {
   productId    String
-  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
   technologyId String
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
   technology   Technology @relation(fields: [technologyId], references: [id], onDelete: Cascade)
 
   @@id([productId, technologyId])
@@ -96,14 +96,14 @@ model ProductTechnology {
 }
 
 model ProductMedia {
-  id          String   @id @default(uuid())
-  productId   String
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  url         String
-  type        String   // "image", "video"
-  alt         String?
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
+  id        String   @id @default(uuid())
+  productId String
+  url       String
+  type      String
+  alt       String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
 }
@@ -111,45 +111,43 @@ model ProductMedia {
 model ProductSEO {
   id          String  @id @default(uuid())
   productId   String  @unique
-  product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   title       String
   description String
   keywords    String?
+  product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
-// 3. Blog System
 model Blog {
   id          String    @id @default(uuid())
   title       String
   slug        String    @unique
-  content     String    @db.Text
-  excerpt     String    @db.Text
+  content     String
+  excerpt     String
   coverImage  String?
-  category    String    // Category string (e.g. "Development", "AI")
+  category    String
   published   Boolean   @default(false)
   publishedAt DateTime?
-  seo         BlogSEO?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  seo         BlogSEO?
 }
 
 model BlogSEO {
   id          String  @id @default(uuid())
   blogId      String  @unique
-  blog        Blog    @relation(fields: [blogId], references: [id], onDelete: Cascade)
   title       String
   description String
   keywords    String?
+  blog        Blog    @relation(fields: [blogId], references: [id], onDelete: Cascade)
 }
 
-// 4. Forms & Subscriptions
 model ContactMessage {
   id        String   @id @default(uuid())
   name      String
   email     String
   subject   String?
-  message   String   @db.Text
-  status    String   @default("unread") // "unread", "read", "archived"
+  message   String
+  status    String   @default("unread")
   createdAt DateTime @default(now())
 }
 
@@ -157,12 +155,11 @@ model NewsletterSubscriber {
   id        String   @id @default(uuid())
   email     String   @unique
   active    Boolean  @default(true)
-  token     String   @unique // Token for one-click unsubscribe
+  token     String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-// 5. Analytics (Includes 90-day cleanup retention rule)
 model Visitor {
   id        String           @id @default(uuid())
   createdAt DateTime         @default(now())
@@ -171,51 +168,48 @@ model Visitor {
 }
 
 model AnalyticsEvent {
-  id         String   @id @default(uuid())
-  visitorId  String
-  visitor    Visitor  @relation(fields: [visitorId], references: [id], onDelete: Cascade)
-  eventName  String
-  eventData  Json?    // Stores unstructured analytics metadata
-  url        String
-  referrer   String?
-  userAgent  String?
-  ipAddress  String?
-  createdAt  DateTime @default(now())
+  id        String   @id @default(uuid())
+  visitorId String
+  eventName String
+  eventData Json?
+  url       String
+  referrer  String?
+  userAgent String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+  visitor   Visitor  @relation(fields: [visitorId], references: [id], onDelete: Cascade)
 
-  // Note: These events are deleted periodically if older than 90 days
   @@index([visitorId])
   @@index([createdAt])
 }
 
-// 6. Media Library
 model MediaAsset {
   id        String   @id @default(uuid())
   url       String
-  publicId  String   @unique // Cloudinary public_id
+  publicId  String   @unique
   fileName  String
   fileSize  Int
   mimeType  String
   createdAt DateTime @default(now())
 }
 
-// 7. Site Navigation & Settings
 model NavItem {
   id        String    @id @default(uuid())
   label     String
   path      String
   parentId  String?
-  parent    NavItem?  @relation("NavHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
-  children  NavItem[] @relation("NavHierarchy")
   sortOrder Int       @default(0)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  parent    NavItem?  @relation("NavHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children  NavItem[] @relation("NavHierarchy")
 
   @@index([parentId])
 }
 
 model SiteSetting {
-  id        String   @id // Config Key (e.g. "site_title", "maintenance_mode")
-  value     String   @db.Text
+  id        String   @id
+  value     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -223,21 +217,20 @@ model SiteSetting {
 model ActivityLog {
   id        String   @id @default(uuid())
   adminId   String
-  admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
-  action    String   // Description of action (e.g. "CREATE_PRODUCT")
-  details   String?  @db.Text
+  action    String
+  details   String?
   ipAddress String?
   userAgent String?
   createdAt DateTime @default(now())
+  admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
 
   @@index([adminId])
 }
 
-// 8. General FAQs
 model FAQ {
   id        String   @id @default(uuid())
   question  String
-  answer    String   @db.Text
+  answer    String
   sortOrder Int      @default(0)
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -247,24 +240,27 @@ model FAQ {
 model ProductFAQ {
   id        String   @id @default(uuid())
   productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   question  String
-  answer    String   @db.Text
+  answer    String
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
 }
 
-// 9. Labs & Open Source
 model Lab {
   id          String   @id @default(uuid())
   name        String
   slug        String   @unique
   description String   @db.Text
-  url         String?
-  githubUrl   String?
+  url         String?  // liveUrl
+  githubUrl   String?  // repoUrl
+  demoUrl     String?
+  mediaUrl    String?  // Cloudinary upload
   status      String   // "active", "completed", "deprecated"
+  type        String   @default("experiment") // open source / experiment / tool / sandbox
+  techStack   String?  // comma-separated tags
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -273,22 +269,21 @@ model OpenSourceProject {
   id          String   @id @default(uuid())
   name        String
   slug        String   @unique
-  description String   @db.Text
+  description String
   githubUrl   String
   stars       Int      @default(0)
   forks       Int      @default(0)
-  status      String   // "active", "archived", "maintained"
+  status      String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
-// 10. Homepage Sections (CMS Customizer Layout)
 model HomepageSection {
   id          String   @id @default(uuid())
-  sectionType String   @unique // e.g. "hero", "spotlight", "featured-products"
+  sectionType String   @unique
   title       String?
   subtitle    String?
-  config      Json     // Config stores arrays of slugs/IDs and display settings, preventing hard relationships
+  config      Json
   sortOrder   Int      @default(0)
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())

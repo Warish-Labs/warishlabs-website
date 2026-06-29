@@ -95,4 +95,103 @@ export class EmailService {
       return false;
     }
   }
+
+  /**
+   * Dispatches a broadcast campaign email to a list of subscribers
+   */
+  static async sendBroadcastCampaign(
+    emails: string[],
+    subject: string,
+    htmlContent: string
+  ): Promise<{ successCount: number; failureCount: number }> {
+    console.log(`[EmailService] Sending newsletter broadcast to ${emails.length} subscribers`);
+    
+    if (!resend) {
+      console.warn('[EmailService] RESEND_API_KEY is not defined. Simulating broadcast email campaign.');
+      console.log('--- EMAIL BROADCAST SIMULATION START ---');
+      console.log(`To: ${emails.join(', ')}\nFrom: ${fromEmail}\nSubject: ${subject}\nContent:\n${htmlContent}`);
+      console.log('--- EMAIL BROADCAST SIMULATION END ---');
+      return { successCount: emails.length, failureCount: 0 };
+    }
+
+    let successCount = 0;
+    let failureCount = 0;
+
+    // Send in batches of 100 (Resend batch limit)
+    const batchSize = 100;
+    for (let i = 0; i < emails.length; i += batchSize) {
+      const batchEmails = emails.slice(i, i + batchSize);
+      const batchPayload = batchEmails.map((email) => ({
+        from: fromEmail,
+        to: email,
+        subject,
+        html: htmlContent,
+      }));
+
+      try {
+        const response = await resend.batch.send(batchPayload);
+        if (response.data) {
+          successCount += response.data.length;
+        } else {
+          failureCount += batchEmails.length;
+        }
+      } catch (err) {
+        console.error(`[EmailService] Failed to send broadcast batch starting at ${i}:`, err);
+        failureCount += batchEmails.length;
+      }
+    }
+
+    return { successCount, failureCount };
+  }
+
+  /**
+   * Sends a reply email to a contact form message sender
+   */
+  static async sendMessageReply(
+    toEmail: string,
+    originalSubject: string,
+    originalMessage: string,
+    replyText: string
+  ): Promise<boolean> {
+    const emailSubject = `Re: ${originalSubject || 'Your inquiry at WarishLabs'}`;
+    const htmlContent = `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
+        <h2 style="color: #2563EB; border-bottom: 2px solid #2563EB; padding-bottom: 10px;">WarishLabs</h2>
+        <div style="margin-bottom: 25px; line-height: 1.6; color: #111; white-space: pre-wrap;">
+          ${replyText.replace(/\n/g, '<br/>')}
+        </div>
+        <hr style="border: none; border-top: 1px solid #eee; margin-top: 30px;" />
+        <div style="font-size: 12px; color: #666;">
+          <p><strong>Original Message:</strong></p>
+          <blockquote style="border-left: 3px solid #ccc; padding-left: 10px; margin-left: 0; color: #555;">
+            ${originalMessage.replace(/\n/g, '<br/>')}
+          </blockquote>
+        </div>
+      </div>
+    `;
+
+    console.log(`[EmailService] Attempting to send message reply to ${toEmail}`);
+
+    if (!resend) {
+      console.warn('[EmailService] RESEND_API_KEY is not defined. Simulating message reply.');
+      console.log('--- EMAIL SIMULATION START ---');
+      console.log(`To: ${toEmail}\nSubject: ${emailSubject}\nBody:\n${htmlContent}`);
+      console.log('--- EMAIL SIMULATION END ---');
+      return true;
+    }
+
+    try {
+      const data = await resend.emails.send({
+        from: fromEmail,
+        to: toEmail,
+        subject: emailSubject,
+        html: htmlContent,
+      });
+
+      return !!data.data?.id;
+    } catch (error) {
+      console.error('[EmailService] Failed to send message reply email:', error);
+      return false;
+    }
+  }
 }
