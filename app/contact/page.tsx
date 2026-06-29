@@ -26,14 +26,14 @@ export default async function ContactPage() {
   const title = contactSection?.title || 'Contact Us';
   const subtitle = contactSection?.subtitle || 'Have a technical inquiry, feedback, or need collaboration? Get in touch with our engineering team directly.';
   
-  const config = (contactSection?.config as any) || {};
+  const config = (contactSection?.config as Record<string, string>) || {};
   const email = config.email || 'contact@warishlabs.in';
   const phone = config.phone || '';
   const address = config.address || 'New Delhi, India';
   const responseTime = config.responseTime || 'Under 24 hours';
   const secureRouting = config.secureRouting || 'Messages are stored inside a TLS encrypted datastore and sent to resend relays.';
 
-  const socialConfig = (socialSection?.config as any) || {};
+  const socialConfig = (socialSection?.config as Record<string, string>) || {};
   const githubUrl = socialConfig.githubUrl || '';
   const twitterUrl = socialConfig.twitterUrl || '';
   const linkedinUrl = socialConfig.linkedinUrl || '';

@@ -120,7 +120,7 @@ export async function GET(request: Request) {
         height: 630,
       }
     );
-  } catch (e: any) {
+  } catch (e) {
     console.error('[API OG] Failed to generate image:', e);
     return new Response('Failed to generate dynamic OG banner', { status: 500 });
   }

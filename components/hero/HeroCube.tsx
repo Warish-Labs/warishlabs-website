@@ -17,19 +17,25 @@ export default function HeroCube() {
 
   // 1. Shards Setup (8 scattered floating wireframe shards)
   const shardsData = useMemo(() => {
+    let seed = 42;
+    const rnd = () => {
+      const x = Math.sin(seed++) * 10000;
+      return x - Math.floor(x);
+    };
+
     return Array.from({ length: 8 }).map((_, idx) => {
       const isLeft = idx < 4;
       // Position them on the sides to not block the core
-      const x = isLeft ? -4.8 - Math.random() * 1.5 : 4.8 + Math.random() * 1.5;
-      const y = (Math.random() - 0.5) * 5;
-      const z = -1.5 - Math.random() * 2.5;
-      const size = 0.12 + Math.random() * 0.15;
-      const speed = 0.3 + Math.random() * 0.5;
-      const phase = Math.random() * Math.PI * 2;
+      const x = isLeft ? -4.8 - rnd() * 1.5 : 4.8 + rnd() * 1.5;
+      const y = (rnd() - 0.5) * 5;
+      const z = -1.5 - rnd() * 2.5;
+      const size = 0.12 + rnd() * 0.15;
+      const speed = 0.3 + rnd() * 0.5;
+      const phase = rnd() * Math.PI * 2;
       const rotSpeed = [
-        (Math.random() - 0.5) * 0.8,
-        (Math.random() - 0.5) * 0.8,
-        (Math.random() - 0.5) * 0.8
+        (rnd() - 0.5) * 0.8,
+        (rnd() - 0.5) * 0.8,
+        (rnd() - 0.5) * 0.8
       ];
       return { x, y, z, size, speed, phase, rotSpeed };
     });

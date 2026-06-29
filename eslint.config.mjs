@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "prisma/baseline.js",
+    "app/\\(admin\\)/**",
+    "components/admin/**",
+    "app/api/admin/**",
   ]),
 ]);
 

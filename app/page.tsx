@@ -25,7 +25,13 @@ export default async function Home() {
     }).catch(() => null),
   ]);
 
-  const heroConfig = heroSection?.config as any;
+  const heroConfig = (heroSection?.config as {
+    ctaPrimaryText?: string;
+    ctaPrimaryUrl?: string;
+    ctaSecondaryText?: string;
+    ctaSecondaryUrl?: string;
+    techFloating?: string[];
+  }) || undefined;
 
   const jsonLd = {
     '@context': 'https://schema.org',

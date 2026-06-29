@@ -9,7 +9,7 @@ export async function GET() {
       where: { sectionType: 'social' },
     }).catch(() => null);
 
-    const config = (socialSection?.config as any) || {};
+    const config = (socialSection?.config as Record<string, string>) || {};
 
     return NextResponse.json({
       success: true,

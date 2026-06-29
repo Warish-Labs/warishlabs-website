@@ -50,8 +50,10 @@ export default function SearchPanel({ isOpen, onClose }: SearchPanelProps) {
   useEffect(() => {
     if (!isOpen) return;
     if (!searchQuery.trim()) {
-      setResults({ products: [], categories: [], labs: [], blogs: [] });
-      return;
+      const t = setTimeout(() => {
+        setResults({ products: [], categories: [], labs: [], blogs: [] });
+      }, 0);
+      return () => clearTimeout(t);
     }
 
     const timer = setTimeout(async () => {
@@ -174,7 +176,7 @@ export default function SearchPanel({ isOpen, onClose }: SearchPanelProps) {
         )}
 
         {!isLoading && searchQuery.trim() && !hasResults && (
-          <CommandEmpty>No results found for "{searchQuery}". Try "Festoryx" or "development".</CommandEmpty>
+          <CommandEmpty>No results found for &quot;{searchQuery}&quot;. Try &quot;Festoryx&quot; or &quot;development&quot;.</CommandEmpty>
         )}
 
         {!isLoading && searchQuery.trim() && hasResults && (

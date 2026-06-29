@@ -19,7 +19,7 @@ export default async function ProductsPage() {
   ]);
 
   // Format dates and relational fields to simple serializable objects for client
-  const serializedProducts = products.map((p: any) => ({
+  const serializedProducts = products.map((p) => ({
     id: p.id,
     name: p.name,
     slug: p.slug,
@@ -35,7 +35,7 @@ export default async function ProductsPage() {
       name: p.category.name,
       slug: p.category.slug,
     },
-    technologies: p.technologies.map((t: any) => ({
+    technologies: p.technologies.map((t) => ({
       technology: {
         id: t.technology.id,
         name: t.technology.name,

@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { ANALYTICS_EVENTS } from '@/constants/events';
 
 interface AnalyticsContextType {
-  track: (eventName: string, eventData?: Record<string, any>) => void;
+  track: (eventName: string, eventData?: Record<string, unknown>) => void;
 }
 
 const AnalyticsContext = createContext<AnalyticsContextType | undefined>(undefined);
@@ -16,7 +16,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   const prevPathRef = useRef<string | null>(null);
 
   // Custom event tracking helper
-  const track = (eventName: string, eventData?: Record<string, any>) => {
+  const track = (eventName: string, eventData?: Record<string, unknown>) => {
     // Send event asynchronously to not block UI rendering
     if (typeof window === 'undefined') return;
 

@@ -4,13 +4,13 @@ import { describe, it, expect, vi } from 'vitest';
 
 // Mock Three.js and R3F fiber completely since they cannot run in JSDOM environment
 vi.mock('@react-three/fiber', () => ({
-  Canvas: ({ children }: any) => <div>{children}</div>,
+  Canvas: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   useFrame: vi.fn(),
   useThree: () => ({ pointer: { x: 0, y: 0 }, gl: { dispose: vi.fn() }, scene: { traverse: vi.fn() } }),
 }));
 vi.mock('@react-three/drei', () => ({
   Edges: () => null,
-  Suspense: ({ children }: any) => children,
+  Suspense: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 vi.mock('@/components/hero/HeroCanvas', () => {
   return {

@@ -39,9 +39,9 @@ export default async function AboutPage() {
   const title = aboutSection?.title || 'About WarishLabs';
   const subtitle = aboutSection?.subtitle || 'WarishLabs is a software engineering laboratory focused on building high-performance, beautiful, and highly stable developer tools and full-stack systems.';
   
-  const config = (aboutSection?.config as any) || {};
-  const philosophy: string[] = config.philosophy || defaultPhilosophy;
-  const highlights: Array<{ title: string; description: string; icon: string }> = config.highlights || defaultHighlights;
+  const config = (aboutSection?.config as Record<string, unknown>) || {};
+  const philosophy = (config.philosophy as string[]) || defaultPhilosophy;
+  const highlights = (config.highlights as Array<{ title: string; description: string; icon: string }>) || defaultHighlights;
 
   return (
     <>

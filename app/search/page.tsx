@@ -2,6 +2,7 @@ import React from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import prisma from '@/lib/prisma';
+import { Product, Category, Lab, Blog } from '@prisma/client';
 import Link from 'next/link';
 import ProductCard from '@/components/products/ProductCard';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -20,10 +21,32 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const { q = '' } = await searchParams;
   const query = q.trim();
 
-  let products: any[] = [];
-  let categories: any[] = [];
-  let labs: any[] = [];
-  let blogs: any[] = [];
+  let products: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    tagline: string;
+    description: string;
+    status: string;
+    type: string;
+    displayOrder: number;
+    createdAt: string;
+    visitUrl: string | null;
+    logoUrl: string | null;
+    category: {
+      name: string;
+      slug: string;
+    };
+    technologies: Array<{
+      technology: {
+        id: string;
+        name: string;
+      };
+    }>;
+  }> = [];
+  let categories: Array<Category & { _count?: { products: number } }> = [];
+  let labs: Lab[] = [];
+  let blogs: Blog[] = [];
 
   if (query) {
     // Parallel database searches

@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Technology } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 import dotenv from 'dotenv';
@@ -79,7 +79,7 @@ async function main() {
     { name: 'Framer Motion', slug: 'framer-motion', icon: 'framer-motion' },
   ];
 
-  const seededTechs: Record<string, any> = {};
+  const seededTechs: Record<string, Technology> = {};
   for (const tech of techs) {
     const t = await prisma.technology.upsert({
       where: { slug: tech.slug },

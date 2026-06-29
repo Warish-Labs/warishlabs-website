@@ -17,7 +17,7 @@ export default async function CategoryDetailPage({ params }: CategoryDetailPageP
   const { slug } = await params;
 
   // Query category by slug and include its active products
-  const category = (await prisma.category.findUnique({
+  const category = await prisma.category.findUnique({
     where: { slug },
     include: {
       products: {
@@ -37,17 +37,17 @@ export default async function CategoryDetailPage({ params }: CategoryDetailPageP
             },
           },
         },
-        orderBy: { displayOrder: 'asc' } as any,
+        orderBy: { displayOrder: 'asc' },
       },
     },
-  }).catch(() => null)) as any;
+  }).catch(() => null);
 
   if (!category) {
     notFound();
   }
 
   // Format products for hydration compatibility
-  const serializedProducts = category.products.map((p: any) => ({
+  const serializedProducts = category.products.map((p) => ({
     id: p.id,
     name: p.name,
     slug: p.slug,
@@ -63,7 +63,7 @@ export default async function CategoryDetailPage({ params }: CategoryDetailPageP
       name: category.name,
       slug: category.slug,
     },
-    technologies: p.technologies.map((t: any) => ({
+    technologies: p.technologies.map((t) => ({
       technology: {
         id: t.technology.id,
         name: t.technology.name,
@@ -106,7 +106,7 @@ export default async function CategoryDetailPage({ params }: CategoryDetailPageP
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-               {serializedProducts.map((product: any) => (
+               {serializedProducts.map((product) => (
                  <ProductCard key={product.id} product={product} />
                ))}
             </div>

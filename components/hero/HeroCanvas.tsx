@@ -8,36 +8,39 @@ import * as THREE from 'three';
 function MouseReactiveParticles() {
   const pointsRef = useRef<THREE.Points>(null);
   const count = 320;
-  
-  const [initialPositions, currentPositions, velocities] = useMemo(() => {
+
+  // 1. Initial positions are created with useMemo (pure, no mutation)
+  const initialPositions = useMemo(() => {
+    let seed = 100;
+    const rnd = () => {
+      const x = Math.sin(seed++) * 10000;
+      return x - Math.floor(x);
+    };
     const init = new Float32Array(count * 3);
-    const curr = new Float32Array(count * 3);
-    const vels = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
-      // Wider distribution in 3D space
-      const x = (Math.random() - 0.5) * 16;
-      const y = (Math.random() - 0.5) * 12;
-      const z = (Math.random() - 0.5) * 6;
+      const x = (rnd() - 0.5) * 16;
+      const y = (rnd() - 0.5) * 12;
+      const z = (rnd() - 0.5) * 6;
       
       init[i * 3] = x;
       init[i * 3 + 1] = y;
       init[i * 3 + 2] = z;
-      
-      curr[i * 3] = x;
-      curr[i * 3 + 1] = y;
-      curr[i * 3 + 2] = z;
-      
-      vels[i * 3] = 0;
-      vels[i * 3 + 1] = 0;
-      vels[i * 3 + 2] = 0;
     }
-    return [init, curr, vels];
+    return init;
+  }, []);
+
+  // 2. velocitiesRef is populated after mount (outside render)
+  const velocitiesRef = useRef<Float32Array | null>(null);
+
+  useEffect(() => {
+    velocitiesRef.current = new Float32Array(count * 3);
   }, []);
 
   useFrame((state) => {
-    if (!pointsRef.current) return;
+    if (!pointsRef.current || !velocitiesRef.current) return;
     const geom = pointsRef.current.geometry;
     const posAttr = geom.getAttribute('position') as THREE.BufferAttribute;
+    const velocities = velocitiesRef.current;
     
     // Scale normalized mouse coords [-1, 1] to roughly match 3D projection plane bounds
     const mouseX = state.pointer.x * 5.5;
@@ -87,7 +90,7 @@ function MouseReactiveParticles() {
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"
-          args={[currentPositions, 3]}
+          args={[initialPositions, 3]}
         />
       </bufferGeometry>
       <pointsMaterial
@@ -106,9 +109,14 @@ function BackgroundDust() {
   const count = 200;
 
   const positions = useMemo(() => {
+    let seed = 200;
+    const rnd = () => {
+      const x = Math.sin(seed++) * 10000;
+      return x - Math.floor(x);
+    };
     const arr = new Float32Array(count * 3);
     for (let i = 0; i < count * 3; i++) {
-      arr[i] = (Math.random() - 0.5) * 20;
+      arr[i] = (rnd() - 0.5) * 20;
     }
     return arr;
   }, []);
@@ -143,15 +151,20 @@ function CanvasCleanup() {
   const { gl, scene } = useThree();
   useEffect(() => {
     return () => {
-      scene?.traverse?.((obj: any) => {
-        if (obj.geometry) {
-          obj.geometry.dispose();
+      scene?.traverse?.((obj) => {
+        const mesh = obj as THREE.Mesh;
+        if (mesh.geometry) {
+          mesh.geometry.dispose();
         }
-        if (obj.material) {
-          if (Array.isArray(obj.material)) {
-            obj.material.forEach((mat: any) => mat.dispose());
+        if (mesh.material) {
+          if (Array.isArray(mesh.material)) {
+            mesh.material.forEach((mat) => {
+              if (mat && typeof mat.dispose === 'function') mat.dispose();
+            });
           } else {
-            obj.material.dispose();
+            if (mesh.material && typeof mesh.material.dispose === 'function') {
+              mesh.material.dispose();
+            }
           }
         }
       });
@@ -166,25 +179,33 @@ export default function HeroCanvas() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const timer = setTimeout(() => setMounted(true), 0);
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', checkMobile);
+    };
   }, []);
 
   const linePositions = useMemo(() => {
+    let seed = 300;
+    const rnd = () => {
+      const x = Math.sin(seed++) * 10000;
+      return x - Math.floor(x);
+    };
     const points = new Float32Array(18 * 2 * 3);
     for (let i = 0; i < 18; i++) {
-      const x1 = (Math.random() - 0.5) * 16;
-      const y1 = (Math.random() - 0.5) * 12;
-      const z1 = -3 - Math.random() * 4;
+      const x1 = (rnd() - 0.5) * 16;
+      const y1 = (rnd() - 0.5) * 12;
+      const z1 = -3 - rnd() * 4;
 
-      const x2 = x1 + (Math.random() - 0.5) * 2.0;
-      const y2 = y1 + (Math.random() - 0.5) * 2.0;
-      const z2 = z1 + (Math.random() - 0.5) * 2.0;
+      const x2 = x1 + (rnd() - 0.5) * 2.0;
+      const y2 = y1 + (rnd() - 0.5) * 2.0;
+      const z2 = z1 + (rnd() - 0.5) * 2.0;
 
       const idx = i * 6;
       points[idx] = x1;
@@ -258,7 +279,7 @@ class CanvasErrorBoundary extends React.Component<
     return { hasError: true };
   }
 
-  componentDidCatch(error: any, errorInfo: any) {
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error("[CanvasErrorBoundary] Caught R3F rendering crash:", error, errorInfo);
   }
 

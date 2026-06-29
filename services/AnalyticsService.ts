@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { CONFIG } from '@/constants/config';
 
 export class AnalyticsService {
@@ -16,7 +17,7 @@ export class AnalyticsService {
   }: {
     visitorId: string;
     eventName: string;
-    eventData?: Record<string, any>;
+    eventData?: Prisma.InputJsonValue;
     url: string;
     referrer?: string | null;
     userAgent?: string | null;

@@ -10,12 +10,26 @@ export default async function LabsPage() {
   // Opt-out of static rendering for dynamic date queries
   await cookies();
 
+  interface SerializedLab {
+    id: string;
+    name: string;
+    slug: string;
+    description: string;
+    url: string | null;
+    githubUrl: string | null;
+    demoUrl: string | null;
+    mediaUrl: string | null;
+    status: string;
+    type: string;
+    techStack: string | null;
+  }
+
   const labs = await prisma.lab.findMany({
     orderBy: { createdAt: 'desc' },
   }).catch(() => []);
 
   // Format database labs or use mock fallback labs
-  const serializedLabs = labs.length > 0 ? labs.map((l: any) => ({
+  const serializedLabs: SerializedLab[] = labs.length > 0 ? labs.map((l) => ({
     id: l.id,
     name: l.name,
     slug: l.slug,
@@ -54,7 +68,7 @@ export default async function LabsPage() {
       type: 'tool',
       techStack: 'Next.js, Upstash, Redis, Tailwind',
     }
-  ] as any[];
+  ];
 
   return (
     <>

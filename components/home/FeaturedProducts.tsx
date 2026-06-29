@@ -9,7 +9,7 @@ export default async function FeaturedProducts() {
       status: 'active',
       featured: true,
       showOnHomepage: true,
-    } as any,
+    },
     include: {
       category: {
         select: {
@@ -30,7 +30,7 @@ export default async function FeaturedProducts() {
     },
     orderBy: {
       displayOrder: 'asc',
-    } as any,
+    },
   }).catch((err) => {
     console.error('[FeaturedProducts] Failed to fetch products:', err);
     return [];
@@ -41,7 +41,7 @@ export default async function FeaturedProducts() {
   }
 
   // Map to matching props type
-  const typedProducts = products.map((p: any) => ({
+  const typedProducts = products.map((p) => ({
     id: p.id,
     name: p.name,
     slug: p.slug,
@@ -54,7 +54,7 @@ export default async function FeaturedProducts() {
       name: p.category.name,
       slug: p.category.slug,
     },
-    technologies: p.technologies.map((t: any) => ({
+    technologies: p.technologies.map((t) => ({
       technology: {
         id: t.technology.id,
         name: t.technology.name,
