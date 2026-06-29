@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { ContactService } from '@/services/ContactService';
+import { verifyTurnstileToken } from '@/lib/turnstile';
 import { z } from 'zod';
 
 const contactSchema = z.object({
@@ -7,6 +8,7 @@ const contactSchema = z.object({
   email: z.string().email({ message: 'Invalid email address' }),
   subject: z.string().optional(),
   message: z.string().min(10, { message: 'Message must be at least 10 characters' }),
+  turnstileToken: z.string().min(1, { message: 'Security verification is required' }),
 });
 
 export async function POST(request: Request) {
@@ -22,7 +24,18 @@ export async function POST(request: Request) {
       );
     }
 
-    const { name, email, subject, message } = validation.data;
+    const { name, email, subject, message, turnstileToken } = validation.data;
+
+    // Verify Cloudflare Turnstile token
+    const ip = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for') || undefined;
+    const isValidToken = await verifyTurnstileToken(turnstileToken, ip);
+    if (!isValidToken) {
+      return NextResponse.json(
+        { success: false, error: 'Security verification failed. Please try again.' },
+        { status: 400 }
+      );
+    }
+
     const success = await ContactService.submitMessage({ name, email, subject, message });
 
     if (!success) {

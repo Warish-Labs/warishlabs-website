@@ -4,7 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Play, ExternalLink } from 'lucide-react';
+import { Play, ExternalLink } from 'lucide-react';
 import Github from '@/components/icons/GithubIcon';
 import { cn } from '@/utils/cn';
 
@@ -49,7 +49,7 @@ export default function LabCard({ lab }: LabCardProps) {
           <div className="w-full h-24 bg-gradient-to-br from-accent/5 via-blue-900/10 to-transparent border-b border-white/5 flex items-center justify-center relative select-none pointer-events-none">
             <div className="absolute inset-0 blueprint-grid opacity-[0.03]" />
             <span className="text-[10px] font-mono tracking-widest text-accent-subtle/50 uppercase">
-              // EXPERIMENTAL_WORKSPACE
+              {"// EXPERIMENTAL_WORKSPACE"}
             </span>
           </div>
         )}

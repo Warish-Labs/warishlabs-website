@@ -7,7 +7,7 @@ import ProductCard from './ProductCard';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Terminal, Search, SlidersHorizontal, RotateCcw } from 'lucide-react';
-import { cn } from '@/utils/cn';
+
 
 interface Category {
   id: string;
@@ -63,6 +63,7 @@ export default function ProductCatalog({ initialProducts, categories }: ProductC
   const [sortBy, setSortBy] = useState(sortParam);
 
   // Sync state if URL search parameters change
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setSearchQuery(searchParams.get('q') || '');
     setSelectedCategory(searchParams.get('category') || 'all');
@@ -70,6 +71,7 @@ export default function ProductCatalog({ initialProducts, categories }: ProductC
     setSelectedType(searchParams.get('type') || 'all');
     setSortBy(searchParams.get('sort') || 'default');
   }, [searchParams]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Update URL search parameters
   const updateParams = (updates: Record<string, string>) => {
@@ -151,7 +153,7 @@ export default function ProductCatalog({ initialProducts, categories }: ProductC
         <div className="flex items-center justify-between border-b border-white/8 pb-4">
           <div className="flex items-center gap-2 text-white">
             <SlidersHorizontal className="w-4 h-4 text-accent" />
-            <h3 className="text-xs font-bold uppercase tracking-wider">Console Filter Matrix</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wider">Sort & Filter Options</h3>
           </div>
           {(searchQuery || selectedCategory !== 'all' || selectedStatus !== 'all' || selectedType !== 'all' || sortBy !== 'default') && (
             <button
@@ -165,22 +167,26 @@ export default function ProductCatalog({ initialProducts, categories }: ProductC
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
           {/* Text Search Input */}
-          <div className="md:col-span-4 relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
-            <Input
-              type="text"
-              placeholder="Search specifications, stacks, names..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                updateParams({ q: e.target.value });
-              }}
-              className="pl-9 bg-black/40 border-white/10 text-white rounded-lg focus-visible:ring-accent"
-            />
+          <div className="md:col-span-4 space-y-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary block">Search Specifications</span>
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+              <Input
+                type="text"
+                placeholder="Search specifications, stacks, names..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  updateParams({ q: e.target.value });
+                }}
+                className="pl-9 bg-black/40 border-white/10 text-white rounded-lg focus-visible:ring-accent"
+              />
+            </div>
           </div>
 
           {/* Category Dropdown */}
-          <div className="md:col-span-2">
+          <div className="md:col-span-2 space-y-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary block">Category</span>
             <Select
               value={selectedCategory}
               onValueChange={(val) => {
@@ -188,7 +194,7 @@ export default function ProductCatalog({ initialProducts, categories }: ProductC
                 updateParams({ category: val || 'all' });
               }}
             >
-              <SelectTrigger className="bg-black/40 border-white/10 text-white rounded-lg">
+              <SelectTrigger className="bg-black/40 border-white/10 text-white rounded-lg w-full">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent className="bg-zinc-950 border-white/10 text-white">
@@ -203,7 +209,8 @@ export default function ProductCatalog({ initialProducts, categories }: ProductC
           </div>
 
           {/* Status Dropdown */}
-          <div className="md:col-span-2">
+          <div className="md:col-span-2 space-y-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary block">Status</span>
             <Select
               value={selectedStatus}
               onValueChange={(val) => {
@@ -211,7 +218,7 @@ export default function ProductCatalog({ initialProducts, categories }: ProductC
                 updateParams({ status: val || 'all' });
               }}
             >
-              <SelectTrigger className="bg-black/40 border-white/10 text-white rounded-lg">
+              <SelectTrigger className="bg-black/40 border-white/10 text-white rounded-lg w-full">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent className="bg-zinc-950 border-white/10 text-white">
@@ -224,7 +231,8 @@ export default function ProductCatalog({ initialProducts, categories }: ProductC
           </div>
 
           {/* Type Dropdown */}
-          <div className="md:col-span-2">
+          <div className="md:col-span-2 space-y-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary block">Type</span>
             <Select
               value={selectedType}
               onValueChange={(val) => {
@@ -232,7 +240,7 @@ export default function ProductCatalog({ initialProducts, categories }: ProductC
                 updateParams({ type: val || 'all' });
               }}
             >
-              <SelectTrigger className="bg-black/40 border-white/10 text-white rounded-lg">
+              <SelectTrigger className="bg-black/40 border-white/10 text-white rounded-lg w-full">
                 <SelectValue placeholder="Type" />
               </SelectTrigger>
               <SelectContent className="bg-zinc-950 border-white/10 text-white">
@@ -247,7 +255,8 @@ export default function ProductCatalog({ initialProducts, categories }: ProductC
           </div>
 
           {/* Sort Dropdown */}
-          <div className="md:col-span-2">
+          <div className="md:col-span-2 space-y-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary block">Sort Order</span>
             <Select
               value={sortBy}
               onValueChange={(val) => {
@@ -255,7 +264,7 @@ export default function ProductCatalog({ initialProducts, categories }: ProductC
                 updateParams({ sort: val || 'default' });
               }}
             >
-              <SelectTrigger className="bg-black/40 border-white/10 text-white rounded-lg">
+              <SelectTrigger className="bg-black/40 border-white/10 text-white rounded-lg w-full">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent className="bg-zinc-950 border-white/10 text-white">

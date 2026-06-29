@@ -8,22 +8,28 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
+import Turnstile from '@/components/ui/Turnstile';
 
 export default function ContactForm() {
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
   const [isPending, setIsPending] = useState(false);
   const [isSent, setIsSent] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.email || !formData.message) return;
+    if (!turnstileToken) {
+      toast.error('Security verification check incomplete.');
+      return;
+    }
 
     setIsPending(true);
     try {
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, turnstileToken }),
       });
 
       const data = await response.json();
@@ -32,6 +38,7 @@ export default function ContactForm() {
         setIsSent(true);
         toast.success('Your message was successfully transmitted.');
         setFormData({ name: '', email: '', subject: '', message: '' });
+        setTurnstileToken(null);
       } else {
         toast.error(data.error || 'Failed to submit. Please try again.');
       }
@@ -132,17 +139,28 @@ export default function ContactForm() {
                 className="bg-bg-primary border-border text-white text-xs focus:border-accent"
               />
             </div>
+
+            <Turnstile 
+              onVerify={(token) => setTurnstileToken(token)} 
+              onError={() => setTurnstileToken(null)}
+              onExpire={() => setTurnstileToken(null)}
+            />
           </CardContent>
 
-          <CardFooter className="pb-8 pt-4">
+          <CardFooter className="pb-8 pt-2 flex flex-col gap-2">
             <Button
               type="submit"
-              disabled={isPending}
-              className="w-full bg-accent hover:bg-accent-hover text-white py-5 font-semibold text-xs rounded-lg active:scale-[0.97] transition-all flex items-center justify-center gap-2 cursor-pointer"
+              disabled={isPending || !turnstileToken}
+              className="w-full bg-accent hover:bg-accent-hover disabled:bg-accent/40 disabled:text-white/60 text-white py-5 font-semibold text-xs rounded-lg active:scale-[0.97] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-accent"
             >
               {isPending ? 'Routing Message...' : 'Send Message'}
               {!isPending && <ArrowRight className="w-4 h-4" />}
             </Button>
+            <p className="text-[9px] text-text-tertiary text-center leading-relaxed">
+              Protected by Cloudflare Turnstile. By submitting this form, you agree to our{' '}
+              <a href="/privacy" className="hover:underline text-accent">Privacy Policy</a> and{' '}
+              <a href="/terms" className="hover:underline text-accent">Terms & Conditions</a>.
+            </p>
           </CardFooter>
         </form>
       )}

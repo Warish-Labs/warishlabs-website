@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { NewsletterService } from '@/services/NewsletterService';
+import { verifyTurnstileToken } from '@/lib/turnstile';
 import { z } from 'zod';
 
 const subscribeSchema = z.object({
   email: z.string().email({ message: 'Invalid email address' }),
+  turnstileToken: z.string().min(1, { message: 'Security verification is required' }),
 });
 
 export async function POST(request: Request) {
@@ -19,7 +21,18 @@ export async function POST(request: Request) {
       );
     }
 
-    const { email } = validation.data;
+    const { email, turnstileToken } = validation.data;
+
+    // Verify Cloudflare Turnstile token
+    const ip = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for') || undefined;
+    const isValidToken = await verifyTurnstileToken(turnstileToken, ip);
+    if (!isValidToken) {
+      return NextResponse.json(
+        { success: false, error: 'Security verification failed. Please try again.' },
+        { status: 400 }
+      );
+    }
+
     const result = await NewsletterService.subscribe(email);
 
     if (!result.success) {

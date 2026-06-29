@@ -15,9 +15,9 @@ export async function GET() {
       success: true,
       social: {
         githubUrl: config.githubUrl || 'https://github.com/warishlabs',
-        twitterUrl: config.twitterUrl || 'https://twitter.com/warishlabs',
-        linkedinUrl: config.linkedinUrl || 'https://linkedin.com/company/warishlabs',
-        youtubeUrl: config.youtubeUrl || 'https://youtube.com/@warishlabs',
+        twitterUrl: config.twitterUrl || '',
+        linkedinUrl: config.linkedinUrl || '',
+        youtubeUrl: config.youtubeUrl || '',
       }
     });
   } catch (error) {

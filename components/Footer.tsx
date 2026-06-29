@@ -3,17 +3,19 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ROUTES } from '@/constants/routes';
-import { ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Mail, ExternalLink } from 'lucide-react';
 import Github from '@/components/icons/GithubIcon';
 import { Twitter, Linkedin, Youtube } from '@/components/icons/SocialIcons';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import Turnstile from '@/components/ui/Turnstile';
 
 export default function Footer() {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [socialLinks, setSocialLinks] = useState<{
     githubUrl: string;
     twitterUrl: string;
@@ -39,6 +41,10 @@ export default function Footer() {
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
+    if (!turnstileToken) {
+      toast.error('Security verification check incomplete.');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -47,7 +53,7 @@ export default function Footer() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, turnstileToken }),
       });
 
       const data = await response.json();
@@ -56,6 +62,7 @@ export default function Footer() {
         setIsSubscribed(true);
         toast.success(data.message || 'Thank you for subscribing!');
         setEmail('');
+        setTurnstileToken(null);
       } else {
         toast.error(data.error || 'Failed to subscribe. Please try again.');
       }
@@ -70,87 +77,138 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-bg-secondary border-t border-border mt-auto select-none">
-      <div className="container mx-auto px-6 py-12 max-w-7xl">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-          {/* Logo & Tagline column */}
+    <footer className="bg-bg-secondary border-t border-border mt-auto select-none relative overflow-hidden">
+      {/* Decorative Grid Backdrop */}
+      <div className="absolute inset-0 blueprint-grid opacity-[0.01] pointer-events-none" />
+
+      <div className="container mx-auto px-6 py-16 max-w-7xl relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-10 items-start">
+          {/* Logo & Description (4 cols) */}
           <div className="md:col-span-4 space-y-4">
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2 group">
               <img 
                 src="/logo.gif" 
                 alt="WarishLabs Logo" 
-                className="w-8 h-8 rounded-lg" 
+                className="w-8 h-8 rounded-lg group-hover:scale-105 transition-transform duration-300 border border-border/40" 
               />
-              <span className="font-extrabold text-white tracking-wide">
+              <span className="font-extrabold text-white tracking-wide text-lg group-hover:text-accent transition-colors duration-300">
                 WarishLabs
               </span>
             </Link>
-            <p className="text-text-secondary text-sm max-w-xs leading-relaxed">
-              Engineering-first laboratory building immersive 3D interfaces, high-performance distributed systems, and developer tools.
+            <p className="text-text-secondary text-xs leading-relaxed max-w-xs">
+              Engineering-first laboratory building immersive 3D interfaces, high-performance distributed systems, and developer tools built with precision.
             </p>
           </div>
 
-          {/* Quick Links Column */}
-          <div className="md:col-span-3 space-y-3">
+          {/* Products (2 cols) */}
+          <div className="md:col-span-2 space-y-3">
             <h4 className="text-[10px] uppercase font-bold tracking-widest text-text-tertiary">
-              Resources
+              Products
             </h4>
             <ul className="space-y-2">
               <li>
-                <Link href={ROUTES.PRODUCTS} className="text-sm text-text-secondary hover:text-white transition-colors">
-                  Products Spotlight
+                <Link href="/products/warishlabs-cloud" className="text-xs text-text-secondary hover:text-white transition-colors flex items-center gap-1 group">
+                  Cloud Platform <ExternalLink className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Link>
               </li>
               <li>
-                <Link href={ROUTES.LABS} className="text-sm text-text-secondary hover:text-white transition-colors">
-                  Labs Experiments
-                </Link>
-              </li>
-              <li>
-                <Link href={ROUTES.BLOG} className="text-sm text-text-secondary hover:text-white transition-colors">
-                  Engineering Blog
-                </Link>
-              </li>
-              <li>
-                <Link href={ROUTES.ABOUT} className="text-sm text-text-secondary hover:text-white transition-colors">
-                  About the Lab
+                <Link href="/products/antigravity-engine" className="text-xs text-text-secondary hover:text-white transition-colors flex items-center gap-1 group">
+                  Antigravity Engine <ExternalLink className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Newsletter Column */}
-          <div className="md:col-span-5 space-y-4">
+          {/* Company (2 cols) */}
+          <div className="md:col-span-2 space-y-3">
             <h4 className="text-[10px] uppercase font-bold tracking-widest text-text-tertiary">
-              Newsletter Subscription
+              Company
             </h4>
-            <p className="text-text-secondary text-sm leading-relaxed">
-              Subscribe to receive technical bulletins, product case studies, and releases.
-            </p>
+            <ul className="space-y-2">
+              <li>
+                <Link href={ROUTES.ABOUT} className="text-xs text-text-secondary hover:text-white transition-colors">
+                  About Lab
+                </Link>
+              </li>
+              <li>
+                <Link href={ROUTES.CONTACT} className="text-xs text-text-secondary hover:text-white transition-colors">
+                  Contact Us
+                </Link>
+              </li>
+              <li>
+                <Link href={ROUTES.BLOG} className="text-xs text-text-secondary hover:text-white transition-colors">
+                  Engineering Blog
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Resources (2 cols) */}
+          <div className="md:col-span-2 space-y-3">
+            <h4 className="text-[10px] uppercase font-bold tracking-widest text-text-tertiary">
+              Legal Compliance
+            </h4>
+            <ul className="space-y-2 text-xs">
+              <li>
+                <Link href="/privacy" className="text-text-secondary hover:text-white transition-colors">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" className="text-text-secondary hover:text-white transition-colors">
+                  Terms & Conditions
+                </Link>
+              </li>
+              <li>
+                <Link href="/cookies" className="text-text-secondary hover:text-white transition-colors">
+                  Cookie Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/disclaimer" className="text-text-secondary hover:text-white transition-colors">
+                  General Disclaimer
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Newsletter Column (2 cols) */}
+          <div className="md:col-span-2 space-y-4">
+            <h4 className="text-[10px] uppercase font-bold tracking-widest text-text-tertiary">
+              Bulletins
+            </h4>
             
             {isSubscribed ? (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs">
-                <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <p>Welcome to the bulletin list! Check your inbox shortly.</p>
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] leading-relaxed">
+                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                <p>Mailing list active. Check inbox.</p>
               </div>
             ) : (
-              <form onSubmit={handleSubscribe} className="flex gap-2">
-                <Input
-                  type="email"
-                  placeholder="name@company.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={isSubmitting}
-                  className="bg-bg-primary border-border text-white text-xs max-w-[260px] focus:border-accent"
+              <form onSubmit={handleSubscribe} className="space-y-3">
+                <div className="flex gap-2">
+                  <Input
+                    type="email"
+                    placeholder="name@company.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={isSubmitting}
+                    className="bg-bg-primary border-border text-white text-[10px] max-w-[160px] focus:border-accent h-8"
+                  />
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting || !turnstileToken}
+                    className="bg-accent hover:bg-accent-hover text-white active:scale-[0.97] transition-all rounded-lg px-3 h-8 cursor-pointer shadow-accent"
+                  >
+                    {isSubmitting ? '...' : <ArrowRight className="w-3.5 h-3.5" />}
+                  </Button>
+                </div>
+                
+                <Turnstile 
+                  onVerify={(token) => setTurnstileToken(token)} 
+                  onError={() => setTurnstileToken(null)}
+                  onExpire={() => setTurnstileToken(null)}
                 />
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="bg-accent hover:bg-accent-hover text-white active:scale-[0.97] transition-all rounded-lg px-4"
-                >
-                  {isSubmitting ? '...' : <ArrowRight className="w-4 h-4" />}
-                </Button>
               </form>
             )}
           </div>
@@ -158,10 +216,13 @@ export default function Footer() {
 
         {/* Footer bottom */}
         <div className="mt-12 pt-8 border-t border-border/40 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-text-tertiary">
-            © {currentYear} WarishLabs. All rights reserved.
+          <p className="text-[10px] text-text-tertiary">
+            © {currentYear} WarishLabs. All rights reserved. Built with precision.
           </p>
-          <div className="flex items-center gap-4 md:gap-6">
+          <div className="flex items-center gap-4 md:gap-5">
+            <a href="mailto:contact@warishlabs.in" className="text-text-tertiary hover:text-white transition-colors" title="Email Support">
+              <Mail className="w-4 h-4" />
+            </a>
             {socialLinks?.githubUrl && (
               <a href={socialLinks.githubUrl} target="_blank" rel="noopener noreferrer" className="text-text-tertiary hover:text-white transition-colors" title="GitHub">
                 <Github className="w-4 h-4" />
@@ -182,8 +243,8 @@ export default function Footer() {
                 <Youtube className="w-4 h-4" />
               </a>
             )}
-            <span className="text-xs text-text-tertiary border-l border-white/10 pl-4">
-              Constructed with Precision
+            <span className="text-[10px] text-text-tertiary border-l border-white/10 pl-4">
+              Canonical: warishlabs.in
             </span>
           </div>
         </div>

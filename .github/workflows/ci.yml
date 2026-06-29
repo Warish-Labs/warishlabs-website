@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+        env:
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/warishlabs"
+
+      - name: Run Linter
+        run: npm run lint
+
+      - name: Run Type Check
+        run: npm run typecheck
+
+      - name: Run Unit Tests
+        run: npm run test:run
+
+      - name: Build Application
+        run: npm run build
+        env:
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: "0x4AAAAAADsxz5P51f_8YIzF"
+          TURNSTILE_SECRET_KEY: "0x4AAAAAADsxz-HxuOKAZFRRmbjVTyO18tQ"
+          NEXT_PUBLIC_ADMIN_EMAIL: "warishlabs@gmail.com"
+          CLERK_SECRET_KEY: "sk_test_mock"
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_mock"

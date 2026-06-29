@@ -1,7 +1,7 @@
 # brain.md — WarishLabs Website
 
 > **Last Updated:** 2026-06-29
-> **Status:** Production-Ready (Compiled, Security-Hardened & Tested)
+> **Status:** Production-Ready (Compiled, Security-Hardened, Monitored & Tested)
 
 ---
 
@@ -9,7 +9,7 @@
 
 WarishLabs is a modern, CMS-driven software laboratory profile presenting SaaS tools, open source contributions, and visual canvas sandboxes.
 
-- **Stack:** Next.js 16 (App Router, Turbopack), React 19, TypeScript, Prisma ORM, PostgreSQL (Neon), Clerk SSO, Cloudinary, Resend transactional mail, Upstash Redis.
+- **Stack:** Next.js 16 (App Router, Turbopack), React 19, TypeScript, Prisma ORM, PostgreSQL (Neon), Clerk SSO, Cloudinary, Resend transactional mail, Upstash Redis, Sentry SDK, Microsoft Clarity, Cloudflare Turnstile.
 - **Base Style:** Slate Blue/Black glassmorphism cards and smooth custom micro-animations (Framer Motion).
 - **Core Visuals:** Absolute full-bleed WebGL 3D canvas rendering mouse-reactive particle field layers (repulsion threshold < 2.5), orbital tori, data nodes, and scrolling lattice grid.
 
@@ -29,38 +29,61 @@ Core pages are modular and editable from the **System Settings** dashboard panel
 
 ---
 
-## 3. Rate-Limiting & Security Parameters
+## 3. Authentication & Middleware Router
 
-- **Sliding-Window Rate Limiter:** Built on Upstash Redis REST client (`@upstash/ratelimit`) matching endpoint keys:
+To comply with Vercel's Edge runtime constraints and enable seamless administrative logins:
+
+- **Middleware routing (`proxy.ts`)**:
+  - The middleware is built on Clerk's `clerkMiddleware()` hook.
+  - Next.js 16 deprecated `middleware.ts` in favor of `proxy.ts`. We conform to this convention to ensure clean builds.
+  - Automatically manages public and protected routes. Any request targeting `/admin/*` (except `/admin/login`) requires an active Clerk session (`userId` verification) or redirects directly to sign-in.
+  - Generates and signs secure visitor tracking IDs in cookies (`warishlabs_visitor_id`).
+  - Sets Content-Security-Policy (CSP) headers tailored for Google Tag Manager, Vercel Insights, Cloudinary assets, Turnstile verification script, Microsoft Clarity, and Clerk's SSO servers.
+  - **No database queries** are made in the middleware to prevent Edge runtime database driver compilation crashes. Database-level owner validation is securely delegated to Server Components and admin API endpoints via `requireAdmin()`.
+
+---
+
+## 4. Rate-Limiting & Security Hardening
+
+- **Sliding-Window Rate Limiter:** Checked within `proxy.ts` using Upstash Redis REST client (`@upstash/ratelimit`) matching endpoint keys:
   - `/api/contact`: Max 5 requests per hour.
   - `/api/newsletter/subscribe`: Max 5 requests per hour.
   - `/api/search`: Max 30 requests per minute.
   - `/api/analytics/event`: Max 60 requests per minute.
   - `/api/admin/*`: Protected with strict administrative rate limits (Max 60 requests per minute).
 - **Local Fallback:** Falls back automatically to local in-memory token bucket rate limiters in development (or if Upstash variables are absent) to keep serverless functions working.
-- **Security Headers & CSP:** Sets frames denial (`X-Frame-Options: DENY`), mime sniffing guards (`X-Content-Type-Options: nosniff`), Referrer Policy, and strict Content-Security-Policy (CSP) headers including Clerk's SSO proxies and Google Tag Manager.
+- **Security Headers & CSP:** Sets frames denial (`X-Frame-Options: DENY`), mime sniffing guards (`X-Content-Type-Options: nosniff`), Referrer Policy, HSTS, Permissions-Policy (disabling sensors/geolocation), and Cross-Origin policies (COOP, COEP, CORP) matching modern security ratings.
 - **XSS Sanitization:** All dynamic description and content injections are sanitized with `isomorphic-dompurify` prior to dangerouslySetInnerHTML rendering.
 
 ---
 
-## 4. Media & Cloudinary Sync Pipeline
+## 5. Captcha Verification (Cloudflare Turnstile)
 
-- **Media Service:** Image and video uploads are routed folder-wise to `warishlabs/products` and `warishlabs/labs` subdirectories.
-- **Cloud Asset Registry Sync:** Accessible from `/admin/media`, the synchronization utility fetches all remote Cloudinary assets directly, imports missing ones into the local database, and prunes stale references that no longer exist on the cloud.
-- **Cleanup Sync:** Prior to deleting a Product DB record, URL parsing extracts the Cloudinary `publicId` paths via regex-URL parser, executes `cloudinary.uploader.destroy()`, and then removes the SQL records.
-
----
-
-## 5. Communications & Campaign Composer
-
-- **Message Inbound Reply Tool:** Inbound queries from visitors can be responded to directly from `/admin/messages`. Custom responses dispatch HTML formatted emails with original messages embedded through Resend.
-- **Newsletter Broadcast Campaigns:** Composes rich custom HTML campaigns in the newsletter dashboard and broadcasts them to all active opt-in audiences using Resend's high-speed batch mailing endpoint.
-- **Audience Export:** Generates downloadable client-side CSV files containing subscriber registries (emails, active states, sign up dates).
+- **Reusable Component (`components/ui/Turnstile.tsx`):** Renders Turnstile widget client-side with script injection and dark theme matching the design, resetting on submission success or expiry.
+- **Form Protection:** Contact Form (`ContactForm.tsx`), Newsletter Section (`NewsletterCTA.tsx`), and Footer bulletin subscriptions are protected. Submit buttons are locked until verification completes.
+- **Server Verification (`lib/turnstile.ts`):** Validates the token against Cloudflare`s `siteverify` API on POST request processing, rejecting unauthorized, empty, or expired tokens.
 
 ---
 
-## 6. Verification Commands & Testing
+## 6. Real-time Monitoring & Observability
 
-- **Compilation check:** `npx tsc --noEmit` compiles cleanly.
-- **Build check:** `npm run build` generates production assets successfully.
-- **Vitest specs:** `npm run test:run` runs unit tests for slugification, dates formatting, mocked email dispatchers, and mocked canvas render suites. All 13 test suites execute and pass cleanly.
+- **Sentry SDK:** Error reporting and profiling client-side, server-side, and on edge runtimes. Bypasses ad-blockers using a rewritten `/monitoring` tunnel route.
+- **Microsoft Clarity (`components/Clarity.tsx`):** Captures high-fidelity session replays and heatmaps in production. Dynamically loaded client-side to prevent SSR window reference crashes.
+
+---
+
+## 7. Legal Compliance & Footer
+
+- **Privacy Policy (`/privacy`):** Fully drafted documentation specifying collected data and service vendors (Clerk, GA, Resend, Cloudinary, Neon, Upstash, Sentry).
+- **Terms & Conditions (`/terms`):** Outlines usage guidelines, user responsibilities, and intellectual property conditions.
+- **Cookie Policy (`/cookies`):** Explains cookie types, retention details, and management options.
+- **Disclaimer (`/disclaimer`):** General portfolio disclaimer for testing sandboxes and SaaS tools.
+- **Redesigned Footer (`Footer.tsx`):** Links resources, company info, actual products, and social media channels. Prevents crawl 404s by defaulting unconfigured social handles to empty strings.
+
+---
+
+## 8. CI/CD GitHub Pipeline Setup
+
+- **Automated Workflow (`.github/workflows/ci.yml`):** Runs typecheck, linting, tests, and production build checks using Node.js 22 and npm caching on push/PRs.
+- **Dependabot (`.github/dependabot.yml`):** Weekly audits for npm packages and GHA updates.
+- **Templates:** PR templates, bug reports, feature requests, and `CODEOWNERS` are established.

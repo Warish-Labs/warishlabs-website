@@ -1,12 +1,8 @@
 import { clerkMiddleware } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
-import type { NextRequest, NextFetchEvent } from 'next/server';
-import { validateSession } from '@/lib/auth';
 import { CONFIG } from '@/constants/config';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
-
-const clerk = clerkMiddleware();
 
 // 1. Upstash Redis Setup (if env variables exist)
 let redisClient: Redis | null = null;
@@ -60,20 +56,20 @@ async function checkRateLimit(ip: string, category: string, limit: number, windo
 }
 
 /**
- * Next.js 16 Proxy
+ * Next.js 16 Proxy (Middleware) with Clerk SSO & Security features
  */
-export async function proxy(request: NextRequest, event: NextFetchEvent) {
+export default clerkMiddleware(async (auth, request) => {
   const { pathname } = request.nextUrl;
 
-  const clerkResponse = await clerk(request, event);
-  if (clerkResponse && clerkResponse.headers.get('x-middleware-next') !== '1') {
-    return clerkResponse;
+  // Immediately bypass Sentry monitoring tunnel route
+  if (pathname.startsWith('/monitoring')) {
+    return NextResponse.next();
   }
-  
-  let response = (clerkResponse as NextResponse) || NextResponse.next();
 
   // 1. Visitor Tracking (Set UUID if not present)
   let visitorId = request.cookies.get(CONFIG.VISITOR_COOKIE_NAME)?.value;
+  const response = NextResponse.next();
+
   if (!visitorId) {
     visitorId = crypto.randomUUID();
     response.cookies.set(CONFIG.VISITOR_COOKIE_NAME, visitorId, {
@@ -86,9 +82,9 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   }
 
   // 2. Admin Authentication
-  if (pathname.startsWith('/admin') && !pathname.startsWith('/admin/login')) {
-    const admin = await validateSession();
-    if (!admin) {
+  if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
+    const clerkAuth = await auth();
+    if (!clerkAuth.userId) {
       return NextResponse.redirect(new URL('/admin/login', request.url));
     }
   }
@@ -120,37 +116,37 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  response.headers.set('Permissions-Policy', 'accelerometer=(), autoplay=(), camera=(), display-capture=(), encrypted-media=(), fullscreen=(self), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), publickey-credentials-get=(self), screen-wake-lock=(), usb=(), web-share=(self)');
+  response.headers.set('Cross-Origin-Embedder-Policy', 'credentialless');
+  response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
+  response.headers.set('Cross-Origin-Resource-Policy', 'same-origin');
   
   // Content Security Policy
+  const isProd = process.env.NODE_ENV === 'production';
   const csp = `
     default-src 'self';
-    script-src 'self' 'unsafe-inline' 'unsafe-eval' *.clerk.accounts.dev clerk.warishlabs.in https://www.googletagmanager.com;
+    script-src 'self' ${isProd ? '' : "'unsafe-eval'"} 'unsafe-inline' *.clerk.accounts.dev clerk.warishlabs.in https://www.googletagmanager.com https://challenges.cloudflare.com https://www.clarity.ms;
     style-src 'self' 'unsafe-inline';
-    img-src 'self' data: blob: res.cloudinary.com img.clerk.com *.clerk.accounts.dev;
+    img-src 'self' data: blob: res.cloudinary.com img.clerk.com *.clerk.accounts.dev https://www.google-analytics.com https://*.clarity.ms https://*.bing.com;
     media-src 'self' data: blob: res.cloudinary.com;
-    connect-src 'self' *.clerk.accounts.dev clerk.warishlabs.in https://api.clerk.com https://vitals.vercel-insights.com;
+    connect-src 'self' *.clerk.accounts.dev clerk.warishlabs.in https://api.clerk.com https://vitals.vercel-insights.com https://challenges.cloudflare.com https://*.clarity.ms https://*.bing.com https://www.google-analytics.com;
     font-src 'self' data:;
     object-src 'none';
     frame-ancestors 'none';
+    frame-src 'self' https://challenges.cloudflare.com;
     worker-src 'self' blob:;
     upgrade-insecure-requests;
   `.replace(/\s+/g, ' ').trim();
   
   response.headers.set('Content-Security-Policy', csp);
 
-  if (process.env.NODE_ENV === 'production') {
-    response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
-  }
-
   return response;
-}
-
-// Export default for environments looking for default exports
-export default proxy;
+});
 
 export const config = {
   matcher: [
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/((?!monitoring|_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
     '/__clerk/:path*',
     '/(api|trpc)(.*)',
   ],

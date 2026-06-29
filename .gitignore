@@ -50,3 +50,5 @@ next-env.d.ts
 .vscode/
 *.swp
 *.log
+# Sentry Config File
+.env.sentry-build-plugin
