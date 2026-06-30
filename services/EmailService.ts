@@ -3,14 +3,14 @@ import { Resend } from 'resend';
 // Initialize Resend with safety check
 const resendApiKey = process.env.RESEND_API_KEY;
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
-const fromEmail = 'WarishLabs <noreply@warishlabs.com>';
+const fromEmail = 'WarishLabs <noreply@warishlabs.in>';
 
 export class EmailService {
   /**
    * Sends an email notification to the site administrator when a contact form is submitted
    */
   static async sendContactEmail(name: string, email: string, subject: string, message: string): Promise<boolean> {
-    const adminEmail = process.env.ADMIN_EMAIL || 'admin@warishlabs.com';
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@warishlabs.in';
     const emailSubject = `[Contact Form] ${subject || 'New Message from ' + name}`;
     
     const htmlContent = `
@@ -65,7 +65,7 @@ export class EmailService {
         <p><strong>The WarishLabs Team</strong></p>
         <hr style="border: none; border-top: 1px solid #eee; margin-top: 30px;" />
         <p style="font-size: 12px; color: #666;">
-          You are receiving this because you subscribed at warishlabs.com. 
+          You are receiving this because you subscribed at warishlabs.in. 
           If this was a mistake, you can <a href="${unsubscribeUrl}" target="_blank">unsubscribe here</a>.
         </p>
       </div>
