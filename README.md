@@ -10,7 +10,6 @@
 > Seriousness in Engineering, Modern Product Thinking. An engineering-first software laboratory showcasing premium SaaS platforms, developer tools, and interactive WebGL canvas playgrounds.
 
 **Live URL:** [https://warishlabs.in/](https://warishlabs.in/)  
-**Canonical Domain:** [warishlabs.in](https://warishlabs.in/)
 
 ---
 
