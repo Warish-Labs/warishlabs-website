@@ -4,8 +4,6 @@
 
 # WarishLabs Website
 
-[![CI](https://github.com/warishlabs/warishlabs-website/actions/workflows/ci.yml/badge.svg)](https://github.com/warishlabs/warishlabs-website/actions/workflows/ci.yml)
-[![Vercel Deployment](https://therealsujitk-vercel-badge.vercel.app/?app=warishlabs)](https://warishlabs.vercel.app/)
 
 > Seriousness in Engineering, Modern Product Thinking. An engineering-first software laboratory showcasing premium SaaS platforms, developer tools, and interactive WebGL canvas playgrounds.
 
