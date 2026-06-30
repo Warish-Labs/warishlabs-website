@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ROUTES } from '@/constants/routes';
-import { ArrowRight, CheckCircle2, Mail, ExternalLink } from 'lucide-react';
-import Github from '@/components/icons/GithubIcon';
+import { ArrowRight, CheckCircle2, ExternalLink } from 'lucide-react';
 import { Twitter, Linkedin, Youtube } from '@/components/icons/SocialIcons';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,18 @@ export default function Footer() {
     linkedinUrl: string;
     youtubeUrl: string;
   } | null>(null);
+
+  const handleVerify = useCallback((token: string) => {
+    setTurnstileToken(token);
+  }, []);
+
+  const handleError = useCallback(() => {
+    setTurnstileToken(null);
+  }, []);
+
+  const handleExpire = useCallback(() => {
+    setTurnstileToken(null);
+  }, []);
 
   useEffect(() => {
     async function loadSocial() {
@@ -87,10 +99,12 @@ export default function Footer() {
           {/* Logo & Description (4 cols) */}
           <div className="md:col-span-4 space-y-4">
             <Link href="/" className="flex items-center gap-2 group">
-              <img 
+              <Image 
                 src="/logo.gif" 
                 alt="WarishLabs Logo" 
-                className="w-8 h-8 rounded-lg group-hover:scale-105 transition-transform duration-300 border border-border/40" 
+                width={32}
+                height={32}
+                className="rounded-lg group-hover:scale-105 transition-transform duration-300 border border-border/40" 
               />
               <span className="font-extrabold text-white tracking-wide text-lg group-hover:text-accent transition-colors duration-300">
                 WarishLabs
@@ -215,9 +229,9 @@ export default function Footer() {
                 
                 {hasInteracted && (
                   <Turnstile 
-                    onVerify={(token) => setTurnstileToken(token)} 
-                    onError={() => setTurnstileToken(null)}
-                    onExpire={() => setTurnstileToken(null)}
+                    onVerify={handleVerify} 
+                    onError={handleError}
+                    onExpire={handleExpire}
                   />
                 )}
               </form>

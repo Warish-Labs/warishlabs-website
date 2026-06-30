@@ -5,13 +5,13 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { BlogService } from '@/services/BlogService';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, Calendar, User, Clock, ArrowRight } from 'lucide-react';
 import { formatDate } from '@/utils/formatters';
 import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
 import NewsletterCTA from '@/components/shared/NewsletterCTA';
-import DOMPurify from 'isomorphic-dompurify';
+import { sanitizeServer } from '@/lib/sanitize';
 import { Metadata } from 'next';
 
 interface BlogDetailPageProps {
@@ -123,6 +123,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
           {/* Cover Image */}
           {post.coverImage && (
             <div className="w-full h-80 md:h-[420px] rounded-2xl overflow-hidden border border-white/10 select-none pointer-events-none">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover" />
             </div>
           )}
@@ -130,7 +131,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
           {/* Article Body */}
           <Card className="glass-panel border-border shadow-card overflow-hidden">
             <CardContent className="pt-8 px-6 md:px-10 prose prose-invert max-w-none text-text-secondary text-sm leading-relaxed space-y-4">
-              <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }} />
+              <div dangerouslySetInnerHTML={{ __html: sanitizeServer(post.content) }} />
             </CardContent>
           </Card>
 

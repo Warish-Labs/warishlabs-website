@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,18 @@ export default function ContactForm() {
   const [isSent, setIsSent] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [hasInteracted, setHasInteracted] = useState(false);
+
+  const handleVerify = useCallback((token: string) => {
+    setTurnstileToken(token);
+  }, []);
+
+  const handleError = useCallback(() => {
+    setTurnstileToken(null);
+  }, []);
+
+  const handleExpire = useCallback(() => {
+    setTurnstileToken(null);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,9 +162,9 @@ export default function ContactForm() {
 
             {hasInteracted && (
               <Turnstile 
-                onVerify={(token) => setTurnstileToken(token)} 
-                onError={() => setTurnstileToken(null)}
-                onExpire={() => setTurnstileToken(null)}
+                onVerify={handleVerify} 
+                onError={handleError}
+                onExpire={handleExpire}
               />
             )}
           </CardContent>

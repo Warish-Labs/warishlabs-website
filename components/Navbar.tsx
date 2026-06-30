@@ -9,6 +9,7 @@ import { Search, Menu, X } from 'lucide-react';
 import { buttonVariants } from '@/components/ui/button';
 import SearchPanel from './SearchPanel';
 import { useUser } from '@clerk/nextjs';
+import Image from 'next/image';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -55,10 +56,12 @@ export default function Navbar() {
         <div className="container mx-auto px-6 h-full max-w-7xl flex items-center justify-between">
           {/* Logo Brand using logo.gif */}
           <Link href="/" className="flex items-center gap-2 group">
-            <img 
+            <Image 
               src="/logo.gif" 
               alt="WarishLabs Logo" 
-              className="w-8 h-8 rounded-lg group-hover:scale-105 transition-all duration-200" 
+              width={32}
+              height={32}
+              className="rounded-lg group-hover:scale-105 transition-all duration-200" 
             />
             <span className="font-extrabold text-white tracking-wide">
               WarishLabs

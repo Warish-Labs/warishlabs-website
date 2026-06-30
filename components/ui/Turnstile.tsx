@@ -24,6 +24,7 @@ declare global {
         }
       ) => string;
       reset: (widgetId: string) => void;
+      remove: (widgetId: string) => void;
     };
   }
 }
@@ -36,6 +37,12 @@ export default function Turnstile({
 }: TurnstileProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
+  const callbacksRef = useRef({ onVerify, onError, onExpire });
+
+  // Always keep callback references up to date
+  useEffect(() => {
+    callbacksRef.current = { onVerify, onError, onExpire };
+  }, [onVerify, onError, onExpire]);
 
   useEffect(() => {
     const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
@@ -44,18 +51,23 @@ export default function Turnstile({
       return;
     }
 
+    let isMounted = true;
+
     const initTurnstile = () => {
-      if (containerRef.current && window.turnstile) {
+      if (!isMounted) return;
+      if (containerRef.current && window.turnstile && !widgetIdRef.current) {
         try {
-          // If a widget was already rendered, reset it first
-          if (widgetIdRef.current) {
-            window.turnstile.reset(widgetIdRef.current);
-          }
           const id = window.turnstile.render(containerRef.current, {
             sitekey: siteKey,
-            callback: onVerify,
-            'error-callback': onError,
-            'expired-callback': onExpire,
+            callback: (token) => {
+              if (isMounted) callbacksRef.current.onVerify(token);
+            },
+            'error-callback': (err) => {
+              if (isMounted) callbacksRef.current.onError?.(err);
+            },
+            'expired-callback': () => {
+              if (isMounted) callbacksRef.current.onExpire?.();
+            },
             theme,
           });
           widgetIdRef.current = id;
@@ -83,12 +95,22 @@ export default function Turnstile({
     }
 
     return () => {
+      isMounted = false;
       // Clean up callback reference
       if (window.onloadTurnstileCallback) {
         delete window.onloadTurnstileCallback;
       }
+      // Remove widget from Cloudflare Turnstile if initialized
+      if (widgetIdRef.current && window.turnstile) {
+        try {
+          window.turnstile.remove(widgetIdRef.current);
+        } catch (err) {
+          console.error('[Turnstile] Cleanup error:', err);
+        }
+        widgetIdRef.current = null;
+      }
     };
-  }, [onVerify, onError, onExpire, theme]);
+  }, [theme]); // Only recreate widget if theme changes
 
   return (
     <div 

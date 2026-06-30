@@ -43,6 +43,7 @@ export default function LabCard({ lab }: LabCardProps) {
         {/* Screenshot Banner / Ambient Graphic Placeholder */}
         {lab.mediaUrl ? (
           <div className="w-full h-44 overflow-hidden relative border-b border-white/5 select-none pointer-events-none">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={lab.mediaUrl} alt={lab.name} className="w-full h-full object-cover" />
           </div>
         ) : (

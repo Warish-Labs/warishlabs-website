@@ -3,10 +3,9 @@
 import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight } from 'lucide-react';
-import { cn } from '@/utils/cn';
 
 interface BlogPost {
   id: string;
@@ -61,6 +60,7 @@ export default function LatestBlogPostsList({ posts }: LatestBlogPostsListProps)
           >
             {post.coverImage && (
               <div className="w-full h-48 overflow-hidden relative border-b border-white/5 select-none pointer-events-none">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={post.coverImage}
                   alt={post.title}

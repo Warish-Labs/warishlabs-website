@@ -5,10 +5,16 @@ import { vi } from 'vitest';
 global.fetch = vi.fn().mockImplementation((url: string) => {
   if (url === '/api/stats') {
     return Promise.resolve({
+      ok: true,
+      status: 200,
+      headers: new Headers(),
       json: () => Promise.resolve({ success: true, products: 4, visitors: 120 }),
-    });
+    } as unknown as Response);
   }
   return Promise.resolve({
+    ok: true,
+    status: 200,
+    headers: new Headers(),
     json: () => Promise.resolve({ success: true }),
-  });
+  } as unknown as Response);
 });

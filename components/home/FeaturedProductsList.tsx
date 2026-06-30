@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, ExternalLink } from 'lucide-react';
 import { cn } from '@/utils/cn';
-import DOMPurify from 'isomorphic-dompurify';
+import { sanitizeClient } from '@/lib/sanitize-client';
 
 interface Product {
   id: string;
@@ -97,6 +97,7 @@ export default function FeaturedProductsList({ products }: FeaturedProductsListP
                   </div>
                   {product.logoUrl ? (
                     <div className="w-10 h-10 rounded border border-white/10 bg-black/40 flex items-center justify-center p-1.5 overflow-hidden shadow-sm shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={product.logoUrl} alt={`${product.name} Logo`} className="w-full h-full object-contain" />
                     </div>
                   ) : (
@@ -118,7 +119,7 @@ export default function FeaturedProductsList({ products }: FeaturedProductsListP
                 {/* Description snippet */}
                 <div 
                   className="text-text-tertiary text-xs leading-relaxed max-w-prose mb-6 line-clamp-3"
-                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(product.description) }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeClient(product.description) }}
                 />
 
                 {/* Tech tags and action links */}

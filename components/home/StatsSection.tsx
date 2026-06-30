@@ -62,7 +62,7 @@ export default function StatsSection() {
     fetchStats();
   }, []);
 
-  const stats = [
+  const stats: StatItem[] = [
     { value: statsData?.products || 0, label: 'Active Projects', suffix: '+' },
     { value: statsData?.visitors || 0, label: 'Total Site Visitors', suffix: '+' },
     { value: statsData?.labs || 0, label: 'Sandbox Experiments', suffix: '+' },
