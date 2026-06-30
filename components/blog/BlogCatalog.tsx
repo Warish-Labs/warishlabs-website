@@ -3,11 +3,11 @@
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Terminal, Search, SlidersHorizontal, RotateCcw, Calendar, ArrowRight, BookOpen } from 'lucide-react';
+import { Terminal, Search, SlidersHorizontal, RotateCcw, ArrowRight } from 'lucide-react';
 import NewsletterCTA from '../shared/NewsletterCTA';
 import { cn } from '@/utils/cn';
 
@@ -145,6 +145,7 @@ export default function BlogCatalog({ initialPosts }: BlogCatalogProps) {
             <Card className="glass-panel border border-white/10 bg-white/5 backdrop-blur-sm overflow-hidden hover:border-accent/40 transition-all duration-350 cursor-pointer flex flex-col lg:flex-row min-h-[380px]">
               {featuredPost.coverImage && (
                 <div className="lg:w-1/2 h-64 lg:h-auto overflow-hidden relative pointer-events-none select-none border-b lg:border-b-0 lg:border-r border-white/5">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={featuredPost.coverImage}
                     alt={featuredPost.title}
@@ -224,6 +225,7 @@ export default function BlogCatalog({ initialPosts }: BlogCatalogProps) {
                   <Card className="glass-panel border border-white/10 bg-white/5 backdrop-blur-sm shadow-card flex flex-col h-full hover:border-accent/40 transition-all duration-300 overflow-hidden">
                     {post.coverImage && (
                       <div className="w-full h-48 overflow-hidden relative border-b border-white/5 pointer-events-none select-none">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover" />
                       </div>
                     )}

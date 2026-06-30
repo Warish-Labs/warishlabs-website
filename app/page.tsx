@@ -16,14 +16,9 @@ export default async function Home() {
   await cookies();
 
   // Fetch hero settings from database (seeded config)
-  const [heroSection, statsSection] = await Promise.all([
-    prisma.homepageSection.findUnique({
-      where: { sectionType: 'hero' },
-    }).catch(() => null),
-    prisma.homepageSection.findUnique({
-      where: { sectionType: 'stats' },
-    }).catch(() => null),
-  ]);
+  const heroSection = await prisma.homepageSection.findUnique({
+    where: { sectionType: 'hero' },
+  }).catch(() => null);
 
   const heroConfig = (heroSection?.config as {
     ctaPrimaryText?: string;

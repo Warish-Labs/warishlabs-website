@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import { NewsletterService } from '@/services/NewsletterService';
 
 export const dynamic = 'force-dynamic';

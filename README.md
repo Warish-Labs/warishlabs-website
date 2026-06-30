@@ -188,21 +188,66 @@ npm run ci:test      # Run the local verification pipeline (lint + typecheck + t
 
 ---
 
-## 🌍 Production Deployment
+## 🌍 Production Deployment & CI/CD Architecture
 
-For full deployment instructions (Neon DB poolers, DNS CNAME setups, Clerk configurations), refer to:
-👉 [Vercel Deployment Guide](file:///home/md-warish-ansari/Projects/warishlabs-website/docs/VERCEL_DEPLOYMENT.md)
+### 1. CI/CD Workflow
+We use GitHub Actions to enforce strict quality gates before any code is merged into production.
+
+```mermaid
+graph TD
+    A[Push / Pull Request] --> B[Install Dependencies npm ci]
+    B --> C[Generate Prisma Client]
+    C --> D[Run ESLint]
+    D --> E[Run Typecheck]
+    E --> F[Run Vitest Tests]
+    F --> G[Build Application npm run build]
+    G --> H[Run Security Audit npm audit]
+    H --> I{All Passed?}
+    I -- Yes --> J[Merge to main / Deploy to Vercel]
+    I -- No --> K[Block Merge]
+```
+
+### 2. Branch & Git Strategy
+- **`main`**: Protected production branch. Direct pushes to `main` are disabled.
+- **Feature Branches**: Named `feat/*`, `fix/*`, or `chore/*`. Opened against `main` via Pull Requests.
+- **PR Requisites**: Must pass the CI pipeline, receive approval, and resolve all conflicts before merge.
+- **Merge Method**: Squash and merge to maintain a clean history.
+
+### 3. Branch Protection Rules
+Enable the following settings on your GitHub repository for `main`:
+1. **Require status checks to pass before merging**: Enforce `CI` job completion.
+2. **Require branches to be up to date before merging**.
+3. **Restrict push access**: Only authorized service accounts/maintainers.
+
+### 4. Dependabot & Security Scans
+- **Dependabot**: Automatically scans `npm` packages and GitHub Actions weekly on Mondays. Packages are updated in grouped PRs, limited to 3 open PRs, and labeled with `dependencies`.
+- **CodeQL SAST**: Performs weekly static analysis security testing for JavaScript and TypeScript to prevent code injections, XSS, and vulnerable patterns.
 
 ---
 
-## 🏗️ Production Architecture
+## 🔒 Configuration & Environment Variables
 
-The application is engineered as a highly resilient, modern web system:
-- **Hosting & Edge Routing**: Hosted on Vercel with serverless and Edge handler execution, ensuring sub-100ms global latency.
-- **Relational Datastore**: Neon Serverless PostgreSQL with pg poolers, optimized for dynamic schemas and low connection times.
-- **Caching & Rate Limiting**: Global Upstash Redis instance managing real-time API call rate thresholds client-side and server-side.
-- **Media CDN**: Cloudinary serves highly compressed images and files using global edge CDNs.
-- **Identity & Authentication**: Clerk SSO manages administrative sessions.
+### Required GitHub Secrets
+Configure the following secrets in GitHub Repository Settings (`Settings > Secrets and variables > Actions`):
+- `DATABASE_URL`: Production PostgreSQL connection string.
+- `NEXT_PUBLIC_TURNSTILE_SITE_KEY`: Cloudflare Turnstile site key.
+- `TURNSTILE_SECRET_KEY`: Cloudflare Turnstile secret key.
+- `NEXT_PUBLIC_ADMIN_EMAIL`: Email address of the admin account.
+- `CLERK_SECRET_KEY`: Clerk secret key.
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`: Clerk publishable key.
+
+### Required Vercel Environment Variables
+Set the following environment variables in your Vercel Dashboard:
+- `DATABASE_URL`, `DIRECT_URL`: Database connection pooler and direct migration URL.
+- `ADMIN_EMAIL`, `NEXT_PUBLIC_ADMIN_EMAIL`.
+- `CLERK_SECRET_KEY`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `NEXT_PUBLIC_CLERK_SIGN_IN_URL`.
+- `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`.
+- `RESEND_API_KEY`.
+- `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`.
+- `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`.
+- `NEXT_PUBLIC_MICROSOFT_CLARITY_PROJECT_ID`.
+- `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, `SENTRY_AUTH_TOKEN`.
+- `CRON_SECRET`.
 
 ---
 

@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 import { Category, Lab, Blog } from '@prisma/client';
 import Link from 'next/link';
 import ProductCard from '@/components/products/ProductCard';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardTitle, CardContent } from '@/components/ui/card';
 import { Search, Briefcase, Folder, FlaskConical, FileText, ArrowRight, CornerDownRight } from 'lucide-react';
 import { cookies } from 'next/headers';
 

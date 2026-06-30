@@ -1,7 +1,7 @@
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardTitle, CardContent } from '@/components/ui/card';
 import { Terminal, Shield, Cpu, Code2, Globe, LucideIcon } from 'lucide-react';
 import prisma from '@/lib/prisma';
 import { cookies } from 'next/headers';

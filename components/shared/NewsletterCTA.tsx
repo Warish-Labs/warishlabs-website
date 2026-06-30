@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CheckCircle2, Mail, Loader2 } from 'lucide-react';
@@ -13,6 +13,18 @@ export default function NewsletterCTA() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [hasInteracted, setHasInteracted] = useState(false);
+
+  const handleVerify = useCallback((token: string) => {
+    setTurnstileToken(token);
+  }, []);
+
+  const handleError = useCallback(() => {
+    setTurnstileToken(null);
+  }, []);
+
+  const handleExpire = useCallback(() => {
+    setTurnstileToken(null);
+  }, []);
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,9 +118,9 @@ export default function NewsletterCTA() {
             
             {hasInteracted && (
               <Turnstile 
-                onVerify={(token) => setTurnstileToken(token)} 
-                onError={() => setTurnstileToken(null)}
-                onExpire={() => setTurnstileToken(null)}
+                onVerify={handleVerify} 
+                onError={handleError}
+                onExpire={handleExpire}
               />
             )}
           </form>
