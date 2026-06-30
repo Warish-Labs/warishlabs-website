@@ -29,7 +29,7 @@ export default async function LabsPage() {
   }).catch(() => []);
 
   // Format database labs or use mock fallback labs
-  const serializedLabs: SerializedLab[] = labs.length > 0 ? labs.map((l) => ({
+  const serializedLabs: SerializedLab[] = labs.map((l) => ({
     id: l.id,
     name: l.name,
     slug: l.slug,
@@ -41,34 +41,7 @@ export default async function LabsPage() {
     status: l.status,
     type: l.type,
     techStack: l.techStack,
-  })) : [
-    {
-      id: 'mock-1',
-      name: 'R3F Physics Engine Sandbox',
-      slug: 'r3f-physics-engine',
-      description: 'A sandbox testing browser-based physical particle interactions using React Three Fiber, Rapier, and customized canvas meshes.',
-      url: null,
-      githubUrl: null,
-      demoUrl: null,
-      mediaUrl: null,
-      status: 'active',
-      type: 'experiment',
-      techStack: 'React, Three.js, R3F, Rapier, WebGL',
-    },
-    {
-      id: 'mock-2',
-      name: 'Upstash Rate-Limit Visualizer',
-      slug: 'upstash-rate-limit-visualizer',
-      description: 'Observe sliding window and token bucket rate limits visually in real-time, matching redis keys and IP client pools.',
-      url: 'https://ratelimit.warishlabs.in',
-      githubUrl: null,
-      demoUrl: null,
-      mediaUrl: null,
-      status: 'completed',
-      type: 'tool',
-      techStack: 'Next.js, Upstash, Redis, Tailwind',
-    }
-  ];
+  })) 
 
   return (
     <>

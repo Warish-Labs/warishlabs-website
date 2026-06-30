@@ -231,14 +231,7 @@ export default function Footer() {
             © {currentYear} WarishLabs. All rights reserved. Built with precision.
           </p>
           <div className="flex items-center gap-4 md:gap-5">
-            <a href="mailto:contact@warishlabs.in" className="text-text-tertiary hover:text-white transition-colors" title="Email Support">
-              <Mail className="w-4 h-4" />
-            </a>
-            {socialLinks?.githubUrl && (
-              <a href={socialLinks.githubUrl} target="_blank" rel="noopener noreferrer" className="text-text-tertiary hover:text-white transition-colors" title="GitHub">
-                <Github className="w-4 h-4" />
-              </a>
-            )}
+
             {socialLinks?.twitterUrl && (
               <a href={socialLinks.twitterUrl} target="_blank" rel="noopener noreferrer" className="text-text-tertiary hover:text-white transition-colors" title="Twitter">
                 <Twitter className="w-4 h-4" />
