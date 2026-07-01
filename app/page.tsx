@@ -8,6 +8,7 @@ import StatsSection from '@/components/home/StatsSection';
 import LatestBlogPosts from '@/components/home/LatestBlogPosts';
 import WhyWarishLabs from '@/components/home/WhyWarishLabs';
 import FAQSection from '@/components/shared/FAQSection';
+import NewsletterCTA from '@/components/shared/NewsletterCTA';
 import Footer from '@/components/Footer';
 import { cookies } from 'next/headers';
 
@@ -71,6 +72,13 @@ export default async function Home() {
         <div className="py-24 bg-bg-primary border-t border-border/40">
           <div className="container mx-auto px-6 max-w-7xl">
             <FAQSection showViewAll />
+          </div>
+        </div>
+
+        {/* Newsletter CTA Section */}
+        <div className="py-24 bg-bg-primary border-t border-border/40">
+          <div className="container mx-auto px-6 max-w-7xl">
+            <NewsletterCTA />
           </div>
         </div>
       </main>

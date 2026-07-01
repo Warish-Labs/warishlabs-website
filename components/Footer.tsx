@@ -1,71 +1,13 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ROUTES } from '@/constants/routes';
-import { ArrowRight, CheckCircle2, ExternalLink } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import SocialLinks from '@/components/shared/SocialLinks';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import Turnstile from '@/components/ui/Turnstile';
 
 export default function Footer() {
-  const [email, setEmail] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubscribed, setIsSubscribed] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [hasInteracted, setHasInteracted] = useState(false);
-
-  const handleVerify = useCallback((token: string) => {
-    setTurnstileToken(token);
-  }, []);
-
-  const handleError = useCallback(() => {
-    setTurnstileToken(null);
-  }, []);
-
-  const handleExpire = useCallback(() => {
-    setTurnstileToken(null);
-  }, []);
-
-  const handleSubscribe = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-    if (!turnstileToken) {
-      toast.error('Security verification check incomplete.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const response = await fetch('/api/newsletter/subscribe', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, turnstileToken }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        setIsSubscribed(true);
-        toast.success(data.message || 'Thank you for subscribing!');
-        setEmail('');
-        setTurnstileToken(null);
-      } else {
-        toast.error(data.error || 'Failed to subscribe. Please try again.');
-      }
-    } catch (error) {
-      console.error('[Footer] Newsletter subscription error:', error);
-      toast.error('An error occurred. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const currentYear = new Date().getFullYear();
 
   return (
@@ -75,8 +17,8 @@ export default function Footer() {
 
       <div className="container mx-auto px-6 py-16 max-w-7xl relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10 items-start">
-          {/* Logo & Description (4 cols) */}
-          <div className="md:col-span-4 space-y-4">
+          {/* Logo & Description (6 cols) */}
+          <div className="md:col-span-6 space-y-4">
             <Link href="/" className="flex items-center gap-2 group">
               <Image 
                 src="/logo.gif" 
@@ -89,7 +31,7 @@ export default function Footer() {
                 WarishLabs
               </span>
             </Link>
-            <p className="text-text-secondary text-xs leading-relaxed max-w-xs">
+            <p className="text-text-secondary text-xs leading-relaxed max-w-sm">
               Engineering-first laboratory building immersive 3D interfaces, high-performance distributed systems, and developer tools built with precision.
             </p>
           </div>
@@ -164,57 +106,6 @@ export default function Footer() {
                 </Link>
               </li>
             </ul>
-          </div>
-
-          {/* Newsletter Column (2 cols) */}
-          <div className="md:col-span-2 space-y-4">
-            <h4 className="text-[10px] uppercase font-bold tracking-widest text-text-tertiary">
-              Bulletins
-            </h4>
-            
-            {isSubscribed ? (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] leading-relaxed">
-                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                <p>Mailing list active. Check inbox.</p>
-              </div>
-            ) : (
-              <form 
-                onSubmit={handleSubscribe} 
-                className="space-y-3"
-                onFocus={() => setHasInteracted(true)}
-                onChange={() => setHasInteracted(true)}
-                onMouseEnter={() => setHasInteracted(true)}
-                onKeyDown={() => setHasInteracted(true)}
-                onTouchStart={() => setHasInteracted(true)}
-              >
-                <div className="flex gap-2">
-                  <Input
-                    type="email"
-                    placeholder="name@company.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={isSubmitting}
-                    className="bg-bg-primary border-border text-white text-[10px] max-w-[160px] focus:border-accent h-8"
-                  />
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting || !turnstileToken}
-                    className="bg-accent hover:bg-accent-hover text-white active:scale-[0.97] transition-all rounded-lg px-3 h-8 cursor-pointer shadow-accent"
-                  >
-                    {isSubmitting ? '...' : <ArrowRight className="w-3.5 h-3.5" />}
-                  </Button>
-                </div>
-                
-                {hasInteracted && (
-                  <Turnstile 
-                    onVerify={handleVerify} 
-                    onError={handleError}
-                    onExpire={handleExpire}
-                  />
-                )}
-              </form>
-            )}
           </div>
         </div>
 
