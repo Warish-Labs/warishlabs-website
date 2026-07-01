@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 import {
   CommandDialog,
   CommandInput,
@@ -33,16 +34,29 @@ interface SearchResults {
   categories: Array<{ id: string; name: string; slug: string }>;
   labs: Array<{ id: string; name: string; slug: string }>;
   blogs: Array<{ id: string; title: string; slug: string }>;
+  pages: Array<{ id: string; name: string; path: string; description: string }>;
 }
 
 export default function SearchPanel({ isOpen, onClose }: SearchPanelProps) {
   const router = useRouter();
+  const { user, isLoaded } = useUser();
+  
+  // Existing auth RBAC pattern matching Navbar.tsx
+  const adminEmail = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'warishlabs@gmail.com').toLowerCase().trim();
+  const isAdmin = !!(
+    isLoaded &&
+    user &&
+    (user.publicMetadata?.role === 'admin' ||
+      user.primaryEmailAddress?.emailAddress?.toLowerCase().trim() === adminEmail)
+  );
+
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<SearchResults>({
     products: [],
     categories: [],
     labs: [],
     blogs: [],
+    pages: [],
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -51,7 +65,7 @@ export default function SearchPanel({ isOpen, onClose }: SearchPanelProps) {
     if (!isOpen) return;
     if (!searchQuery.trim()) {
       const t = setTimeout(() => {
-        setResults({ products: [], categories: [], labs: [], blogs: [] });
+        setResults({ products: [], categories: [], labs: [], blogs: [], pages: [] });
       }, 0);
       return () => clearTimeout(t);
     }
@@ -67,6 +81,7 @@ export default function SearchPanel({ isOpen, onClose }: SearchPanelProps) {
             categories: data.categories || [],
             labs: data.labs || [],
             blogs: data.blogs || [],
+            pages: data.pages || [],
           });
 
           // Track analytics search event
@@ -121,7 +136,8 @@ export default function SearchPanel({ isOpen, onClose }: SearchPanelProps) {
     results.products.length > 0 ||
     results.categories.length > 0 ||
     results.labs.length > 0 ||
-    results.blogs.length > 0;
+    results.blogs.length > 0 ||
+    results.pages.length > 0;
 
   return (
     <CommandDialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -173,24 +189,28 @@ export default function SearchPanel({ isOpen, onClose }: SearchPanelProps) {
               </CommandItem>
             </CommandGroup>
             
-            <CommandSeparator />
-            
-            {/* Admin Console Group */}
-            <CommandGroup heading="Administration">
-              <CommandItem onSelect={() => handleSelect(ROUTES.ADMIN_DASHBOARD)}>
-                <LayoutDashboard className="mr-2 h-4 w-4 text-accent" />
-                <span>Console Dashboard</span>
-              </CommandItem>
-              <CommandItem onSelect={() => handleSelect(ROUTES.ADMIN_LOGIN)}>
-                <HelpCircle className="mr-2 h-4 w-4" />
-                <span>Console Login</span>
-              </CommandItem>
-            </CommandGroup>
+            {isAdmin && (
+              <>
+                <CommandSeparator />
+                
+                {/* Admin Console Group - Gated and only visible to Admin users */}
+                <CommandGroup heading="Administration">
+                  <CommandItem onSelect={() => handleSelect(ROUTES.ADMIN_DASHBOARD)}>
+                    <LayoutDashboard className="mr-2 h-4 w-4 text-accent" />
+                    <span>Console Dashboard</span>
+                  </CommandItem>
+                  <CommandItem onSelect={() => handleSelect(ROUTES.ADMIN_LOGIN)}>
+                    <HelpCircle className="mr-2 h-4 w-4" />
+                    <span>Console Login</span>
+                  </CommandItem>
+                </CommandGroup>
+              </>
+            )}
           </>
         )}
 
         {!isLoading && searchQuery.trim() && !hasResults && (
-          <CommandEmpty>No results found for &quot;{searchQuery}&quot;. Try &quot;Festoryx&quot; or &quot;development&quot;.</CommandEmpty>
+          <CommandEmpty>No results found for &quot;{searchQuery}&quot;.</CommandEmpty>
         )}
 
         {!isLoading && searchQuery.trim() && hasResults && (
@@ -237,6 +257,20 @@ export default function SearchPanel({ isOpen, onClose }: SearchPanelProps) {
                   <CommandItem key={b.id} onSelect={() => handleSelect(`/blog/${b.slug}`)}>
                     <FileText className="mr-2 h-4 w-4 text-accent" />
                     <span>{b.title}</span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+
+            {results.pages.length > 0 && (
+              <CommandGroup heading="Pages">
+                {results.pages.map((p) => (
+                  <CommandItem key={p.id} onSelect={() => handleSelect(p.path)}>
+                    <Home className="mr-2 h-4 w-4 text-accent" />
+                    <div className="flex flex-col">
+                      <span className="font-semibold">{p.name}</span>
+                      <span className="text-[10px] text-text-tertiary">{p.description}</span>
+                    </div>
                   </CommandItem>
                 ))}
               </CommandGroup>

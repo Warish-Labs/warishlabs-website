@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Briefcase, Plus, Edit2, Trash2, X, Terminal, Loader2, ExternalLink } from 'lucide-react';
+import { Briefcase, Plus, Edit2, Trash2, X, Terminal, Loader2, ExternalLink, GitBranch, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Product {
@@ -17,10 +17,19 @@ interface Product {
   tagline: string;
   description: string;
   status: string;
+  type: string;
   visitUrl: string | null;
   logoUrl?: string | null;
+  bannerUrl?: string | null;
+  githubUrl?: string | null;
   categoryId: string;
   category?: { name: string };
+  technologies?: Array<{
+    technology: {
+      id: string;
+      name: string;
+    };
+  }>;
 }
 
 interface Category {
@@ -28,9 +37,16 @@ interface Category {
   name: string;
 }
 
+interface Technology {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [allTechnologies, setAllTechnologies] = useState<Technology[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitPending, setIsSubmitPending] = useState(false);
 
@@ -45,21 +61,41 @@ export default function AdminProductsPage() {
   const [logoUrl, setLogoUrl] = useState('');
   const [isLogoUploading, setIsLogoUploading] = useState(false);
   const [categoryId, setCategoryId] = useState('');
+  
+  // Dynamic Content Audit addition states
+  const [githubUrl, setGithubUrl] = useState('');
+  const [bannerUrl, setBannerUrl] = useState('');
+  const [isBannerUploading, setIsBannerUploading] = useState(false);
+  const [type, setType] = useState('Tool');
+  const [technologyIds, setTechnologyIds] = useState<string[]>([]);
 
   // Fetch initial data
+  const fetchProductsList = async () => {
+    try {
+      const resProducts = await fetch('/api/admin/products');
+      const dataProducts = await resProducts.json();
+      if (dataProducts.success) setProducts(dataProducts.products);
+    } catch {
+      toast.error('Failed to reload products list.');
+    }
+  };
+
   useEffect(() => {
     async function fetchData() {
       try {
-        const [resProducts, resCategories] = await Promise.all([
+        const [resProducts, resCategories, resTechs] = await Promise.all([
           fetch('/api/admin/products'),
-          fetch('/api/admin/categories')
+          fetch('/api/admin/categories'),
+          fetch('/api/admin/technologies')
         ]);
         
         const dataProducts = await resProducts.json();
         const dataCategories = await resCategories.json();
+        const dataTechs = await resTechs.json();
 
         if (dataProducts.success) setProducts(dataProducts.products);
         if (dataCategories.success) setCategories(dataCategories.categories);
+        if (dataTechs.success) setAllTechnologies(dataTechs.technologies);
       } catch (err) {
         toast.error('Failed to load admin resources.');
       } finally {
@@ -78,6 +114,10 @@ export default function AdminProductsPage() {
     setVisitUrl('');
     setLogoUrl('');
     setCategoryId('');
+    setGithubUrl('');
+    setBannerUrl('');
+    setType('Tool');
+    setTechnologyIds([]);
     setIsFormOpen(false);
   };
 
@@ -90,14 +130,20 @@ export default function AdminProductsPage() {
     setVisitUrl(product.visitUrl || '');
     setLogoUrl(product.logoUrl || '');
     setCategoryId(product.categoryId);
+    setGithubUrl(product.githubUrl || '');
+    setBannerUrl(product.bannerUrl || '');
+    setType(product.type || 'Tool');
+    setTechnologyIds(product.technologies?.map((t) => t.technology.id) || []);
     setIsFormOpen(true);
   };
 
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isBanner: boolean) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsLogoUploading(true);
+    if (isBanner) setIsBannerUploading(true);
+    else setIsLogoUploading(true);
+
     const formData = new FormData();
     formData.append('file', file);
     formData.append('folder', 'products');
@@ -109,15 +155,29 @@ export default function AdminProductsPage() {
       });
       const data = await res.json();
       if (data.success && data.asset) {
-        setLogoUrl(data.asset.url);
-        toast.success('Logo uploaded successfully');
+        if (isBanner) {
+          setBannerUrl(data.asset.url);
+          toast.success('Banner uploaded successfully');
+        } else {
+          setLogoUrl(data.asset.url);
+          toast.success('Logo uploaded successfully');
+        }
       } else {
-        toast.error(data.error || 'Failed to upload logo');
+        toast.error(data.error || 'Failed to upload asset');
       }
     } catch (err) {
-      toast.error('Network error uploading logo');
+      toast.error('Network error uploading asset');
     } finally {
-      setIsLogoUploading(false);
+      if (isBanner) setIsBannerUploading(false);
+      else setIsLogoUploading(false);
+    }
+  };
+
+  const handleTechCheckboxChange = (techId: string, checked: boolean) => {
+    if (checked) {
+      setTechnologyIds((prev) => [...prev, techId]);
+    } else {
+      setTechnologyIds((prev) => prev.filter((id) => id !== techId));
     }
   };
 
@@ -137,7 +197,11 @@ export default function AdminProductsPage() {
       status,
       visitUrl: visitUrl || null,
       logoUrl: logoUrl || null,
-      categoryId
+      bannerUrl: bannerUrl || null,
+      githubUrl: githubUrl || null,
+      type: type || 'Tool',
+      categoryId,
+      technologyIds,
     };
 
     try {
@@ -151,12 +215,7 @@ export default function AdminProductsPage() {
 
       if (response.ok && result.success) {
         toast.success(editingId ? 'Product updated successfully!' : 'Product created successfully!');
-        
-        // Refresh products list
-        const resProducts = await fetch('/api/admin/products');
-        const dataProducts = await resProducts.json();
-        if (dataProducts.success) setProducts(dataProducts.products);
-
+        await fetchProductsList();
         resetForm();
       } else {
         toast.error(result.error || 'Failed to submit product.');
@@ -246,7 +305,7 @@ export default function AdminProductsPage() {
                     id="prod-name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. distributed Scheduler Engine"
+                    placeholder="e.g. Distributed Scheduler Engine"
                     required
                     className="bg-bg-primary border-border focus:border-accent text-white"
                   />
@@ -303,7 +362,21 @@ export default function AdminProductsPage() {
                   </Select>
                 </div>
 
-                {/* Launch URL */}
+                {/* Product Type Input */}
+                <div className="space-y-2">
+                  <Label htmlFor="prod-type" className="text-xs font-semibold text-text-secondary">
+                    Product Type
+                  </Label>
+                  <Input
+                    id="prod-type"
+                    value={type}
+                    onChange={(e) => setType(e.target.value)}
+                    placeholder="e.g. Tool, Platform, Library, Service"
+                    className="bg-bg-primary border-border focus:border-accent text-white"
+                  />
+                </div>
+
+                {/* Launch Visit URL */}
                 <div className="space-y-2">
                   <Label htmlFor="prod-visit" className="text-xs font-semibold text-text-secondary">
                     Launch Visit URL (Optional)
@@ -317,9 +390,23 @@ export default function AdminProductsPage() {
                   />
                 </div>
 
+                {/* GitHub Repository URL */}
+                <div className="space-y-2">
+                  <Label htmlFor="prod-repo" className="text-xs font-semibold text-text-secondary">
+                    GitHub Repository URL (Optional)
+                  </Label>
+                  <Input
+                    id="prod-repo"
+                    value={githubUrl}
+                    onChange={(e) => setGithubUrl(e.target.value)}
+                    placeholder="e.g. https://github.com/warishlabs/engine"
+                    className="bg-bg-primary border-border focus:border-accent text-white"
+                  />
+                </div>
+
                 {/* Brand Logo Upload */}
                 <div className="space-y-2">
-                  <Label htmlFor="prod-logo" className="text-xs font-semibold text-text-secondary">
+                  <Label htmlFor="prod-logo-file" className="text-xs font-semibold text-text-secondary">
                     Product Brand Logo
                   </Label>
                   <div className="flex items-center gap-3">
@@ -337,7 +424,7 @@ export default function AdminProductsPage() {
                         id="prod-logo-file"
                         type="file"
                         accept="image/*"
-                        onChange={handleLogoUpload}
+                        onChange={(e) => handleFileUpload(e, false)}
                         disabled={isLogoUploading}
                         className="bg-bg-primary border-border focus:border-accent text-white text-xs file:bg-bg-card file:border-border file:text-white file:rounded file:px-2 file:py-0.5 file:mr-2 file:cursor-pointer"
                       />
@@ -346,8 +433,64 @@ export default function AdminProductsPage() {
                   {isLogoUploading && <p className="text-[10px] text-accent animate-pulse">Uploading logo to Cloudinary...</p>}
                 </div>
 
+                {/* Hero Banner Upload */}
+                <div className="space-y-2">
+                  <Label htmlFor="prod-banner-file" className="text-xs font-semibold text-text-secondary">
+                    Product Showcase Banner
+                  </Label>
+                  <div className="flex items-center gap-3">
+                    {bannerUrl ? (
+                      <div className="w-16 h-10 rounded border border-border bg-bg-card flex items-center justify-center overflow-hidden shrink-0">
+                        <img src={bannerUrl} alt="Banner preview" className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="w-16 h-10 rounded border border-dashed border-border flex items-center justify-center shrink-0">
+                        <span className="text-[9px] text-text-tertiary font-mono">No Banner</span>
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <Input
+                        id="prod-banner-file"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleFileUpload(e, true)}
+                        disabled={isBannerUploading}
+                        className="bg-bg-primary border-border focus:border-accent text-white text-xs file:bg-bg-card file:border-border file:text-white file:rounded file:px-2 file:py-0.5 file:mr-2 file:cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                  {isBannerUploading && <p className="text-[10px] text-accent animate-pulse">Uploading banner to Cloudinary...</p>}
+                </div>
+
+                {/* Technologies checkboxes */}
+                <div className="space-y-2 md:col-span-2 border-t border-border/30 pt-4">
+                  <Label className="text-xs font-semibold text-text-secondary block mb-2">
+                    Technologies / Tech Stack Matrix
+                  </Label>
+                  {allTechnologies.length === 0 ? (
+                    <p className="text-xs text-text-tertiary italic">No technology tags found in database.</p>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-black/40 border border-white/5 rounded-lg p-4">
+                      {allTechnologies.map((tech) => {
+                        const isChecked = technologyIds.includes(tech.id);
+                        return (
+                          <label key={tech.id} className="flex items-center gap-2 cursor-pointer text-xs text-text-secondary hover:text-white transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => handleTechCheckboxChange(tech.id, e.target.checked)}
+                              className="rounded bg-bg-primary border-border border text-accent focus:ring-accent w-4 h-4 cursor-pointer"
+                            />
+                            <span>{tech.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
                 {/* Description Textarea */}
-                <div className="space-y-2 md:col-span-2">
+                <div className="space-y-2 md:col-span-2 border-t border-border/30 pt-4">
                   <Label htmlFor="prod-desc" className="text-xs font-semibold text-text-secondary">
                     HTML Description/Specs <span className="text-destructive">*</span>
                   </Label>
@@ -407,8 +550,9 @@ export default function AdminProductsPage() {
                     <tr className="border-b border-border bg-bg-secondary text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
                       <th className="px-6 py-4">Product Name</th>
                       <th className="px-6 py-4">Category</th>
+                      <th className="px-6 py-4">Type</th>
                       <th className="px-6 py-4">Status</th>
-                      <th className="px-6 py-4">Launch Link</th>
+                      <th className="px-6 py-4">Resources</th>
                       <th className="px-6 py-4 text-right">Actions</th>
                     </tr>
                   </thead>
@@ -435,6 +579,9 @@ export default function AdminProductsPage() {
                         <td className="px-6 py-4 text-text-secondary font-medium">
                           {product.category?.name || 'Unassigned'}
                         </td>
+                        <td className="px-6 py-4 text-text-secondary font-mono">
+                          {product.type}
+                        </td>
                         <td className="px-6 py-4">
                           <span
                             className={cn(
@@ -449,18 +596,32 @@ export default function AdminProductsPage() {
                             {product.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 font-mono text-text-tertiary">
+                        <td className="px-6 py-4 font-mono text-text-tertiary flex items-center gap-3 mt-1.5">
                           {product.visitUrl ? (
                             <a
                               href={product.visitUrl}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-accent hover:underline flex items-center gap-1"
+                              title="Launch Platform"
                             >
-                              Visit <ExternalLink className="w-3.5 h-3.5" />
+                              <ExternalLink className="w-3.5 h-3.5" />
                             </a>
                           ) : (
-                            'N/A'
+                            <span className="text-[10px] text-zinc-600 italic">No Launch</span>
+                          )}
+                          {product.githubUrl ? (
+                            <a
+                              href={product.githubUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-white hover:text-accent flex items-center gap-1"
+                              title="GitHub Codebase"
+                            >
+                              <GitBranch className="w-3.5 h-3.5 text-accent" />
+                            </a>
+                          ) : (
+                            <span className="text-[10px] text-zinc-600 italic">No Repo</span>
                           )}
                         </td>
                         <td className="px-6 py-4 text-right space-x-2">
