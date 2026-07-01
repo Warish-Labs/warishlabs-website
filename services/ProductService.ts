@@ -53,7 +53,7 @@ export class ProductService {
         },
         seo: true,
       },
-    }).catch(() => null) as unknown as ProductWithDetails | null;
+    }) as unknown as ProductWithDetails | null;
   }
 
   /**

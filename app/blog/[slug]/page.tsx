@@ -14,6 +14,8 @@ import NewsletterCTA from '@/components/shared/NewsletterCTA';
 import { sanitizeServer } from '@/lib/sanitize';
 import { Metadata } from 'next';
 
+export const dynamic = 'force-dynamic';
+
 interface BlogDetailPageProps {
   params: Promise<{ slug: string }>;
 }
