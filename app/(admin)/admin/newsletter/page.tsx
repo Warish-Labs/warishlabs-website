@@ -129,7 +129,7 @@ export default function AdminNewsletterPage() {
   };
 
   return (
-    <div className="space-y-8 select-none">
+    <div className="space-y-8">
       {/* Page Overview */}
       <Card className="glass-panel border-border shadow-card overflow-hidden">
         <CardHeader className="border-b border-border/40 pb-4">
