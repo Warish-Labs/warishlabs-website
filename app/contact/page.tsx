@@ -1,9 +1,9 @@
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { Mail, Phone, MapPin, ShieldCheck, Clock } from 'lucide-react';
-import Github from '@/components/icons/GithubIcon';
+import { Mail, Phone, MapPin, ShieldCheck, Clock, ExternalLink } from 'lucide-react';
 import { Twitter, Linkedin, Youtube } from '@/components/icons/SocialIcons';
+import GithubIcon from '@/components/icons/GithubIcon';
 import prisma from '@/lib/prisma';
 import ContactForm from './ContactForm';
 import FAQSection from '@/components/shared/FAQSection';
@@ -13,19 +13,21 @@ export default async function ContactPage() {
   // Opt-out of static rendering to query DB dynamically
   await cookies();
 
-  // Fetch CMS settings from the DB
-  const [contactSection, socialSection] = await Promise.all([
+  // Fetch CMS settings and social links from the DB
+  const [contactSection, socialLinks] = await Promise.all([
     prisma.homepageSection.findUnique({
       where: { sectionType: 'contact' },
     }).catch(() => null),
-    prisma.homepageSection.findUnique({
-      where: { sectionType: 'social' },
-    }).catch(() => null),
+    prisma.socialLink.findMany({
+      where: { isVisible: true, url: { not: null } },
+      orderBy: { sortOrder: 'asc' },
+      select: { platform: true, url: true },
+    }).catch(() => []),
   ]);
 
   const title = contactSection?.title || 'Contact Us';
   const subtitle = contactSection?.subtitle || 'Have a technical inquiry, feedback, or need collaboration? Get in touch with our engineering team directly.';
-  
+
   const config = (contactSection?.config as Record<string, string>) || {};
   const email = config.email || 'contact@warishlabs.in';
   const phone = config.phone || '';
@@ -33,11 +35,8 @@ export default async function ContactPage() {
   const responseTime = config.responseTime || 'Under 24 hours';
   const secureRouting = config.secureRouting || 'Messages are stored inside a TLS encrypted datastore and sent to resend relays.';
 
-  const socialConfig = (socialSection?.config as Record<string, string>) || {};
-  const githubUrl = socialConfig.githubUrl || '';
-  const twitterUrl = socialConfig.twitterUrl || '';
-  const linkedinUrl = socialConfig.linkedinUrl || '';
-  const youtubeUrl = socialConfig.youtubeUrl || '';
+  // Filter out rows with empty string URLs
+  const visibleLinks = socialLinks.filter((l) => l.url && l.url.trim() !== '');
 
   return (
     <>
@@ -79,29 +78,40 @@ export default async function ContactPage() {
                 </div>
               </div>
 
-              {/* Social Channels */}
-              {(githubUrl || twitterUrl || linkedinUrl || youtubeUrl) && (
-                <div className="flex gap-4 pt-6 border-t border-border/40 items-center">
-                  {githubUrl && (
-                    <a href={githubUrl} target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-white transition-colors" title="GitHub">
-                      <Github className="w-4.5 h-4.5 text-accent" />
-                    </a>
-                  )}
-                  {twitterUrl && (
-                    <a href={twitterUrl} target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-white transition-colors" title="Twitter">
-                      <Twitter className="w-4.5 h-4.5 text-accent" />
-                    </a>
-                  )}
-                  {linkedinUrl && (
-                    <a href={linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-white transition-colors" title="LinkedIn">
-                      <Linkedin className="w-4.5 h-4.5 text-accent" />
-                    </a>
-                  )}
-                  {youtubeUrl && (
-                    <a href={youtubeUrl} target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-white transition-colors" title="YouTube">
-                      <Youtube className="w-4.5 h-4.5 text-accent" />
-                    </a>
-                  )}
+              {/* Social Channels — DB driven, renders nothing if all empty */}
+              {visibleLinks.length > 0 && (
+                <div className="flex gap-4 pt-6 border-t border-border/40 items-center" role="list" aria-label="Social media links">
+                  {visibleLinks.map(({ platform, url }) => {
+                    const p = platform.toLowerCase();
+                    const label =
+                      p === 'twitter' || p === 'x' ? 'Twitter / X' :
+                      p === 'linkedin' ? 'LinkedIn' :
+                      p === 'youtube' ? 'YouTube' :
+                      p === 'github' ? 'GitHub' :
+                      platform.charAt(0).toUpperCase() + platform.slice(1);
+
+                    let Icon: React.ReactNode;
+                    if (p === 'twitter' || p === 'x') Icon = <Twitter className="w-4 h-4 text-accent" aria-hidden="true" />;
+                    else if (p === 'linkedin') Icon = <Linkedin className="w-4 h-4 text-accent" aria-hidden="true" />;
+                    else if (p === 'youtube') Icon = <Youtube className="w-4 h-4 text-accent" aria-hidden="true" />;
+                    else if (p === 'github') Icon = <GithubIcon className="w-4 h-4 text-accent" aria-hidden="true" />;
+                    else Icon = <ExternalLink className="w-4 h-4 text-accent" aria-hidden="true" />;
+
+                    return (
+                      <a
+                        key={platform}
+                        href={url!}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`Visit WarishLabs on ${label}`}
+                        title={label}
+                        className="text-text-secondary hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"
+                        role="listitem"
+                      >
+                        {Icon}
+                      </a>
+                    );
+                  })}
                 </div>
               )}
 

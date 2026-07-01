@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ROUTES } from '@/constants/routes';
 import { ArrowRight, CheckCircle2, ExternalLink } from 'lucide-react';
-import { Twitter, Linkedin, Youtube } from '@/components/icons/SocialIcons';
+import SocialLinks from '@/components/shared/SocialLinks';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,12 +17,6 @@ export default function Footer() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [hasInteracted, setHasInteracted] = useState(false);
-  const [socialLinks, setSocialLinks] = useState<{
-    githubUrl: string;
-    twitterUrl: string;
-    linkedinUrl: string;
-    youtubeUrl: string;
-  } | null>(null);
 
   const handleVerify = useCallback((token: string) => {
     setTurnstileToken(token);
@@ -34,21 +28,6 @@ export default function Footer() {
 
   const handleExpire = useCallback(() => {
     setTurnstileToken(null);
-  }, []);
-
-  useEffect(() => {
-    async function loadSocial() {
-      try {
-        const res = await fetch('/api/settings');
-        const data = await res.json();
-        if (data.success && data.social) {
-          setSocialLinks(data.social);
-        }
-      } catch (err) {
-        console.error('[Footer] Failed to load social settings:', err);
-      }
-    }
-    loadSocial();
   }, []);
 
   const handleSubscribe = async (e: React.FormEvent) => {
@@ -245,22 +224,11 @@ export default function Footer() {
             © {currentYear} WarishLabs. All rights reserved. Built with precision.
           </p>
           <div className="flex items-center gap-4 md:gap-5">
-
-            {socialLinks?.twitterUrl && (
-              <a href={socialLinks.twitterUrl} target="_blank" rel="noopener noreferrer" className="text-text-tertiary hover:text-white transition-colors" title="Twitter">
-                <Twitter className="w-4 h-4" />
-              </a>
-            )}
-            {socialLinks?.linkedinUrl && (
-              <a href={socialLinks.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-text-tertiary hover:text-white transition-colors" title="LinkedIn">
-                <Linkedin className="w-4 h-4" />
-              </a>
-            )}
-            {socialLinks?.youtubeUrl && (
-              <a href={socialLinks.youtubeUrl} target="_blank" rel="noopener noreferrer" className="text-text-tertiary hover:text-white transition-colors" title="YouTube">
-                <Youtube className="w-4 h-4" />
-              </a>
-            )}
+            {/* Dynamic social links — renders nothing if all are empty/hidden */}
+            <SocialLinks
+              iconSize="w-4 h-4"
+              iconClass="text-text-tertiary hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"
+            />
             <span className="text-[10px] text-text-tertiary border-l border-white/10 pl-4">
               Canonical: warishlabs.in
             </span>
