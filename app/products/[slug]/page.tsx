@@ -17,6 +17,8 @@ import { sanitizeServer } from '@/lib/sanitize';
 
 import { Metadata } from 'next';
 
+export const dynamic = 'force-dynamic';
+
 interface ProductDetailPageProps {
   params: Promise<{ slug: string }>;
 }

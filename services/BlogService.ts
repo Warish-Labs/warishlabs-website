@@ -24,7 +24,7 @@ export class BlogService {
     return prisma.blog.findUnique({
       where: { slug },
       include: { seo: true },
-    }).catch(() => null) as unknown as BlogWithDetails | null;
+    }) as unknown as BlogWithDetails | null;
   }
 
   /**
