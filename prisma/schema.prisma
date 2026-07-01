@@ -54,7 +54,7 @@ model Product {
   slug           String              @unique
   tagline        String
   description    String              @db.Text // HTML or Rich Text from Tiptap
-  status         String              // "active", "beta", "archived"
+  status         String // "active", "beta", "archived"
   type           String              @default("Tool")
   githubUrl      String?
   visitUrl       String?
@@ -254,13 +254,13 @@ model Lab {
   name        String
   slug        String   @unique
   description String   @db.Text
-  url         String?  // liveUrl
-  githubUrl   String?  // repoUrl
+  url         String? // liveUrl
+  githubUrl   String? // repoUrl
   demoUrl     String?
-  mediaUrl    String?  // Cloudinary upload
-  status      String   // "active", "completed", "deprecated"
+  mediaUrl    String? // Cloudinary upload
+  status      String // "active", "completed", "deprecated"
   type        String   @default("experiment") // open source / experiment / tool / sandbox
-  techStack   String?  // comma-separated tags
+  techStack   String? // comma-separated tags
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -288,4 +288,14 @@ model HomepageSection {
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model SocialLink {
+  id        String   @id @default(uuid())
+  platform  String   @unique
+  url       String?
+  isVisible Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
