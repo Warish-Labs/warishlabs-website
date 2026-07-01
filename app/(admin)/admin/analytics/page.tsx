@@ -68,18 +68,32 @@ function ChartTooltip({ active, payload, label }: any) {
 
 // ---------------------------------------------------------------------------
 // Referrer label helper
+// Uses proper URL parsing (new URL) and an allowlist of known hostnames.
+// Never uses substring checks on raw URL strings.
 // ---------------------------------------------------------------------------
+const REFERRER_ALLOWLIST: Record<string, string> = {
+  'www.google.com': 'Google Search',
+  'google.com': 'Google Search',
+  'github.com': 'GitHub',
+  'www.github.com': 'GitHub',
+  'www.linkedin.com': 'LinkedIn',
+  'linkedin.com': 'LinkedIn',
+  't.co': 'X / Twitter',
+  'twitter.com': 'X / Twitter',
+  'www.twitter.com': 'X / Twitter',
+  'x.com': 'X / Twitter',
+  'www.x.com': 'X / Twitter',
+  'localhost': 'Local Staging',
+  '127.0.0.1': 'Local Staging',
+};
+
 function getReferrerLabel(ref: string | null): string {
   if (!ref) return 'Direct / Unknown';
-  const lower = ref.toLowerCase();
-  if (lower.includes('google.com')) return 'Google Search';
-  if (lower.includes('github.com')) return 'GitHub';
-  if (lower.includes('linkedin.com')) return 'LinkedIn';
-  if (lower.includes('t.co') || lower.includes('twitter.com') || lower.includes('x.com')) return 'X / Twitter';
-  if (lower.includes('localhost') || lower.includes('127.0.0.1')) return 'Local Staging';
   try {
-    return new URL(ref).hostname;
+    const { hostname } = new URL(ref);
+    return REFERRER_ALLOWLIST[hostname] ?? hostname;
   } catch {
+    // ref is not a valid URL — return as-is (already sanitised by the server)
     return ref;
   }
 }
@@ -121,7 +135,6 @@ export default function AdminAnalyticsPage() {
     }
   };
 
-  const maxSearchCount = data?.topSearches?.[0]?.count || 1;
   const maxReferrerCount = data?.referrers?.[0]?._count?.id || 1;
 
   return (

@@ -15,22 +15,18 @@ export async function GET(request: Request) {
     const range = searchParams.get('range') || '7d';
 
     // 1. Build date range filter
+    // numDays drives the time-series bucket count; the initial value is
+    // determined by the range before any branching (avoids dead-write lint).
+    const RANGE_DAYS: Record<string, number> = { '7d': 7, '30d': 30 };
+    const numDays: number = RANGE_DAYS[range] ?? 90;
+
     const dateFilter: any = {};
-    let numDays = 7;
-    if (range === '7d') {
-      numDays = 7;
+    if (range === '7d' || range === '30d') {
       const limitDate = new Date();
-      limitDate.setDate(limitDate.getDate() - 7);
+      limitDate.setDate(limitDate.getDate() - numDays);
       dateFilter.createdAt = { gte: limitDate };
-    } else if (range === '30d') {
-      numDays = 30;
-      const limitDate = new Date();
-      limitDate.setDate(limitDate.getDate() - 30);
-      dateFilter.createdAt = { gte: limitDate };
-    } else {
-      // All time – limit chart to last 90 days for readability
-      numDays = 90;
     }
+    // else: no createdAt filter → all time
 
     // Run all queries in parallel
     const [
