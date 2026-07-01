@@ -8,13 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { buttonVariants } from '@/components/ui/button';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
-import { ArrowLeft, ExternalLink, Cpu, Info } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Cpu, Info, GitBranch } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
 import { sanitizeServer } from '@/lib/sanitize';
-
-
 import { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
@@ -81,6 +79,14 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Console
           </Link>
 
+          {/* Product Banner Image */}
+          {product.bannerUrl && (
+            <div className="w-full h-48 md:h-80 rounded-2xl overflow-hidden border border-white/10 select-none pointer-events-none mb-12">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={product.bannerUrl} alt={`${product.name} Banner`} className="w-full h-full object-cover" />
+            </div>
+          )}
+
           {/* Product Header */}
           <div className="space-y-4 mb-12">
             <div className="flex flex-wrap items-center gap-3">
@@ -90,10 +96,25 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
               <Badge className="bg-bg-secondary border-border text-text-secondary text-[10px] font-bold uppercase tracking-wider">
                 {product.status}
               </Badge>
+              {product.type && (
+                <Badge className="bg-white/5 border-white/5 text-zinc-400 text-[10px] font-bold uppercase tracking-wider">
+                  {product.type}
+                </Badge>
+              )}
             </div>
-            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white leading-tight">
-              {product.name}
-            </h1>
+            
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              {product.logoUrl && (
+                <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl border border-white/10 bg-black/40 flex items-center justify-center p-2 overflow-hidden shadow-sm shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={product.logoUrl} alt={`${product.name} Logo`} className="w-full h-full object-contain" />
+                </div>
+              )}
+              <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white leading-tight">
+                {product.name}
+              </h1>
+            </div>
+
             <p className="text-text-secondary text-lg max-w-3xl font-semibold">
               {product.tagline}
             </p>
@@ -101,7 +122,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
 
           {/* Grid Layout splits details and side specs */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-            {/* Left Main column - Details */}
+            {/* Left Main column - Description Details */}
             <div className="lg:col-span-8 space-y-12">
               <Card className="glass-panel border-border shadow-card overflow-hidden">
                 <CardHeader className="border-b border-border/40 pb-4">
@@ -110,7 +131,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-6 prose prose-invert max-w-none text-text-secondary text-sm leading-relaxed space-y-4">
-                <div dangerouslySetInnerHTML={{ __html: sanitizeServer(product.description) }} />
+                  <div dangerouslySetInnerHTML={{ __html: sanitizeServer(product.description) }} />
                 </CardContent>
               </Card>
 
@@ -168,25 +189,41 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                       Visit Unavailable
                     </div>
                   )}
+
+                  {product.githubUrl && (
+                    <a
+                      href={product.githubUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn(
+                        buttonVariants({ variant: "outline" }),
+                        "w-full border-border hover:border-accent hover:text-white py-5 font-semibold text-sm flex items-center justify-center gap-2"
+                      )}
+                    >
+                      <GitBranch className="w-4 h-4 text-accent" /> GitHub Repository
+                    </a>
+                  )}
                 </div>
               </Card>
 
               {/* Technologies details */}
-              <Card className="glass-panel border-border shadow-card p-6 space-y-4">
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary flex items-center gap-1.5">
-                  <Cpu className="w-4 h-4 text-accent" /> Tech Stack
-                </h4>
-                <div className="flex flex-wrap gap-2 pt-2">
-                  {product.technologies.map((t) => (
-                    <span
-                      key={t.technology.id}
-                      className="px-2.5 py-1 bg-bg-secondary border border-border-subtle rounded text-xs font-semibold text-text-secondary uppercase tracking-wider"
-                    >
-                      {t.technology.name}
-                    </span>
-                  ))}
-                </div>
-              </Card>
+              {product.technologies.length > 0 && (
+                <Card className="glass-panel border-border shadow-card p-6 space-y-4">
+                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary flex items-center gap-1.5">
+                    <Cpu className="w-4 h-4 text-accent" /> Tech Stack
+                  </h4>
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {product.technologies.map((t) => (
+                      <span
+                        key={t.technology.id}
+                        className="px-2.5 py-1 bg-bg-secondary border border-border-subtle rounded text-xs font-semibold text-text-secondary uppercase tracking-wider"
+                      >
+                        {t.technology.name}
+                      </span>
+                    ))}
+                  </div>
+                </Card>
+              )}
 
               {/* Metadata */}
               <Card className="glass-panel border-border shadow-card p-6 space-y-3">
@@ -198,6 +235,12 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                     <span className="text-text-tertiary">Category</span>
                     <span className="text-white font-semibold">{product.category.name}</span>
                   </div>
+                  {product.type && (
+                    <div className="flex justify-between">
+                      <span className="text-text-tertiary">Type</span>
+                      <span className="text-white font-semibold">{product.type}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-text-tertiary">Pipeline Stage</span>
                     <span className="text-white font-semibold capitalize">{product.status}</span>

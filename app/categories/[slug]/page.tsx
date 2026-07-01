@@ -7,9 +7,28 @@ import Link from 'next/link';
 import { ArrowLeft, Folder } from 'lucide-react';
 import ProductCard from '@/components/products/ProductCard';
 import { cookies } from 'next/headers';
+import { Metadata } from 'next';
+
+export const dynamic = 'force-dynamic';
 
 interface CategoryDetailPageProps {
   params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({ params }: CategoryDetailPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const category = await prisma.category.findUnique({
+    where: { slug },
+    include: { seo: true },
+  }).catch(() => null);
+
+  if (!category) return { title: 'Category Not Found' };
+
+  return {
+    title: category.seo?.title || `${category.name} | WarishLabs Catalog`,
+    description: category.seo?.description || category.description || `Browse active systems constructed under the ${category.name} landscape.`,
+    keywords: category.seo?.keywords ? category.seo.keywords.split(',').map((k) => k.trim()) : undefined,
+  };
 }
 
 export default async function CategoryDetailPage({ params }: CategoryDetailPageProps) {
@@ -20,6 +39,7 @@ export default async function CategoryDetailPage({ params }: CategoryDetailPageP
   const category = await prisma.category.findUnique({
     where: { slug },
     include: {
+      seo: true,
       products: {
         where: {
           status: { in: ['active', 'beta'] },

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import LabCard from './LabCard';
 import { Input } from '@/components/ui/input';
@@ -26,11 +26,21 @@ interface LabCatalogProps {
 }
 
 export default function LabCatalog({ initialLabs }: LabCatalogProps) {
+  const [searchVal, setSearchVal] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
 
+  // Debounce search query changes
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setSearchQuery(searchVal);
+    }, 250);
+    return () => clearTimeout(handler);
+  }, [searchVal]);
+
   const handleResetFilters = () => {
+    setSearchVal('');
     setSearchQuery('');
     setSelectedStatus('all');
     setSelectedType('all');
@@ -79,7 +89,7 @@ export default function LabCatalog({ initialLabs }: LabCatalogProps) {
             <SlidersHorizontal className="w-4 h-4 text-accent" />
             <h3 className="text-xs font-bold uppercase tracking-wider">Sandbox Filter Matrix</h3>
           </div>
-          {(searchQuery || selectedStatus !== 'all' || selectedType !== 'all') && (
+          {(searchVal || selectedStatus !== 'all' || selectedType !== 'all') && (
             <button
               onClick={handleResetFilters}
               className="flex items-center gap-1 text-[10px] uppercase font-bold text-accent hover:text-accent-hover transition-colors"
@@ -91,19 +101,23 @@ export default function LabCatalog({ initialLabs }: LabCatalogProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
           {/* Text Search Input */}
-          <div className="md:col-span-6 relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
-            <Input
-              type="text"
-              placeholder="Search experiments, libraries, concepts..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 bg-black/40 border-white/10 text-white rounded-lg focus-visible:ring-accent"
-            />
+          <div className="md:col-span-6 space-y-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary block">Search Sandbox</span>
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+              <Input
+                type="text"
+                placeholder="Search experiments, libraries, concepts..."
+                value={searchVal}
+                onChange={(e) => setSearchVal(e.target.value)}
+                className="pl-9 bg-black/40 border-white/10 text-white rounded-lg focus-visible:ring-accent"
+              />
+            </div>
           </div>
 
           {/* Status Dropdown */}
-          <div className="md:col-span-3">
+          <div className="md:col-span-3 space-y-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary block">Status</span>
             <Select value={selectedStatus} onValueChange={(val) => setSelectedStatus(val || 'all')}>
               <SelectTrigger className="bg-black/40 border-white/10 text-white rounded-lg">
                 <SelectValue placeholder="Status" />
@@ -118,7 +132,8 @@ export default function LabCatalog({ initialLabs }: LabCatalogProps) {
           </div>
 
           {/* Type Dropdown */}
-          <div className="md:col-span-3">
+          <div className="md:col-span-3 space-y-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary block">Type</span>
             <Select value={selectedType} onValueChange={(val) => setSelectedType(val || 'all')}>
               <SelectTrigger className="bg-black/40 border-white/10 text-white rounded-lg">
                 <SelectValue placeholder="Type" />
