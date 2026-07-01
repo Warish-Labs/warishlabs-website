@@ -16,53 +16,124 @@ export async function GET(request: Request) {
 
     // 1. Build date range filter
     const dateFilter: any = {};
-    if (range === '7d' || range === '30d') {
+    let numDays = 7;
+    if (range === '7d') {
+      numDays = 7;
       const limitDate = new Date();
-      limitDate.setDate(limitDate.getDate() - (range === '7d' ? 7 : 30));
+      limitDate.setDate(limitDate.getDate() - 7);
       dateFilter.createdAt = { gte: limitDate };
+    } else if (range === '30d') {
+      numDays = 30;
+      const limitDate = new Date();
+      limitDate.setDate(limitDate.getDate() - 30);
+      dateFilter.createdAt = { gte: limitDate };
+    } else {
+      // All time – limit chart to last 90 days for readability
+      numDays = 90;
     }
 
-    // 2. Query total events under date range
-    const totalEvents = await prisma.analyticsEvent.count({
-      where: dateFilter,
-    });
-    
-    // 3. Group events by eventName
-    const eventCounts = await prisma.analyticsEvent.groupBy({
-      by: ['eventName'],
-      where: dateFilter,
-      _count: {
-        id: true,
-      },
-    });
+    // Run all queries in parallel
+    const [
+      totalEvents,
+      eventCounts,
+      referrers,
+      recentEvents,
+      pageViewEvents,
+      searchEvents,
+    ] = await Promise.all([
+      // 2. Total events
+      prisma.analyticsEvent.count({ where: dateFilter }),
 
-    // 4. Group events by referrer (Top 10 referrers)
-    const referrers = await prisma.analyticsEvent.groupBy({
-      by: ['referrer'],
-      where: {
-        ...dateFilter,
-        referrer: { not: null },
-      },
-      _count: {
-        id: true,
-      },
-      orderBy: {
-        _count: {
-          id: 'desc',
+      // 3. Group events by eventName
+      prisma.analyticsEvent.groupBy({
+        by: ['eventName'],
+        where: dateFilter,
+        _count: { id: true },
+        orderBy: { _count: { id: 'desc' } },
+      }),
+
+      // 4. Top 10 referrers
+      prisma.analyticsEvent.groupBy({
+        by: ['referrer'],
+        where: { ...dateFilter, referrer: { not: null } },
+        _count: { id: true },
+        orderBy: { _count: { id: 'desc' } },
+        take: 10,
+      }),
+
+      // 5. Recent events (last 100)
+      prisma.analyticsEvent.findMany({
+        where: dateFilter,
+        take: 100,
+        orderBy: { createdAt: 'desc' },
+        include: { visitor: true },
+      }),
+
+      // 6. Page view events for time-series chart (select only createdAt)
+      prisma.analyticsEvent.findMany({
+        where: {
+          ...dateFilter,
+          eventName: 'page_view',
         },
-      },
-      take: 10,
+        select: { createdAt: true },
+        orderBy: { createdAt: 'asc' },
+      }),
+
+      // 7. Search events for top terms
+      prisma.analyticsEvent.findMany({
+        where: {
+          ...dateFilter,
+          eventName: 'search',
+        },
+        select: { eventData: true },
+      }),
+    ]);
+
+    // --- Build page views over time (grouped by day) ---
+    const viewsByDay: Record<string, number> = {};
+    const now = new Date();
+    for (let i = numDays - 1; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+      const key = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      viewsByDay[key] = 0;
+    }
+
+    pageViewEvents.forEach((evt) => {
+      const key = new Date(evt.createdAt).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+      });
+      if (viewsByDay[key] !== undefined) {
+        viewsByDay[key]++;
+      }
     });
 
-    // 5. Query recent events (Last 100) under date filter
-    const recentEvents = await prisma.analyticsEvent.findMany({
-      where: dateFilter,
-      take: 100,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        visitor: true,
-      },
+    const viewsOverTime = Object.entries(viewsByDay).map(([date, views]) => ({
+      date,
+      views,
+    }));
+
+    // --- Build top search terms ---
+    const termCounts: Record<string, number> = {};
+    searchEvents.forEach((evt) => {
+      try {
+        const data = evt.eventData as { query?: string } | null;
+        if (data?.query) {
+          const term = data.query.trim().toLowerCase();
+          if (term) {
+            termCounts[term] = (termCounts[term] || 0) + 1;
+          }
+        }
+      } catch {
+        // ignore parse errors
+      }
     });
+
+    const topSearches = Object.entries(termCounts)
+      .map(([term, count]) => ({ term, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
 
     return NextResponse.json({
       success: true,
@@ -71,6 +142,8 @@ export async function GET(request: Request) {
       eventCounts,
       referrers,
       recentEvents,
+      viewsOverTime,
+      topSearches,
     });
   } catch (error) {
     console.error('[API Admin Analytics] Fetch error:', error);
