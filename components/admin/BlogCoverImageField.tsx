@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Upload, Link as LinkIcon, ImageIcon, AlertTriangle, CheckCircle, RefreshCw, X } from 'lucide-react';
+import Image from 'next/image';
 import { toast } from 'sonner';
 import { CloudFolderSelect } from './CloudFolderSelect';
 
@@ -397,12 +398,28 @@ export function BlogCoverImageField({ value, onChange }: BlogCoverImageFieldProp
       {/* Preview card */}
       {safeSrc && (
         <div className="relative rounded-lg overflow-hidden border border-border bg-black/40">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={safeSrc}
-            alt="Cover image preview"
-            className="w-full max-h-48 object-cover"
-          />
+          {localBlobUrl ? (
+            /* 
+              Safe case: raw <img> is used ONLY for local browser-generated blob: URLs.
+              These URLs are created locally via URL.createObjectURL from a File selected
+              by the user. This is same-origin, not user-controlled string input, and
+              these blob URLs are revoked on cleanup/unmount.
+            */
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={localBlobUrl}
+              alt="Local upload preview"
+              className="w-full max-h-48 object-cover"
+            />
+          ) : (
+            <Image
+              src={safeSrc}
+              alt="Cover image preview"
+              width={dimensions?.width ?? 400}
+              height={dimensions?.height ?? 200}
+              className="w-full max-h-48 object-cover"
+            />
+          )}
           {localBlobUrl && (
             <div className="absolute top-2 left-2 bg-amber-500/90 text-black text-[9px] font-bold uppercase px-2 py-0.5 rounded">
               Local Preview
