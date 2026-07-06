@@ -7,6 +7,9 @@ import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminTopbar from '@/components/admin/AdminTopbar';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { motion } from 'framer-motion';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+const queryClient = new QueryClient();
 
 export default function AdminLayout({
   children,
@@ -81,17 +84,19 @@ export default function AdminLayout({
   }
 
   return (
-    <TooltipProvider>
-      <div className="flex h-screen overflow-hidden bg-black text-white">
-        <AdminSidebar />
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <AdminTopbar />
-          <main className="flex-1 overflow-y-auto bg-black p-8">
-            {children}
-          </main>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <div className="flex h-screen overflow-hidden bg-black text-white">
+          <AdminSidebar />
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <AdminTopbar />
+            <main className="flex-1 overflow-y-auto bg-black p-8">
+              {children}
+            </main>
+          </div>
         </div>
-      </div>
-    </TooltipProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
   );
 }
 

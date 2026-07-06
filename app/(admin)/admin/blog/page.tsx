@@ -6,6 +6,7 @@ import { FileText, Plus, Trash2, Eye, EyeOff, Edit, X, ChevronDown, ChevronUp } 
 import { toast } from 'sonner';
 import { formatDate } from '@/utils/formatters';
 import { Button } from '@/components/ui/button';
+import { BlogCoverImageField } from '@/components/admin/BlogCoverImageField';
 
 export default function AdminBlogPage() {
   const [blogs, setBlogs] = useState<any[]>([]);
@@ -19,6 +20,8 @@ export default function AdminBlogPage() {
   const [category, setCategory] = useState('Engineering');
   const [published, setPublished] = useState(false);
   const [coverImage, setCoverImage] = useState('');
+  const [coverImageWidth, setCoverImageWidth] = useState<number | undefined>(undefined);
+  const [coverImageHeight, setCoverImageHeight] = useState<number | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Collapsible SEO Panel states
@@ -55,6 +58,8 @@ export default function AdminBlogPage() {
     setCategory(blog.category);
     setPublished(blog.published);
     setCoverImage(blog.coverImage || '');
+    setCoverImageWidth(blog.coverImageWidth ?? undefined);
+    setCoverImageHeight(blog.coverImageHeight ?? undefined);
     
     // Populate SEO values if they exist
     if (blog.seo) {
@@ -79,6 +84,8 @@ export default function AdminBlogPage() {
     setCategory('Engineering');
     setPublished(false);
     setCoverImage('');
+    setCoverImageWidth(undefined);
+    setCoverImageHeight(undefined);
     setSeoTitle('');
     setSeoDescription('');
     setSeoKeywords('');
@@ -100,7 +107,9 @@ export default function AdminBlogPage() {
       excerpt,
       category,
       published,
-      coverImage: coverImage || 'https://res.cloudinary.com/placeholder.jpg',
+      coverImage: coverImage || null,
+      coverImageWidth: coverImageWidth ?? null,
+      coverImageHeight: coverImageHeight ?? null,
       seo: {
         title: seoTitle || title,
         description: seoDescription || excerpt,
@@ -235,13 +244,14 @@ export default function AdminBlogPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Cover Image URL</label>
-                    <input
-                      type="text"
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Cover Image</label>
+                    <BlogCoverImageField
                       value={coverImage}
-                      onChange={(e) => setCoverImage(e.target.value)}
-                      placeholder="res.cloudinary.com/..."
-                      className="w-full bg-bg-secondary border border-border rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-accent"
+                      onChange={(url, w, h) => {
+                        setCoverImage(url);
+                        setCoverImageWidth(w);
+                        setCoverImageHeight(h);
+                      }}
                     />
                   </div>
                 </div>

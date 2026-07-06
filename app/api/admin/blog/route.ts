@@ -31,10 +31,20 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { title, content, excerpt, category, published, coverImage, seo } = body;
+    const { title, content, excerpt, category, published, coverImage, coverImageWidth, coverImageHeight, seo } = body;
 
     if (!title || !content || !excerpt || !category) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Validate optional dimension fields
+    const parsedWidth = coverImageWidth != null ? Number(coverImageWidth) : undefined;
+    const parsedHeight = coverImageHeight != null ? Number(coverImageHeight) : undefined;
+    if (parsedWidth !== undefined && (!Number.isInteger(parsedWidth) || parsedWidth <= 0)) {
+      return NextResponse.json({ success: false, error: 'coverImageWidth must be a positive integer' }, { status: 400 });
+    }
+    if (parsedHeight !== undefined && (!Number.isInteger(parsedHeight) || parsedHeight <= 0)) {
+      return NextResponse.json({ success: false, error: 'coverImageHeight must be a positive integer' }, { status: 400 });
     }
 
     const slug = slugify(title);
@@ -46,6 +56,8 @@ export async function POST(request: Request) {
         content,
         excerpt,
         coverImage,
+        coverImageWidth: parsedWidth,
+        coverImageHeight: parsedHeight,
         category,
         published: published ?? false,
         publishedAt: published ? new Date() : null,
@@ -69,9 +81,9 @@ export async function POST(request: Request) {
     }).catch(err => console.error('Failed to log activity:', err));
 
     return NextResponse.json({ success: true, blog });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[API Admin Blog] Create error:', error);
-    if (error.code === 'P2002') {
+    if (typeof error === 'object' && error !== null && 'code' in error && (error as { code: string }).code === 'P2002') {
       return NextResponse.json({ success: false, error: 'Blog slug already exists' }, { status: 400 });
     }
     return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
@@ -86,7 +98,7 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
-    const { id, title, content, excerpt, category, published, coverImage, seo } = body;
+    const { id, title, content, excerpt, category, published, coverImage, coverImageWidth, coverImageHeight, seo } = body;
 
     if (!id) {
       return NextResponse.json({ success: false, error: 'Missing blog ID' }, { status: 400 });
@@ -100,7 +112,17 @@ export async function PUT(request: Request) {
       return NextResponse.json({ success: false, error: 'Blog not found' }, { status: 404 });
     }
 
-    const updatedData: any = {};
+    // Validate optional dimension fields
+    const parsedWidth = coverImageWidth != null ? Number(coverImageWidth) : undefined;
+    const parsedHeight = coverImageHeight != null ? Number(coverImageHeight) : undefined;
+    if (parsedWidth !== undefined && (!Number.isInteger(parsedWidth) || parsedWidth <= 0)) {
+      return NextResponse.json({ success: false, error: 'coverImageWidth must be a positive integer' }, { status: 400 });
+    }
+    if (parsedHeight !== undefined && (!Number.isInteger(parsedHeight) || parsedHeight <= 0)) {
+      return NextResponse.json({ success: false, error: 'coverImageHeight must be a positive integer' }, { status: 400 });
+    }
+
+    const updatedData: Record<string, unknown> = {};
     if (title) {
       updatedData.title = title;
       updatedData.slug = slugify(title);
@@ -109,6 +131,8 @@ export async function PUT(request: Request) {
     if (excerpt !== undefined) updatedData.excerpt = excerpt;
     if (category !== undefined) updatedData.category = category;
     if (coverImage !== undefined) updatedData.coverImage = coverImage;
+    if (parsedWidth !== undefined) updatedData.coverImageWidth = parsedWidth;
+    if (parsedHeight !== undefined) updatedData.coverImageHeight = parsedHeight;
     if (published !== undefined) {
       updatedData.published = published;
       if (published && !currentBlog.published) {
