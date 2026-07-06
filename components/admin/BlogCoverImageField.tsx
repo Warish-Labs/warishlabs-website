@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Upload, Link as LinkIcon, ImageIcon, AlertTriangle, CheckCircle, RefreshCw, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { CloudFolderSelect } from './CloudFolderSelect';
@@ -265,6 +265,19 @@ export function BlogCoverImageField({ value, onChange }: BlogCoverImageFieldProp
   };
 
   const activePreview = localBlobUrl || previewUrl;
+
+  const safeSrc = useMemo(() => {
+    if (!activePreview) return null;
+    if (activePreview.startsWith('blob:')) return activePreview; // our own createObjectURL, not user input
+    try {
+      const parsed = new URL(activePreview);
+      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+        return activePreview;
+      }
+    } catch {}
+    return null;
+  }, [activePreview]);
+
   const goodRatio = dimensions ? isGoodSocialRatio(dimensions.width, dimensions.height) : null;
 
   return (
@@ -382,11 +395,11 @@ export function BlogCoverImageField({ value, onChange }: BlogCoverImageFieldProp
       )}
 
       {/* Preview card */}
-      {activePreview && (
+      {safeSrc && (
         <div className="relative rounded-lg overflow-hidden border border-border bg-black/40">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={activePreview}
+            src={safeSrc}
             alt="Cover image preview"
             className="w-full max-h-48 object-cover"
           />
