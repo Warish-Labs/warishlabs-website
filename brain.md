@@ -1,6 +1,6 @@
 # brain.md — WarishLabs Website
 
-> **Last Updated:** 2026-06-29
+> **Last Updated:** 2026-07-06
 > **Status:** Production-Ready (Compiled, Security-Hardened, Monitored & Tested)
 
 ---
@@ -87,3 +87,52 @@ To comply with Vercel's Edge runtime constraints and enable seamless administrat
 - **Automated Workflow (`.github/workflows/ci.yml`):** Runs typecheck, linting, tests, and production build checks using Node.js 22 and npm caching on push/PRs.
 - **Dependabot (`.github/dependabot.yml`):** Weekly audits for npm packages and GHA updates.
 - **Templates:** PR templates, bug reports, feature requests, and `CODEOWNERS` are established.
+
+---
+
+## 9. Media Library & Cloudinary Integration (Updated 2026-07-06)
+
+### New: Blog Cover Image Dimensions
+
+The `Blog` model now stores optional `coverImageWidth` and `coverImageHeight` (nullable `Int` columns) to persist image dimensions at upload/paste time without re-fetching the image on every render. These are populated automatically by the `BlogCoverImageField` component on the admin blog page.
+
+**Why:** Avoids re-loading images to determine dimensions for OG preview warnings and future layout hints.
+
+### New: MediaFolder Model
+
+A `MediaFolder` lookup table (`id, path, name, createdAt, updatedAt`) stores the list of Cloudinary folder paths synced from the Cloudinary Admin API. This is the backing data source for:
+- The **Cloud Folder dropdown** (`components/admin/CloudFolderSelect.tsx`) used everywhere an upload destination folder must be selected.
+- The **Media Library folder browser** that shows folders at the current navigation level.
+
+**Important:** The `MediaFolder` table is a **lookup table only**. Deleting a folder entry from it (via sync) does NOT cascade to or delete any `Product`, `Blog`, or `MediaAsset` rows that reference a Cloudinary URL from that folder. Stored URLs remain valid.
+
+### New: Real Cloudinary Folder Sync (`/api/admin/media/sync`)
+
+The sync route was completely rebuilt. It now:
+1. Calls `MediaService.walkAllFolders()` which recursively walks the full Cloudinary folder tree using breadth-first traversal (root_folders → sub_folders for each, level by level).
+2. Diffs the result against the local `MediaFolder` DB table.
+3. Inserts newly discovered folders, removes stale ones.
+4. Returns `{ added: string[], removed: string[], unchanged: number }` for a detailed toast on the UI.
+
+**No new environment variables required** — uses the same `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` as before.
+
+### New: Dynamic Folder Endpoint (`GET /api/admin/media?type=folders`)
+
+Returns all `MediaFolder` records from the database ordered by `path`. Used by `CloudFolderSelect` via React Query.
+
+### New: Folder Contents Endpoint (`GET /api/admin/media?type=folder-contents&path=<path>`)
+
+Returns Cloudinary assets inside a specific folder (width, height, bytes, format, url) via `MediaService.listFolderAssets()`. All Cloudinary Admin API calls are server-side — the API secret is never exposed to the client.
+
+### New: Blog Cover Image Field (`components/admin/BlogCoverImageField.tsx`)
+
+Two-mode cover image input (Paste Link | Upload File):
+- **Link mode:** debounced URL probe with `new Image()` onload/onerror, shows dimensions + aspect ratio, amber warning if ratio deviates >15% from 1.91:1 social standard.
+- **Upload mode:** Instant local blob preview via `URL.createObjectURL`, reads dimensions before network upload, then swaps to Cloudinary URL on success. Retry button on failure. Enforces 5MB max / image mimetype on client.
+
+### Branch Hygiene (2026-07-06)
+
+Deleted 7 stale branches (all fully merged into main, 0 unmerged commits):
+- `feat/gtm`, `feature/analytics`, `feature/newsletter`, `feature/social-links-admin` (local + remote)
+- `fix/products-blog-slug`, `fix/search` (local + remote)
+- `fix/ci-cd-production` (local only — remote already pruned)
