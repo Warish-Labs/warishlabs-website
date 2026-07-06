@@ -41,10 +41,25 @@ function isGoodSocialRatio(w: number, h: number): boolean {
   return Math.abs(ratio - target) / target < 0.15; // within 15%
 }
 
+function isSafeImageUrl(url: string): boolean {
+  if (!url) return false;
+  if (url.startsWith('blob:')) {
+    return true;
+  }
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+  } catch {
+    return false;
+  }
+}
+
 export function BlogCoverImageField({ value, onChange }: BlogCoverImageFieldProps) {
   const [mode, setMode] = useState<Mode>('link');
   const [linkInput, setLinkInput] = useState(value || '');
-  const [previewUrl, setPreviewUrl] = useState<string>(value || '');
+  const [previewUrl, setPreviewUrl] = useState<string>(
+    value && isSafeImageUrl(value) ? value : ''
+  );
   const [dimensions, setDimensions] = useState<ImageDimensions | null>(null);
   const [linkError, setLinkError] = useState<string | null>(null);
   const [isProbing, setIsProbing] = useState(false);
@@ -73,7 +88,11 @@ export function BlogCoverImageField({ value, onChange }: BlogCoverImageFieldProp
   useEffect(() => {
     if (value && value !== linkInput) {
       setLinkInput(value);
-      setPreviewUrl(value);
+      if (isSafeImageUrl(value)) {
+        setPreviewUrl(value);
+      } else {
+        setPreviewUrl('');
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
@@ -82,8 +101,15 @@ export function BlogCoverImageField({ value, onChange }: BlogCoverImageFieldProp
    * Probe an image URL by loading it client-side and reading naturalWidth/Height.
    */
   const probeImageUrl = useCallback((url: string) => {
-    if (!url || !url.startsWith('http')) {
+    if (!url) {
       setLinkError(null);
+      setDimensions(null);
+      return;
+    }
+
+    if (!isSafeImageUrl(url)) {
+      setLinkError("Couldn't load image from this URL — the link may be invalid or restricted.");
+      setPreviewUrl('');
       setDimensions(null);
       return;
     }
@@ -188,7 +214,11 @@ export function BlogCoverImageField({ value, onChange }: BlogCoverImageFieldProp
 
       if (data.success && data.url) {
         // Swap blob preview with the real Cloudinary URL
-        setPreviewUrl(data.url);
+        if (isSafeImageUrl(data.url)) {
+          setPreviewUrl(data.url);
+        } else {
+          setPreviewUrl('');
+        }
         setLocalBlobUrl(null);
 
         // Revoke blob now that we have the real URL
