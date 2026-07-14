@@ -37,12 +37,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       name: string;
       slug: string;
     };
-    technologies: Array<{
-      technology: {
-        id: string;
-        name: string;
-      };
-    }>;
   }> = [];
   let categories: Array<Category & { _count?: { products: number } }> = [];
   let labs: Lab[] = [];
@@ -63,16 +57,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         },
         include: {
           category: true,
-          technologies: {
-            include: {
-              technology: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
-            },
-          },
         },
         take: 10,
       }).catch(() => []),
@@ -100,7 +84,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           OR: [
             { name: { contains: query, mode: 'insensitive' } },
             { description: { contains: query, mode: 'insensitive' } },
-            { techStack: { contains: query, mode: 'insensitive' } },
           ],
         },
         take: 5,
@@ -137,12 +120,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         name: p.category.name,
         slug: p.category.slug,
       },
-      technologies: p.technologies.map((t) => ({
-        technology: {
-          id: t.technology.id,
-          name: t.technology.name,
-        },
-      })),
     }));
 
     categories = dbCategories;
@@ -183,7 +160,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                   type="text"
                   name="q"
                   defaultValue={query}
-                  placeholder="Enter specifications, tech stack tags, or keywords..."
+                  placeholder="Enter specifications or keywords..."
                   required
                   className="w-full pl-12 pr-4 py-3 bg-bg-secondary border border-border text-white rounded-xl focus:border-accent outline-none text-sm font-medium shadow-elevated focus:ring-1 focus:ring-accent"
                 />
@@ -222,7 +199,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               <div className="space-y-1">
                 <p className="text-white font-bold text-sm">No Matches Resolved</p>
                 <p className="text-text-secondary text-xs max-w-xs mx-auto leading-relaxed">
-                  We couldn&apos;t resolve any records for &ldquo;<span className="text-white">{query}</span>&rdquo;. Try searching for &ldquo;platform&rdquo;, &ldquo;React&rdquo;, or &ldquo;development&rdquo;.
+                  We couldn&apos;t resolve any records for &ldquo;<span className="text-white">{query}</span>&rdquo;. Try searching for &ldquo;platform&rdquo; or &ldquo;development&rdquo;.
                 </p>
               </div>
             </div>

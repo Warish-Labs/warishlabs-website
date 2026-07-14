@@ -2,13 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Mail, Trash2, CheckCircle, XCircle, Download, Send, AlertTriangle } from 'lucide-react';
+import { Mail, Trash2, CheckCircle, XCircle, Download, Send, AlertTriangle, Search, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDate } from '@/utils/formatters';
+import { Input } from '@/components/ui/input';
 
 export default function AdminNewsletterPage() {
   const [subscribers, setSubscribers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
 
   // Campaign Composer Form states
   const [subject, setSubject] = useState('');
@@ -128,8 +130,12 @@ export default function AdminNewsletterPage() {
     }
   };
 
+  const filteredSubscribers = subscribers.filter((sub) =>
+    sub.email.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 select-none">
       {/* Page Overview */}
       <Card className="glass-panel border-border shadow-card overflow-hidden">
         <CardHeader className="border-b border-border/40 pb-4">
@@ -194,8 +200,15 @@ export default function AdminNewsletterPage() {
                   disabled={isSending || subscribers.filter(s => s.active).length === 0}
                   className="w-full bg-accent hover:bg-accent/80 text-white font-semibold text-xs uppercase tracking-wider py-2.5 rounded-md transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
-                  <Send className="w-3.5 h-3.5" />
-                  {isSending ? 'Dispatching Broadcast...' : 'Execute Campaign'}
+                  {isSending ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Dispatching Broadcast...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" /> Execute Campaign
+                    </>
+                  )}
                 </button>
               </form>
             </CardContent>
@@ -205,30 +218,42 @@ export default function AdminNewsletterPage() {
         {/* Registered Audiences List */}
         <div className="lg:col-span-7">
           <Card className="glass-panel border-border shadow-card overflow-hidden">
-            <CardHeader className="border-b border-border/40 pb-4 flex flex-row items-center justify-between">
+            <CardHeader className="border-b border-border/40 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <CardTitle className="text-sm font-semibold text-white">Registered Audiences</CardTitle>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleExportCSV}
-                  disabled={subscribers.length === 0}
-                  className="px-3 py-1.5 bg-white/5 border border-white/10 hover:border-accent hover:text-white rounded text-[10px] font-bold uppercase text-zinc-300 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                  title="Export Subscriber List to CSV"
-                >
-                  <Download className="w-3.5 h-3.5" /> Export (CSV)
-                </button>
-                <span className="bg-accent-subtle/50 text-accent border border-accent/15 px-3 py-1 rounded-full text-xs font-bold flex items-center">
-                  Total: {subscribers.length}
-                </span>
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Search */}
+                <div className="relative w-44">
+                  <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-500" />
+                  <Input
+                    placeholder="Search subscribers..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-8 h-8 bg-bg-primary border-border text-white text-xs focus:border-accent"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleExportCSV}
+                    disabled={subscribers.length === 0}
+                    className="px-3 py-1.5 bg-white/5 border border-white/10 hover:border-accent hover:text-white rounded text-[10px] font-bold uppercase text-zinc-300 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    title="Export Subscriber List to CSV"
+                  >
+                    <Download className="w-3.5 h-3.5" /> Export (CSV)
+                  </button>
+                  <span className="bg-accent-subtle/50 text-accent border border-accent/15 px-3 py-1 rounded-full text-xs font-bold flex items-center">
+                    Audience: {filteredSubscribers.length} / {subscribers.length}
+                  </span>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="pt-6 px-0">
               {loading ? (
                 <div className="py-12 flex justify-center">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-accent" />
+                  <Loader2 className="animate-spin h-6 w-6 text-accent" />
                 </div>
-              ) : subscribers.length === 0 ? (
-                <div className="py-12 text-center text-text-tertiary text-sm">
-                  No registered email subscribers.
+              ) : filteredSubscribers.length === 0 ? (
+                <div className="py-12 text-center text-text-tertiary text-xs">
+                  No subscribers match search criteria.
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -241,8 +266,8 @@ export default function AdminNewsletterPage() {
                         <th className="px-6 py-3 text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border/40 text-sm text-text-secondary">
-                      {subscribers.map((sub) => (
+                    <tbody className="divide-y divide-border/40 text-xs text-text-secondary">
+                      {filteredSubscribers.map((sub) => (
                         <tr key={sub.id} className="hover:bg-bg-card/30 transition-colors">
                           <td className="px-6 py-4 font-semibold text-white">
                             {sub.email}

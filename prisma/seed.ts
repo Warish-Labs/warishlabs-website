@@ -1,4 +1,4 @@
-import { PrismaClient, Technology } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 import dotenv from 'dotenv';
@@ -67,30 +67,7 @@ async function main() {
   }
   console.log('Categories seeded.');
 
-  // 4. Seed Technologies
-  const techs = [
-    { name: 'Next.js', slug: 'nextjs', icon: 'nextjs' },
-    { name: 'TypeScript', slug: 'typescript', icon: 'typescript' },
-    { name: 'PostgreSQL', slug: 'postgresql', icon: 'postgresql' },
-    { name: 'Prisma', slug: 'prisma', icon: 'prisma' },
-    { name: 'Tailwind CSS', slug: 'tailwindcss', icon: 'tailwindcss' },
-    { name: 'Three.js', slug: 'threejs', icon: 'threejs' },
-    { name: 'Zustand', slug: 'zustand', icon: 'zustand' },
-    { name: 'Framer Motion', slug: 'framer-motion', icon: 'framer-motion' },
-  ];
-
-  const seededTechs: Record<string, Technology> = {};
-  for (const tech of techs) {
-    const t = await prisma.technology.upsert({
-      where: { slug: tech.slug },
-      update: { name: tech.name, icon: tech.icon },
-      create: tech,
-    });
-    seededTechs[t.slug] = t;
-  }
-  console.log('Technologies seeded.');
-
-  // 5. Seed Products
+  // 4. Seed Products
   const products = [
     {
       name: 'WarishLabs Cloud',
@@ -101,7 +78,6 @@ async function main() {
       githubUrl: 'https://github.com/warishlabs/cloud',
       visitUrl: 'https://cloud.warishlabs.com',
       categoryId: seededCategories[0].id,
-      techSlugs: ['nextjs', 'typescript', 'postgresql', 'prisma', 'tailwindcss'],
     },
     {
       name: 'Antigravity Engine',
@@ -112,50 +88,27 @@ async function main() {
       githubUrl: 'https://github.com/warishlabs/antigravity',
       visitUrl: null,
       categoryId: seededCategories[1].id,
-      techSlugs: ['threejs', 'typescript', 'zustand', 'framer-motion', 'nextjs'],
     },
   ];
 
   for (const prod of products) {
-    const { techSlugs, ...prodData } = prod;
-    
-    const p = await prisma.product.upsert({
-      where: { slug: prodData.slug },
+    await prisma.product.upsert({
+      where: { slug: prod.slug },
       update: {
-        name: prodData.name,
-        tagline: prodData.tagline,
-        description: prodData.description,
-        status: prodData.status,
-        githubUrl: prodData.githubUrl,
-        visitUrl: prodData.visitUrl,
-        categoryId: prodData.categoryId,
+        name: prod.name,
+        tagline: prod.tagline,
+        description: prod.description,
+        status: prod.status,
+        githubUrl: prod.githubUrl,
+        visitUrl: prod.visitUrl,
+        categoryId: prod.categoryId,
       },
-      create: prodData,
+      create: prod,
     });
-
-    // Link Technologies
-    for (const slug of techSlugs) {
-      const tech = seededTechs[slug];
-      if (tech) {
-        await prisma.productTechnology.upsert({
-          where: {
-            productId_technologyId: {
-              productId: p.id,
-              technologyId: tech.id,
-            },
-          },
-          update: {},
-          create: {
-            productId: p.id,
-            technologyId: tech.id,
-          },
-        });
-      }
-    }
   }
   console.log('Products seeded.');
 
-  // 6. Seed Nav Items
+  // 5. Seed Nav Items
   const navItems = [
     { label: 'Products', path: '/products', sortOrder: 1 },
     { label: 'Labs', path: '/labs', sortOrder: 2 },
@@ -167,12 +120,10 @@ async function main() {
 
   for (const item of navItems) {
     await prisma.navItem.upsert({
-      // We can use a find/upsert strategy based on path
-      where: { id: item.path }, // Mock identifier or find first
+      where: { id: item.path },
       update: { label: item.label, sortOrder: item.sortOrder },
       create: { id: item.path, label: item.label, path: item.path, sortOrder: item.sortOrder },
     }).catch(async () => {
-      // If table id matches uuid type, create it normally
       const exists = await prisma.navItem.findFirst({ where: { path: item.path } });
       if (!exists) {
         await prisma.navItem.create({
@@ -187,7 +138,7 @@ async function main() {
   }
   console.log('Navigation items seeded.');
 
-  // 7. Seed FAQs
+  // 6. Seed FAQs
   const faqs = [
     { question: 'What is WarishLabs?', answer: 'WarishLabs is an engineering-first laboratory constructing premium full-stack and 3D web software.', sortOrder: 1 },
     { question: 'Can I view the source code of WarishLabs projects?', answer: 'Yes! Most of our developer tools and libraries are fully open-source on GitHub.', sortOrder: 2 },
@@ -201,7 +152,7 @@ async function main() {
   }
   console.log('FAQs seeded.');
 
-  // 8. Seed Homepage Sections configuration
+  // 7. Seed Homepage Sections configuration
   const sections = [
     {
       sectionType: 'hero',
@@ -250,7 +201,7 @@ async function main() {
         ],
         highlights: [
           { title: 'Obsessive Quality', description: 'We believe that software should be built with absolute care, strict type contracts, and solid execution guarantees.', icon: 'Shield' },
-          { title: 'Modern Stack', description: 'Next.js 16 App Router, Tailwind CSS, Prisma 7, PostgreSQL, Cloudinary, and React Three Fiber.', icon: 'Cpu' },
+          { title: 'Modern Stack', description: 'Modern frameworks, serverless databases, CDN assets, and interactive WebGL elements.', icon: 'Cpu' },
           { title: 'WebGL Systems', description: 'Interactive visual layers rendered using hardware-accelerated 3D graphics in the browser.', icon: 'Globe' },
           { title: 'Seeded CMS', description: 'Decoupled relational schema configuration that puts content control securely in the administrative console.', icon: 'Code2' },
         ]

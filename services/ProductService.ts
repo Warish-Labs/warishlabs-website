@@ -1,10 +1,9 @@
 import prisma from '@/lib/prisma';
-import type { Product, Category, Technology, ProductMedia, ProductFAQ, ProductSEO } from '@prisma/client';
+import type { Product, Category, ProductMedia, ProductFAQ, ProductSEO } from '@prisma/client';
 import { MediaService } from './MediaService';
 
 export type ProductWithDetails = Product & {
   category: Category;
-  technologies: { technology: Technology }[];
   media: ProductMedia[];
   faqs: ProductFAQ[];
   seo: ProductSEO | null;
@@ -19,9 +18,6 @@ export class ProductService {
       where: activeOnly ? { status: 'active' } : undefined,
       include: {
         category: true,
-        technologies: {
-          include: { technology: true },
-        },
         media: {
           orderBy: { sortOrder: 'asc' },
         },
@@ -35,6 +31,30 @@ export class ProductService {
   }
 
   /**
+   * Retrieves popular products ordered by clicks first, then created date
+   */
+  static async getPopularProducts(limit = 8): Promise<ProductWithDetails[]> {
+    return prisma.product.findMany({
+      where: { status: 'active' },
+      include: {
+        category: true,
+        media: {
+          orderBy: { sortOrder: 'asc' },
+        },
+        faqs: {
+          orderBy: { sortOrder: 'asc' },
+        },
+        seo: true,
+      },
+      orderBy: [
+        { clickCount: 'desc' },
+        { createdAt: 'desc' },
+      ],
+      take: limit,
+    }).catch(() => []) as unknown as ProductWithDetails[];
+  }
+
+  /**
    * Retrieves a single product by its unique slug
    */
   static async getBySlug(slug: string): Promise<ProductWithDetails | null> {
@@ -42,9 +62,6 @@ export class ProductService {
       where: { slug },
       include: {
         category: true,
-        technologies: {
-          include: { technology: true },
-        },
         media: {
           orderBy: { sortOrder: 'asc' },
         },
@@ -54,6 +71,26 @@ export class ProductService {
         seo: true,
       },
     }) as unknown as ProductWithDetails | null;
+  }
+
+  /**
+   * Increments the page view count of a product
+   */
+  static async incrementViewCount(id: string): Promise<Product> {
+    return prisma.product.update({
+      where: { id },
+      data: { viewCount: { increment: 1 } },
+    });
+  }
+
+  /**
+   * Increments the click count of a product
+   */
+  static async incrementClickCount(id: string): Promise<Product> {
+    return prisma.product.update({
+      where: { id },
+      data: { clickCount: { increment: 1 } },
+    });
   }
 
   /**
@@ -74,12 +111,11 @@ export class ProductService {
     showOnHomepage?: boolean;
     displayOrder?: number;
     categoryId: string;
-    technologyIds?: string[];
     media?: { url: string; type: string; alt?: string; sortOrder?: number }[];
     faqs?: { question: string; answer: string; sortOrder?: number }[];
     seo?: { title: string; description: string; keywords?: string } | null;
   }): Promise<Product> {
-    const { technologyIds = [], media = [], faqs = [], seo, ...productData } = data;
+    const { media = [], faqs = [], seo, ...productData } = data;
 
     return prisma.$transaction(async (tx) => {
       // 1. Create product
@@ -95,17 +131,7 @@ export class ProductService {
         },
       });
 
-      // 2. Link Technologies
-      if (technologyIds.length > 0) {
-        await tx.productTechnology.createMany({
-          data: technologyIds.map((techId) => ({
-            productId: product.id,
-            technologyId: techId,
-          })),
-        });
-      }
-
-      // 3. Create SEO
+      // 2. Create SEO
       if (seo) {
         await tx.productSEO.create({
           data: {
@@ -141,13 +167,12 @@ export class ProductService {
       showOnHomepage?: boolean;
       displayOrder?: number;
       categoryId?: string;
-      technologyIds?: string[];
       media?: { url: string; type: string; alt?: string; sortOrder?: number }[];
       faqs?: { question: string; answer: string; sortOrder?: number }[];
       seo?: { title: string; description: string; keywords?: string } | null;
     }
   ): Promise<Product> {
-    const { technologyIds, media, faqs, seo, ...productData } = data;
+    const { media, faqs, seo, ...productData } = data;
 
     return prisma.$transaction(async (tx) => {
       // 1. Update basic fields
@@ -156,22 +181,7 @@ export class ProductService {
         data: productData,
       });
 
-      // 2. Update Technologies if provided
-      if (technologyIds !== undefined) {
-        // Clear existing links
-        await tx.productTechnology.deleteMany({ where: { productId: id } });
-        // Add new links
-        if (technologyIds.length > 0) {
-          await tx.productTechnology.createMany({
-            data: technologyIds.map((techId) => ({
-              productId: id,
-              technologyId: techId,
-            })),
-          });
-        }
-      }
-
-      // 3. Update Media if provided
+      // 2. Update Media if provided
       if (media !== undefined) {
         await tx.productMedia.deleteMany({ where: { productId: id } });
         if (media.length > 0) {
@@ -184,7 +194,7 @@ export class ProductService {
         }
       }
 
-      // 4. Update FAQs if provided
+      // 3. Update FAQs if provided
       if (faqs !== undefined) {
         await tx.productFAQ.deleteMany({ where: { productId: id } });
         if (faqs.length > 0) {
@@ -197,7 +207,7 @@ export class ProductService {
         }
       }
 
-      // 5. Update SEO if provided
+      // 4. Update SEO if provided
       if (seo !== undefined) {
         await tx.productSEO.deleteMany({ where: { productId: id } });
         if (seo) {

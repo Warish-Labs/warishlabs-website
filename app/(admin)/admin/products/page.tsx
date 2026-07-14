@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Briefcase, Plus, Edit2, Trash2, X, Terminal, Loader2, ExternalLink, GitBranch, ShieldAlert } from 'lucide-react';
+import { Briefcase, Plus, Edit2, Trash2, X, Terminal, Loader2, ExternalLink, GitBranch, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Product {
@@ -24,12 +24,13 @@ interface Product {
   githubUrl?: string | null;
   categoryId: string;
   category?: { name: string };
-  technologies?: Array<{
-    technology: {
-      id: string;
-      name: string;
-    };
-  }>;
+  viewCount?: number;
+  clickCount?: number;
+  seo?: {
+    title: string;
+    description: string;
+    keywords?: string | null;
+  } | null;
 }
 
 interface Category {
@@ -37,18 +38,16 @@ interface Category {
   name: string;
 }
 
-interface Technology {
-  id: string;
-  name: string;
-  slug: string;
-}
-
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [allTechnologies, setAllTechnologies] = useState<Technology[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitPending, setIsSubmitPending] = useState(false);
+
+  // Search & Pagination State
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Form State
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -61,20 +60,26 @@ export default function AdminProductsPage() {
   const [logoUrl, setLogoUrl] = useState('');
   const [isLogoUploading, setIsLogoUploading] = useState(false);
   const [categoryId, setCategoryId] = useState('');
-  
-  // Dynamic Content Audit addition states
   const [githubUrl, setGithubUrl] = useState('');
   const [bannerUrl, setBannerUrl] = useState('');
   const [isBannerUploading, setIsBannerUploading] = useState(false);
   const [type, setType] = useState('Tool');
-  const [technologyIds, setTechnologyIds] = useState<string[]>([]);
 
-  // Fetch initial data
-  const fetchProductsList = async () => {
+  // SEO fields state
+  const [seoTitle, setSeoTitle] = useState('');
+  const [seoDescription, setSeoDescription] = useState('');
+  const [seoKeywords, setSeoKeywords] = useState('');
+
+  const fetchProductsList = async (query = '', pageNum = 1) => {
     try {
-      const resProducts = await fetch('/api/admin/products');
+      const resProducts = await fetch(`/api/admin/products?search=${encodeURIComponent(query)}&page=${pageNum}`);
       const dataProducts = await resProducts.json();
-      if (dataProducts.success) setProducts(dataProducts.products);
+      if (dataProducts.success) {
+        setProducts(dataProducts.products);
+        if (dataProducts.pagination) {
+          setTotalPages(dataProducts.pagination.totalPages || 1);
+        }
+      }
     } catch {
       toast.error('Failed to reload products list.');
     }
@@ -83,19 +88,21 @@ export default function AdminProductsPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [resProducts, resCategories, resTechs] = await Promise.all([
-          fetch('/api/admin/products'),
-          fetch('/api/admin/categories'),
-          fetch('/api/admin/technologies')
+        const [resProducts, resCategories] = await Promise.all([
+          fetch(`/api/admin/products?search=${encodeURIComponent(search)}&page=${page}`),
+          fetch('/api/admin/categories')
         ]);
         
         const dataProducts = await resProducts.json();
         const dataCategories = await resCategories.json();
-        const dataTechs = await resTechs.json();
 
-        if (dataProducts.success) setProducts(dataProducts.products);
+        if (dataProducts.success) {
+          setProducts(dataProducts.products);
+          if (dataProducts.pagination) {
+            setTotalPages(dataProducts.pagination.totalPages || 1);
+          }
+        }
         if (dataCategories.success) setCategories(dataCategories.categories);
-        if (dataTechs.success) setAllTechnologies(dataTechs.technologies);
       } catch (err) {
         toast.error('Failed to load admin resources.');
       } finally {
@@ -103,7 +110,13 @@ export default function AdminProductsPage() {
       }
     }
     fetchData();
-  }, []);
+  }, [page]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    setPage(1);
+    fetchProductsList(e.target.value, 1);
+  };
 
   const resetForm = () => {
     setEditingId(null);
@@ -117,7 +130,9 @@ export default function AdminProductsPage() {
     setGithubUrl('');
     setBannerUrl('');
     setType('Tool');
-    setTechnologyIds([]);
+    setSeoTitle('');
+    setSeoDescription('');
+    setSeoKeywords('');
     setIsFormOpen(false);
   };
 
@@ -133,13 +148,28 @@ export default function AdminProductsPage() {
     setGithubUrl(product.githubUrl || '');
     setBannerUrl(product.bannerUrl || '');
     setType(product.type || 'Tool');
-    setTechnologyIds(product.technologies?.map((t) => t.technology.id) || []);
+    setSeoTitle(product.seo?.title || '');
+    setSeoDescription(product.seo?.description || '');
+    setSeoKeywords(product.seo?.keywords || '');
     setIsFormOpen(true);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isBanner: boolean) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Client-side validations
+    const maxSize = isBanner ? 5 * 1024 * 1024 : 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error(`File size exceeds maximum limit of ${isBanner ? '5MB' : '2MB'}`);
+      return;
+    }
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Invalid file type. Only JPG, PNG, WebP, and SVG are accepted.');
+      return;
+    }
 
     if (isBanner) setIsBannerUploading(true);
     else setIsLogoUploading(true);
@@ -173,14 +203,6 @@ export default function AdminProductsPage() {
     }
   };
 
-  const handleTechCheckboxChange = (techId: string, checked: boolean) => {
-    if (checked) {
-      setTechnologyIds((prev) => [...prev, techId]);
-    } else {
-      setTechnologyIds((prev) => prev.filter((id) => id !== techId));
-    }
-  };
-
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !tagline || !description || !categoryId) {
@@ -201,7 +223,11 @@ export default function AdminProductsPage() {
       githubUrl: githubUrl || null,
       type: type || 'Tool',
       categoryId,
-      technologyIds,
+      seo: (seoTitle || seoDescription || seoKeywords) ? {
+        title: seoTitle || name,
+        description: seoDescription || tagline,
+        keywords: seoKeywords || null
+      } : null,
     };
 
     try {
@@ -215,7 +241,7 @@ export default function AdminProductsPage() {
 
       if (response.ok && result.success) {
         toast.success(editingId ? 'Product updated successfully!' : 'Product created successfully!');
-        await fetchProductsList();
+        await fetchProductsList(search, page);
         resetForm();
       } else {
         toast.error(result.error || 'Failed to submit product.');
@@ -241,7 +267,7 @@ export default function AdminProductsPage() {
 
       if (response.ok && result.success) {
         toast.success('Product deleted successfully!');
-        setProducts(products.filter(p => p.id !== id));
+        fetchProductsList(search, page);
       } else {
         toast.error(result.error || 'Failed to delete product.');
       }
@@ -253,7 +279,7 @@ export default function AdminProductsPage() {
   return (
     <div className="space-y-8 select-none">
       {/* Header action */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
             <Briefcase className="w-8 h-8 text-accent" />
@@ -263,14 +289,27 @@ export default function AdminProductsPage() {
             Configure showcased software platforms in the catalog.
           </p>
         </div>
-        {!isFormOpen && (
-          <Button
-            onClick={() => setIsFormOpen(true)}
-            className="bg-accent hover:bg-accent-hover text-white active:scale-[0.97] transition-all font-semibold flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" /> Add Product
-          </Button>
-        )}
+        <div className="flex items-center gap-3">
+          {!isFormOpen && (
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+              <Input
+                placeholder="Search products..."
+                value={search}
+                onChange={handleSearchChange}
+                className="pl-9 bg-bg-primary border-border focus:border-accent text-white"
+              />
+            </div>
+          )}
+          {!isFormOpen && (
+            <Button
+              onClick={() => setIsFormOpen(true)}
+              className="bg-accent hover:bg-accent-hover text-white active:scale-[0.97] transition-all font-semibold flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" /> Add Product
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Loading indicator */}
@@ -316,18 +355,22 @@ export default function AdminProductsPage() {
                   <Label className="text-xs font-semibold text-text-secondary">
                     Category Group <span className="text-destructive">*</span>
                   </Label>
-                  <Select value={categoryId} onValueChange={(val) => setCategoryId(val || '')}>
-                    <SelectTrigger className="bg-bg-primary border-border text-white focus:border-accent">
-                      <SelectValue placeholder="Select a Category" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-bg-card border-border text-white">
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id} className="focus:bg-accent focus:text-white">
-                          {cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {categories.length === 0 ? (
+                    <div className="text-xs text-zinc-500 italic py-2">Loading categories...</div>
+                  ) : (
+                    <Select value={categoryId} onValueChange={(val) => setCategoryId(val || '')}>
+                      <SelectTrigger className="bg-bg-primary border-border text-white focus:border-accent">
+                        <SelectValue placeholder="Select a Category" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-bg-card border-border text-white">
+                        {categories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id} className="focus:bg-accent focus:text-white">
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
 
                 {/* Tagline */}
@@ -428,6 +471,7 @@ export default function AdminProductsPage() {
                         disabled={isLogoUploading}
                         className="bg-bg-primary border-border focus:border-accent text-white text-xs file:bg-bg-card file:border-border file:text-white file:rounded file:px-2 file:py-0.5 file:mr-2 file:cursor-pointer"
                       />
+                      <p className="text-[9px] text-text-tertiary mt-1">Recommended: 512×512px, square, PNG/SVG, max 2MB</p>
                     </div>
                   </div>
                   {isLogoUploading && <p className="text-[10px] text-accent animate-pulse">Uploading logo to Cloudinary...</p>}
@@ -457,36 +501,63 @@ export default function AdminProductsPage() {
                         disabled={isBannerUploading}
                         className="bg-bg-primary border-border focus:border-accent text-white text-xs file:bg-bg-card file:border-border file:text-white file:rounded file:px-2 file:py-0.5 file:mr-2 file:cursor-pointer"
                       />
+                      <p className="text-[9px] text-text-tertiary mt-1">Recommended: 1200×630px, 16:9, JPG/PNG/WebP, max 5MB</p>
                     </div>
                   </div>
                   {isBannerUploading && <p className="text-[10px] text-accent animate-pulse">Uploading banner to Cloudinary...</p>}
                 </div>
 
-                {/* Technologies checkboxes */}
-                <div className="space-y-2 md:col-span-2 border-t border-border/30 pt-4">
-                  <Label className="text-xs font-semibold text-text-secondary block mb-2">
-                    Technologies / Tech Stack Matrix
+                {/* SEO Meta Section */}
+                <div className="space-y-4 md:col-span-2 border-t border-border/30 pt-4">
+                  <Label className="text-sm font-bold text-white block mb-2">
+                    SEO Metadata Settings
                   </Label>
-                  {allTechnologies.length === 0 ? (
-                    <p className="text-xs text-text-tertiary italic">No technology tags found in database.</p>
-                  ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-black/40 border border-white/5 rounded-lg p-4">
-                      {allTechnologies.map((tech) => {
-                        const isChecked = technologyIds.includes(tech.id);
-                        return (
-                          <label key={tech.id} className="flex items-center gap-2 cursor-pointer text-xs text-text-secondary hover:text-white transition-colors">
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={(e) => handleTechCheckboxChange(tech.id, e.target.checked)}
-                              className="rounded bg-bg-primary border-border border text-accent focus:ring-accent w-4 h-4 cursor-pointer"
-                            />
-                            <span>{tech.name}</span>
-                          </label>
-                        );
-                      })}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-black/40 border border-white/5 rounded-lg p-4">
+                    {/* Meta Title */}
+                    <div className="space-y-1.5 md:col-span-2">
+                      <div className="flex justify-between items-center text-xs">
+                        <Label htmlFor="seo-title" className="font-semibold text-text-secondary">Meta Title</Label>
+                        <span className={`font-mono text-[10px] ${seoTitle.length > 70 ? 'text-destructive' : 'text-text-tertiary'}`}>
+                          {seoTitle.length} / 70 chars
+                        </span>
+                      </div>
+                      <Input
+                        id="seo-title"
+                        value={seoTitle}
+                        onChange={(e) => setSeoTitle(e.target.value)}
+                        placeholder="e.g. Distributed Scheduler Engine | WarishLabs"
+                        className="bg-bg-primary border-border focus:border-accent text-white"
+                      />
                     </div>
-                  )}
+                    {/* Meta Description */}
+                    <div className="space-y-1.5 md:col-span-2">
+                      <div className="flex justify-between items-center text-xs">
+                        <Label htmlFor="seo-desc" className="font-semibold text-text-secondary">Meta Description</Label>
+                        <span className={`font-mono text-[10px] ${seoDescription.length > 160 ? 'text-destructive' : 'text-text-tertiary'}`}>
+                          {seoDescription.length} / 160 chars
+                        </span>
+                      </div>
+                      <Textarea
+                        id="seo-desc"
+                        value={seoDescription}
+                        onChange={(e) => setSeoDescription(e.target.value)}
+                        rows={2}
+                        placeholder="Provide a search snippet summarizing the software..."
+                        className="bg-bg-primary border-border focus:border-accent text-white text-xs"
+                      />
+                    </div>
+                    {/* Meta Keywords */}
+                    <div className="space-y-1.5 md:col-span-2">
+                      <Label htmlFor="seo-keywords" className="text-xs font-semibold text-text-secondary">Keywords (Comma-separated)</Label>
+                      <Input
+                        id="seo-keywords"
+                        value={seoKeywords}
+                        onChange={(e) => setSeoKeywords(e.target.value)}
+                        placeholder="e.g. cloud, workflow, scheduler, developer-tools"
+                        className="bg-bg-primary border-border focus:border-accent text-white"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Description Textarea */}
@@ -541,7 +612,7 @@ export default function AdminProductsPage() {
             {products.length === 0 ? (
               <div className="text-center py-20 text-text-tertiary text-sm flex flex-col items-center gap-4">
                 <Terminal className="w-12 h-12 text-text-tertiary opacity-40 animate-pulse" />
-                <p>No products constructed in the database catalog.</p>
+                <p>No products constructed matching criteria.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -552,6 +623,7 @@ export default function AdminProductsPage() {
                       <th className="px-6 py-4">Category</th>
                       <th className="px-6 py-4">Type</th>
                       <th className="px-6 py-4">Status</th>
+                      <th className="px-6 py-4">Views/Clicks</th>
                       <th className="px-6 py-4">Resources</th>
                       <th className="px-6 py-4 text-right">Actions</th>
                     </tr>
@@ -596,7 +668,10 @@ export default function AdminProductsPage() {
                             {product.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 font-mono text-text-tertiary flex items-center gap-3 mt-1.5">
+                        <td className="px-6 py-4 font-mono text-text-secondary">
+                          Views: {product.viewCount ?? 0} | Clicks: {product.clickCount ?? 0}
+                        </td>
+                        <td className="px-6 py-4 font-mono text-text-tertiary flex items-center gap-3 mt-1">
                           {product.visitUrl ? (
                             <a
                               href={product.visitUrl}
@@ -646,6 +721,35 @@ export default function AdminProductsPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-6 py-4 border-t border-border/40 bg-bg-secondary/20">
+                <span className="text-xs text-text-secondary font-mono">
+                  Page {page} of {totalPages}
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="border-border text-white hover:bg-bg-card text-xs font-semibold"
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="border-border text-white hover:bg-bg-card text-xs font-semibold"
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>

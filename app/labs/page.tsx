@@ -21,7 +21,6 @@ export default async function LabsPage() {
     mediaUrl: string | null;
     status: string;
     type: string;
-    techStack: string | null;
   }
 
   const labs = await prisma.lab.findMany({
@@ -40,8 +39,7 @@ export default async function LabsPage() {
     mediaUrl: l.mediaUrl,
     status: l.status,
     type: l.type,
-    techStack: l.techStack,
-  })) 
+  }));
 
   return (
     <>

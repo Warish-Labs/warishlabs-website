@@ -5,18 +5,49 @@ import { slugify } from '@/utils/slugify';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
   const admin = await validateSession();
   if (!admin) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    const blogs = await prisma.blog.findMany({
-      include: { seo: true },
-      orderBy: { createdAt: 'desc' },
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get('search') || '';
+    const page = parseInt(searchParams.get('page') || '1');
+    const pageSize = parseInt(searchParams.get('pageSize') || '15');
+    const skip = (page - 1) * pageSize;
+
+    const where: any = {};
+    if (search) {
+      where.title = { contains: search, mode: 'insensitive' };
+    }
+    const category = searchParams.get('category') || '';
+    if (category && category !== 'all') {
+      where.category = { equals: category, mode: 'insensitive' };
+    }
+
+    const [blogs, total] = await Promise.all([
+      prisma.blog.findMany({
+        where,
+        include: { seo: true },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: pageSize,
+      }),
+      prisma.blog.count({ where }),
+    ]);
+
+    return NextResponse.json({
+      success: true,
+      blogs,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      }
     });
-    return NextResponse.json({ success: true, blogs });
   } catch (error) {
     console.error('[API Admin Blog] Fetch error:', error);
     return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });

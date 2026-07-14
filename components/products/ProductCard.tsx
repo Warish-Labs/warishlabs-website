@@ -23,12 +23,6 @@ interface Product {
     name: string;
     slug: string;
   };
-  technologies: Array<{
-    technology: {
-      id: string;
-      name: string;
-    };
-  }>;
 }
 
 interface ProductCardProps {
@@ -98,21 +92,9 @@ export default function ProductCard({ product }: ProductCardProps) {
             dangerouslySetInnerHTML={{ __html: sanitizeClient(product.description) }}
           />
 
-          <div className="space-y-6">
-            {/* Tech tags */}
-            <div className="flex flex-wrap gap-2">
-              {product.technologies.map((t) => (
-                <span
-                  key={t.technology.id}
-                  className="px-2 py-1 bg-black/40 border border-white/5 rounded text-[10px] font-semibold text-zinc-400 uppercase tracking-wider select-none"
-                >
-                  {t.technology.name}
-                </span>
-              ))}
-            </div>
-
+          <div className="pt-2 border-t border-white/5">
             {/* Action Links */}
-            <div className="flex items-center gap-4 pt-2 border-t border-white/5">
+            <div className="flex items-center gap-4">
               <Link
                 href={`/products/${product.slug}`}
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-accent hover:text-accent-hover transition-colors"

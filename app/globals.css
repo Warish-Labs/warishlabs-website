@@ -188,3 +188,105 @@
   background: linear-gradient(to right, transparent, rgba(37, 99, 235, 0.15), transparent);
   animation: scan 8s linear infinite;
 }
+
+/* 9. Typography prose styles for HTML content */
+.prose {
+  color: #A1A1AA; /* text-text-secondary */
+}
+.prose h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.02em;
+}
+.prose h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+}
+.prose h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+.prose p {
+  margin-bottom: 1.25rem;
+  line-height: 1.7;
+}
+.prose ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+.prose ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+.prose li {
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+.prose a {
+  color: #2563EB;
+  text-decoration: underline;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.prose a:hover {
+  color: #3B82F6;
+}
+.prose code {
+  font-family: var(--font-mono);
+  background-color: #111111;
+  padding: 0.125rem 0.35rem;
+  border-radius: 0.25rem;
+  border: 1px solid #1F1F1F;
+  color: #E2E8F0;
+  font-size: 0.85em;
+}
+.prose pre {
+  background-color: #0A0A0A;
+  border: 1px solid #1F1F1F;
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  overflow-x: auto;
+  margin-bottom: 1.25rem;
+}
+.prose pre code {
+  background-color: transparent;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  color: inherit;
+  font-size: inherit;
+}
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.25rem;
+  text-align: left;
+  font-size: 0.9em;
+}
+.prose th, .prose td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #1F1F1F;
+}
+.prose th {
+  font-weight: 700;
+  color: #FFFFFF;
+}
+.prose blockquote {
+  border-left: 4px solid #2563EB;
+  padding-left: 1rem;
+  font-style: italic;
+  color: #71717A;
+  margin-bottom: 1.25rem;
+}

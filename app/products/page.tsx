@@ -35,12 +35,6 @@ export default async function ProductsPage() {
       name: p.category.name,
       slug: p.category.slug,
     },
-    technologies: p.technologies.map((t) => ({
-      technology: {
-        id: t.technology.id,
-        name: t.technology.name,
-      },
-    })),
   }));
 
   const serializedCategories = categories.map((c) => ({

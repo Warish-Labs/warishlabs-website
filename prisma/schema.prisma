@@ -49,50 +49,31 @@ model CategorySEO {
 }
 
 model Product {
-  id             String              @id @default(uuid())
+  id             String         @id @default(uuid())
   name           String
-  slug           String              @unique
+  slug           String         @unique
   tagline        String
-  description    String              @db.Text // HTML or Rich Text from Tiptap
+  description    String         @db.Text // HTML or Rich Text from Tiptap
   status         String // "active", "beta", "archived"
-  type           String              @default("Tool")
+  type           String         @default("Tool")
   githubUrl      String?
   visitUrl       String?
   logoUrl        String?
   bannerUrl      String?
-  featured       Boolean             @default(false)
-  showOnHomepage Boolean             @default(false)
-  displayOrder   Int                 @default(0)
+  featured       Boolean        @default(false)
+  showOnHomepage Boolean        @default(false)
+  displayOrder   Int            @default(0)
   categoryId     String
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
-  category       Category            @relation(fields: [categoryId], references: [id])
+  viewCount      Int            @default(0)
+  clickCount     Int            @default(0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  category       Category       @relation(fields: [categoryId], references: [id])
   faqs           ProductFAQ[]
   media          ProductMedia[]
   seo            ProductSEO?
-  technologies   ProductTechnology[]
 
   @@index([categoryId])
-}
-
-model Technology {
-  id        String              @id @default(uuid())
-  name      String
-  slug      String              @unique
-  icon      String?
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
-  products  ProductTechnology[]
-}
-
-model ProductTechnology {
-  productId    String
-  technologyId String
-  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
-  technology   Technology @relation(fields: [technologyId], references: [id], onDelete: Cascade)
-
-  @@id([productId, technologyId])
-  @@index([technologyId])
 }
 
 model ProductMedia {
@@ -262,7 +243,6 @@ model Lab {
   mediaUrl    String? // Cloudinary upload
   status      String // "active", "completed", "deprecated"
   type        String   @default("experiment") // open source / experiment / tool / sandbox
-  techStack   String? // comma-separated tags
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

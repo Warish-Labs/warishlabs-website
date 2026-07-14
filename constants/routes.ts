@@ -20,7 +20,6 @@ export const ROUTES = {
   ADMIN_HOMEPAGE: '/admin/homepage',
   ADMIN_PRODUCTS: '/admin/products',
   ADMIN_CATEGORIES: '/admin/categories',
-  ADMIN_TECHNOLOGIES: '/admin/technologies',
   ADMIN_BLOG: '/admin/blog',
   ADMIN_LABS: '/admin/labs',
   ADMIN_OPEN_SOURCE: '/admin/open-source',

@@ -46,16 +46,6 @@ export default async function CategoryDetailPage({ params }: CategoryDetailPageP
         },
         include: {
           category: true,
-          technologies: {
-            include: {
-              technology: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
-            },
-          },
         },
         orderBy: { displayOrder: 'asc' },
       },
@@ -83,12 +73,6 @@ export default async function CategoryDetailPage({ params }: CategoryDetailPageP
       name: category.name,
       slug: category.slug,
     },
-    technologies: p.technologies.map((t) => ({
-      technology: {
-        id: t.technology.id,
-        name: t.technology.name,
-      },
-    })),
   }));
 
   return (
@@ -127,7 +111,7 @@ export default async function CategoryDetailPage({ params }: CategoryDetailPageP
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                {serializedProducts.map((product) => (
-                 <ProductCard key={product.id} product={product} />
+                  <ProductCard key={product.id} product={product} />
                ))}
             </div>
           )}

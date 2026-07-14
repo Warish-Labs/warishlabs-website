@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import {
   Image as ImageIcon,
   Trash2,
@@ -14,6 +15,7 @@ import {
   ArrowLeft,
   Upload,
   AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -58,6 +60,7 @@ export default function AdminMediaPage() {
   const [uploadFolder, setUploadFolder] = useState('warishlabs/products');
   const [isUploading, setIsUploading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [orphans, setOrphans] = useState<any[]>([]);
 
   // ── Queries ─────────────────────────────────────────────────────────────
   const { data: foldersData, isLoading: foldersLoading } = useQuery<{
@@ -133,6 +136,9 @@ export default function AdminMediaPage() {
       const data = await res.json();
       if (data.success) {
         toast.success(data.message || 'Sync complete');
+        if (data.orphans) {
+          setOrphans(data.orphans);
+        }
         // Invalidate folder list so dropdown & browser both refresh
         queryClient.invalidateQueries({ queryKey: ['media-folders'] });
       } else {
@@ -185,6 +191,8 @@ export default function AdminMediaPage() {
       if (data.success) {
         toast.success('Asset deleted');
         refetchAssets();
+        // Remove from orphans list if it was deleted
+        setOrphans(prev => prev.filter(x => x.publicId !== publicId));
       } else {
         toast.error(data.error || 'Failed to delete asset');
       }
@@ -278,6 +286,36 @@ export default function AdminMediaPage() {
               </button>
             </CardContent>
           </Card>
+
+          {/* Orphan Assets Scanner Report */}
+          {orphans.length > 0 && (
+            <Card className="glass-panel border-amber-500/20 bg-amber-500/5 shadow-card overflow-hidden">
+              <CardHeader className="border-b border-amber-500/10 pb-3">
+                <CardTitle className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5" /> Orphan Assets ({orphans.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-3 pb-3 max-h-60 overflow-y-auto space-y-2">
+                <p className="text-[10px] text-text-secondary leading-relaxed">
+                  These assets exist in Cloudinary but are not referenced in the database.
+                </p>
+                {orphans.map((o) => (
+                  <div key={o.publicId} className="flex items-center justify-between gap-2 p-1.5 rounded border border-white/5 bg-black/40 text-[10px]">
+                    <div className="truncate flex-1">
+                      <p className="text-white font-semibold truncate" title={o.fileName}>{o.fileName}</p>
+                      <p className="text-[8px] text-text-tertiary font-mono">{formatBytes(o.bytes)}</p>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteAsset(o.publicId, o.fileName)}
+                      className="text-red-400 hover:text-red-300 font-semibold uppercase tracking-wider text-[8px] cursor-pointer"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Browser Column */}
@@ -308,7 +346,7 @@ export default function AdminMediaPage() {
               {currentFolder && (
                 <button
                   onClick={() => navigateTo(breadcrumb.length - 2)}
-                  className="mb-4 flex items-center gap-1.5 text-xs text-text-tertiary hover:text-accent transition-colors"
+                  className="mb-4 flex items-center gap-1.5 text-xs text-text-tertiary hover:text-accent transition-colors cursor-pointer"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" /> Back
                 </button>
@@ -317,7 +355,7 @@ export default function AdminMediaPage() {
               {/* Folders grid */}
               {foldersLoading ? (
                 <div className="py-8 flex justify-center">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-accent" />
+                  <Loader2 className="animate-spin h-6 w-6 text-accent" />
                 </div>
               ) : visibleFolders.length === 0 && !currentFolder ? (
                 <div className="py-8 text-center space-y-3">
@@ -356,7 +394,7 @@ export default function AdminMediaPage() {
                 <>
                   {assetsLoading ? (
                     <div className="py-8 flex justify-center">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-accent" />
+                      <Loader2 className="animate-spin h-6 w-6 text-accent" />
                     </div>
                   ) : assets.length === 0 ? (
                     <div className="py-8 text-center text-text-tertiary text-sm">
@@ -382,37 +420,40 @@ export default function AdminMediaPage() {
                                 alt={asset.fileName}
                                 className="max-h-full max-w-full object-contain"
                               />
-                              {/* Hover overlay */}
-                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                <button
-                                  onClick={() => copyUrl(asset.url)}
-                                  className="bg-accent hover:bg-accent/80 text-white p-1.5 rounded cursor-pointer transition-colors"
-                                  title="Copy URL"
-                                >
-                                  <Copy className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteAsset(asset.publicId, asset.fileName)}
-                                  className="bg-destructive hover:bg-destructive/80 text-white p-1.5 rounded cursor-pointer transition-colors"
-                                  title="Delete Asset"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
                             </div>
                             {/* Metadata */}
-                            <div className="p-2.5 space-y-1.5 flex-1">
-                              <p className="text-xs font-semibold text-white truncate" title={asset.fileName}>
-                                {asset.fileName}
-                              </p>
-                              {asset.width > 0 && asset.height > 0 && (
-                                <p className="text-[9px] text-text-tertiary">
-                                  {asset.width}×{asset.height} · {asset.format.toUpperCase()}
+                            <div className="p-2.5 space-y-1.5 flex-1 flex flex-col justify-between">
+                              <div>
+                                <p className="text-xs font-semibold text-white truncate" title={asset.fileName}>
+                                  {asset.fileName}
                                 </p>
-                              )}
-                              <p className="text-[9px] text-text-tertiary">
-                                {formatBytes(asset.bytes)}
-                              </p>
+                                {asset.width > 0 && asset.height > 0 && (
+                                  <p className="text-[9px] text-text-tertiary">
+                                    {asset.width}×{asset.height} · {asset.format.toUpperCase()}
+                                  </p>
+                                )}
+                                <p className="text-[9px] text-text-tertiary">
+                                  {formatBytes(asset.bytes)}
+                                </p>
+                              </div>
+                              <div className="pt-2 flex items-center justify-between border-t border-white/5 gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => copyUrl(asset.url)}
+                                  className="h-7 px-2 text-[9px] border-border text-white hover:bg-bg-card flex-1 font-semibold"
+                                >
+                                  Copy Link
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDeleteAsset(asset.publicId, asset.fileName)}
+                                  className="h-7 px-2 text-[9px] border-border text-destructive hover:bg-destructive/10 hover:border-destructive/30 flex-1 font-semibold"
+                                >
+                                  Delete
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         ))}

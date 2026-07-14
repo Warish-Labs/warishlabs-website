@@ -10,7 +10,7 @@ const pillars = [
   },
   {
     title: 'High-Velocity Execution',
-    description: 'Constructed on Next.js 16 and Tailwind v4. Pages load in milliseconds. Operations feel immediate and responsive.',
+    description: 'Constructed on modern frameworks with performance optimization. Pages load in milliseconds. Operations feel immediate and responsive.',
     icon: Zap,
   },
   {
