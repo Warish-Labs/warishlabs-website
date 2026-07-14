@@ -2,10 +2,9 @@ import { NextResponse } from 'next/server';
 import { validateSession } from '@/lib/auth';
 import { ProductService } from '@/services/ProductService';
 import prisma from '@/lib/prisma';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
-
-import { z } from 'zod';
 
 const productInputSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -21,7 +20,6 @@ const productInputSchema = z.object({
   showOnHomepage: z.boolean().optional().default(false),
   displayOrder: z.number().int().optional().default(0),
   categoryId: z.string().min(1, 'Category is required'),
-  technologyIds: z.array(z.string()).optional(),
   media: z.array(z.object({
     url: z.string(),
     type: z.string(),
@@ -44,15 +42,54 @@ const productUpdateSchema = productInputSchema.partial().extend({
   id: z.string().min(1, 'Product ID is required')
 });
 
-export async function GET() {
+export async function GET(request: Request) {
   const admin = await validateSession();
   if (!admin) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    const products = await ProductService.getAll(false); // Get all including beta/archived
-    return NextResponse.json({ success: true, products });
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get('search') || '';
+    const page = parseInt(searchParams.get('page') || '1');
+    const pageSize = parseInt(searchParams.get('pageSize') || '15');
+    const skip = (page - 1) * pageSize;
+
+    const where: any = {};
+    if (search) {
+      where.name = { contains: search, mode: 'insensitive' };
+    }
+
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        include: {
+          category: true,
+          media: {
+            orderBy: { sortOrder: 'asc' },
+          },
+          faqs: {
+            orderBy: { sortOrder: 'asc' },
+          },
+          seo: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: pageSize,
+      }),
+      prisma.product.count({ where }),
+    ]);
+
+    return NextResponse.json({
+      success: true,
+      products,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      }
+    });
   } catch (error) {
     console.error('[API Admin Products] Fetch error:', error);
     return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });

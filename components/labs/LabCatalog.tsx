@@ -18,7 +18,6 @@ interface Lab {
   mediaUrl: string | null;
   status: string;
   type: string;
-  techStack: string | null;
 }
 
 interface LabCatalogProps {
@@ -72,8 +71,7 @@ export default function LabCatalog({ initialLabs }: LabCatalogProps) {
       result = result.filter(
         (l) =>
           l.name.toLowerCase().includes(q) ||
-          l.description.toLowerCase().includes(q) ||
-          (l.techStack && l.techStack.toLowerCase().includes(q))
+          l.description.toLowerCase().includes(q)
       );
     }
 

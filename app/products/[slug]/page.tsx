@@ -8,12 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { buttonVariants } from '@/components/ui/button';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
-import { ArrowLeft, ExternalLink, Cpu, Info, GitBranch } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Info, GitBranch } from 'lucide-react';
 import { cn } from '@/utils/cn';
-import { cookies } from 'next/headers';
-import prisma from '@/lib/prisma';
 import { sanitizeServer } from '@/lib/sanitize';
 import { Metadata } from 'next';
+import ProductTracker from '@/components/products/ProductTracker';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,9 +39,6 @@ export async function generateMetadata({ params }: ProductDetailPageProps): Prom
 }
 
 export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
-  // Opt-out of static rendering for dynamic date queries
-  const cookieJar = await cookies();
-
   const { slug } = await params;
   const product = await ProductService.getBySlug(slug);
 
@@ -50,21 +46,9 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
     notFound();
   }
 
-  // Track product view on the server using visitor cookie
-  const visitorId = cookieJar.get('wl_visitor')?.value;
-  if (visitorId) {
-    await prisma.analyticsEvent.create({
-      data: {
-        visitorId,
-        eventName: 'product_view',
-        eventData: { slug },
-        url: `/products/${slug}`,
-      },
-    }).catch(err => console.error('Failed to log product view event:', err));
-  }
-
   return (
     <>
+      <ProductTracker slug={slug} />
       <Navbar />
       <main className="flex-1 bg-black text-white pt-32 pb-24 relative select-none">
         {/* Ambient glow decoration */}
@@ -174,6 +158,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                       href={product.visitUrl}
                       target="_blank"
                       rel="noopener noreferrer"
+                      data-launch-button
                       className={cn(
                         buttonVariants({ variant: "default" }),
                         "w-full bg-accent hover:bg-accent-hover text-white py-5 font-semibold text-sm flex items-center justify-center gap-2"
@@ -205,25 +190,6 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                   )}
                 </div>
               </Card>
-
-              {/* Technologies details */}
-              {product.technologies.length > 0 && (
-                <Card className="glass-panel border-border shadow-card p-6 space-y-4">
-                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary flex items-center gap-1.5">
-                    <Cpu className="w-4 h-4 text-accent" /> Tech Stack
-                  </h4>
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    {product.technologies.map((t) => (
-                      <span
-                        key={t.technology.id}
-                        className="px-2.5 py-1 bg-bg-secondary border border-border-subtle rounded text-xs font-semibold text-text-secondary uppercase tracking-wider"
-                      >
-                        {t.technology.name}
-                      </span>
-                    ))}
-                  </div>
-                </Card>
-              )}
 
               {/* Metadata */}
               <Card className="glass-panel border-border shadow-card p-6 space-y-3">

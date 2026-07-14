@@ -12,11 +12,10 @@ export async function POST() {
   }
 
   try {
-    // 1. Recursively walk ALL Cloudinary folders
+    // 1. Sync Folders
     const cloudinaryFolders = await MediaService.walkAllFolders();
     const cloudinaryPaths = new Set(cloudinaryFolders.map((f) => f.path));
 
-    // 2. Fetch all locally-stored folder records
     const localFolders = await prisma.mediaFolder.findMany();
     const localPaths = new Set(localFolders.map((f) => f.path));
 
@@ -24,7 +23,6 @@ export async function POST() {
     const removed: string[] = [];
     let unchanged = 0;
 
-    // 3. Insert folders found in Cloudinary but missing from DB
     for (const folder of cloudinaryFolders) {
       if (!localPaths.has(folder.path)) {
         await prisma.mediaFolder.create({
@@ -39,7 +37,6 @@ export async function POST() {
       }
     }
 
-    // 4. Remove DB folders that no longer exist in Cloudinary
     for (const local of localFolders) {
       if (!cloudinaryPaths.has(local.path)) {
         await prisma.mediaFolder.delete({ where: { id: local.id } });
@@ -47,17 +44,57 @@ export async function POST() {
       }
     }
 
-    // 5. Log activity (only if something changed)
+    // 2. Orphan Check: Scan DB for referenced media URLs
+    const [products, productMedia, blogs, labs] = await Promise.all([
+      prisma.product.findMany({ select: { logoUrl: true, bannerUrl: true } }),
+      prisma.productMedia.findMany({ select: { url: true } }),
+      prisma.blog.findMany({ select: { coverImage: true } }),
+      prisma.lab.findMany({ select: { mediaUrl: true } }),
+    ]);
+
+    const activeUrls = new Set<string>();
+    
+    // Helper to extract and normalize URLs
+    const addUrl = (url: string | null) => {
+      if (url) {
+        activeUrls.add(url.trim());
+        const publicId = MediaService.getPublicIdFromUrl(url);
+        if (publicId) activeUrls.add(publicId);
+      }
+    };
+
+    products.forEach(p => {
+      addUrl(p.logoUrl);
+      addUrl(p.bannerUrl);
+    });
+    productMedia.forEach(m => addUrl(m.url));
+    blogs.forEach(b => addUrl(b.coverImage));
+    labs.forEach(l => addUrl(l.mediaUrl));
+
+    // 3. Retrieve all assets across synced folders
+    const allAssets = await MediaService.listAllAssets();
+    
+    const orphans = allAssets.filter(asset => {
+      const isReferencedByUrl = activeUrls.has(asset.url);
+      const isReferencedByPublicId = activeUrls.has(asset.publicId);
+      return !isReferencedByUrl && !isReferencedByPublicId;
+    }).map(asset => ({
+      publicId: asset.publicId,
+      url: asset.url,
+      fileName: asset.fileName,
+      bytes: asset.bytes,
+      createdAt: asset.createdAt,
+    }));
+
+    // Log activity if folder structure changed
     if (added.length > 0 || removed.length > 0) {
-      await prisma.activityLog
-        .create({
-          data: {
-            adminId: admin.id,
-            action: 'SYNC_MEDIA_FOLDERS',
-            details: `Folder sync: +${added.length} added, -${removed.length} removed, ${unchanged} unchanged.`,
-          },
-        })
-        .catch((err) => console.error('Failed to log sync activity:', err));
+      await prisma.activityLog.create({
+        data: {
+          adminId: admin.id,
+          action: 'SYNC_MEDIA_FOLDERS',
+          details: `Folder sync: +${added.length} added, -${removed.length} removed. Found ${orphans.length} orphan assets.`,
+        },
+      }).catch(err => console.error('Failed to log sync activity:', err));
     }
 
     return NextResponse.json({
@@ -65,7 +102,8 @@ export async function POST() {
       added,
       removed,
       unchanged,
-      message: `Synced: ${added.length} folder${added.length !== 1 ? 's' : ''} added, ${removed.length} removed, ${unchanged} unchanged.`,
+      orphans,
+      message: `Synced: ${added.length} folder${added.length !== 1 ? 's' : ''} added, ${removed.length} removed. Scan completed: resolved ${orphans.length} orphan asset${orphans.length !== 1 ? 's' : ''} occupying storage.`,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Internal Server Error';

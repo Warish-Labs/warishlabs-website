@@ -229,4 +229,40 @@ export class MediaService {
       return [];
     }
   }
+
+  /**
+   * Lists all assets under the root 'warishlabs' prefix recursively
+   */
+  static async listAllAssets(maxResults = 500): Promise<CloudinaryAssetMeta[]> {
+    if (!isConfigured()) {
+      console.warn('[MediaService] Cloudinary not configured — returning empty asset list.');
+      return [];
+    }
+
+    ensureConfigured();
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const response: any = await cloudinary.api.resources({
+        type: 'upload',
+        prefix: 'warishlabs',
+        max_results: maxResults,
+        resource_type: 'image',
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (response.resources || []).map((r: any) => ({
+        publicId: r.public_id,
+        url: r.secure_url,
+        width: r.width || 0,
+        height: r.height || 0,
+        bytes: r.bytes || 0,
+        format: r.format || '',
+        fileName: r.public_id.split('/').pop() || r.public_id,
+        createdAt: r.created_at || '',
+      }));
+    } catch (err) {
+      console.error('[MediaService] Error listing all assets:', err);
+      return [];
+    }
+  }
 }

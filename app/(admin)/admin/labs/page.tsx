@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FlaskConical, Plus, Edit2, Trash2, X, Terminal, Loader2, ExternalLink, Play, Image } from 'lucide-react';
+import { FlaskConical, Plus, Edit2, Trash2, X, Terminal, Loader2, ExternalLink, Play, Image, Search } from 'lucide-react';
 import Github from '@/components/icons/GithubIcon';
 import { toast } from 'sonner';
 
@@ -22,13 +22,17 @@ interface Lab {
   githubUrl: string | null;
   demoUrl: string | null;
   mediaUrl: string | null;
-  techStack: string | null;
 }
 
 export default function AdminLabsPage() {
   const [labs, setLabs] = useState<Lab[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitPending, setIsSubmitPending] = useState(false);
+  
+  // Search & Pagination State
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Form State
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -41,23 +45,35 @@ export default function AdminLabsPage() {
   const [githubUrl, setGithubUrl] = useState('');
   const [demoUrl, setDemoUrl] = useState('');
   const [mediaUrl, setMediaUrl] = useState('');
-  const [techStack, setTechStack] = useState('');
+  const [isMediaUploading, setIsMediaUploading] = useState(false);
 
-  // Fetch initial data
-  useEffect(() => {
-    async function fetchLabs() {
-      try {
-        const response = await fetch('/api/admin/labs');
-        const data = await response.json();
-        if (data.success) setLabs(data.labs);
-      } catch (err) {
-        toast.error('Failed to load lab resources.');
-      } finally {
-        setIsLoading(false);
+  const fetchLabs = async (query = '', pageNum = 1) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/admin/labs?search=${encodeURIComponent(query)}&page=${pageNum}`);
+      const data = await response.json();
+      if (data.success) {
+        setLabs(data.labs);
+        if (data.pagination) {
+          setTotalPages(data.pagination.totalPages || 1);
+        }
       }
+    } catch (err) {
+      toast.error('Failed to load lab resources.');
+    } finally {
+      setIsLoading(false);
     }
-    fetchLabs();
-  }, []);
+  };
+
+  useEffect(() => {
+    fetchLabs(search, page);
+  }, [page]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    setPage(1);
+    fetchLabs(e.target.value, 1);
+  };
 
   const resetForm = () => {
     setEditingId(null);
@@ -69,7 +85,6 @@ export default function AdminLabsPage() {
     setGithubUrl('');
     setDemoUrl('');
     setMediaUrl('');
-    setTechStack('');
     setIsFormOpen(false);
   };
 
@@ -83,8 +98,49 @@ export default function AdminLabsPage() {
     setGithubUrl(lab.githubUrl || '');
     setDemoUrl(lab.demoUrl || '');
     setMediaUrl(lab.mediaUrl || '');
-    setTechStack(lab.techStack || '');
     setIsFormOpen(true);
+  };
+
+  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Client-side validations
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast.error('File size exceeds maximum limit of 5MB');
+      return;
+    }
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Invalid file type. Only JPG, PNG, and WebP are accepted.');
+      return;
+    }
+
+    setIsMediaUploading(true);
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('folder', 'labs');
+
+    try {
+      const res = await fetch('/api/admin/media/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success && data.asset) {
+        setMediaUrl(data.asset.url);
+        toast.success('Screenshot uploaded successfully');
+      } else {
+        toast.error(data.error || 'Failed to upload screenshot');
+      }
+    } catch (err) {
+      toast.error('Network error uploading screenshot');
+    } finally {
+      setIsMediaUploading(false);
+    }
   };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -105,7 +161,6 @@ export default function AdminLabsPage() {
       githubUrl: githubUrl || null,
       demoUrl: demoUrl || null,
       mediaUrl: mediaUrl || null,
-      techStack: techStack || null,
     };
 
     try {
@@ -119,12 +174,7 @@ export default function AdminLabsPage() {
 
       if (response.ok && result.success) {
         toast.success(editingId ? 'Lab updated successfully!' : 'Lab created successfully!');
-        
-        // Refresh labs list
-        const resLabs = await fetch('/api/admin/labs');
-        const dataLabs = await resLabs.json();
-        if (dataLabs.success) setLabs(dataLabs.labs);
-
+        fetchLabs(search, page);
         resetForm();
       } else {
         toast.error(result.error || 'Failed to submit lab.');
@@ -150,7 +200,7 @@ export default function AdminLabsPage() {
 
       if (response.ok && result.success) {
         toast.success('Lab deleted successfully!');
-        setLabs(labs.filter(l => l.id !== id));
+        fetchLabs(search, page);
       } else {
         toast.error(result.error || 'Failed to delete lab.');
       }
@@ -162,7 +212,7 @@ export default function AdminLabsPage() {
   return (
     <div className="space-y-8 select-none">
       {/* Header action */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
             <FlaskConical className="w-8 h-8 text-accent" />
@@ -172,14 +222,27 @@ export default function AdminLabsPage() {
             Configure raw interactive visuals and system prototypes in the experimental sandbox.
           </p>
         </div>
-        {!isFormOpen && (
-          <Button
-            onClick={() => setIsFormOpen(true)}
-            className="bg-accent hover:bg-accent-hover text-white active:scale-[0.97] transition-all font-semibold flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" /> Add Experiment
-          </Button>
-        )}
+        <div className="flex items-center gap-3">
+          {!isFormOpen && (
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+              <Input
+                placeholder="Search experiments..."
+                value={search}
+                onChange={handleSearchChange}
+                className="pl-9 bg-bg-primary border-border focus:border-accent text-white"
+              />
+            </div>
+          )}
+          {!isFormOpen && (
+            <Button
+              onClick={() => setIsFormOpen(true)}
+              className="bg-accent hover:bg-accent-hover text-white active:scale-[0.97] transition-all font-semibold flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" /> Add Experiment
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Loading indicator */}
@@ -255,20 +318,6 @@ export default function AdminLabsPage() {
                   </Select>
                 </div>
 
-                {/* Tech Stack Comma separated */}
-                <div className="space-y-2">
-                  <Label htmlFor="lab-tech" className="text-xs font-semibold text-text-secondary">
-                    Tech Stack (Comma-separated)
-                  </Label>
-                  <Input
-                    id="lab-tech"
-                    value={techStack}
-                    onChange={(e) => setTechStack(e.target.value)}
-                    placeholder="e.g. React, Three.js, WebGL"
-                    className="bg-bg-primary border-border focus:border-accent text-white"
-                  />
-                </div>
-
                 {/* Launch/Demo URL */}
                 <div className="space-y-2">
                   <Label htmlFor="lab-url" className="text-xs font-semibold text-text-secondary">
@@ -311,18 +360,41 @@ export default function AdminLabsPage() {
                   />
                 </div>
 
-                {/* Media Screenshot URL */}
-                <div className="space-y-2">
-                  <Label htmlFor="lab-media" className="text-xs font-semibold text-text-secondary">
-                    Media Screenshot URL (Optional)
+                {/* Media Screenshot Upload */}
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="lab-media-file" className="text-xs font-semibold text-text-secondary">
+                    Media Screenshot / Cover (Optional)
                   </Label>
-                  <Input
-                    id="lab-media"
-                    value={mediaUrl}
-                    onChange={(e) => setMediaUrl(e.target.value)}
-                    placeholder="e.g. Cloudinary Image Link"
-                    className="bg-bg-primary border-border focus:border-accent text-white"
-                  />
+                  <div className="flex items-center gap-3">
+                    {mediaUrl ? (
+                      <div className="w-16 h-10 rounded border border-border bg-bg-card flex items-center justify-center overflow-hidden shrink-0 relative group">
+                        <img src={mediaUrl} alt="Screenshot preview" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setMediaUrl('')}
+                          className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[10px] transition-opacity font-bold uppercase cursor-pointer"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-16 h-10 rounded border border-dashed border-border flex items-center justify-center shrink-0">
+                        <span className="text-[9px] text-text-tertiary font-mono">No Image</span>
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <Input
+                        id="lab-media-file"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleMediaUpload}
+                        disabled={isMediaUploading}
+                        className="bg-bg-primary border-border focus:border-accent text-white text-xs file:bg-bg-card file:border-border file:text-white file:rounded file:px-2 file:py-0.5 file:mr-2 file:cursor-pointer"
+                      />
+                      <p className="text-[9px] text-text-tertiary mt-1">Recommended: 1200×630px, max 5MB. JPG, PNG, or WebP</p>
+                    </div>
+                  </div>
+                  {isMediaUploading && <p className="text-[10px] text-accent animate-pulse">Uploading screenshot to Cloudinary...</p>}
                 </div>
 
                 {/* Description Textarea */}
@@ -377,7 +449,7 @@ export default function AdminLabsPage() {
             {labs.length === 0 ? (
               <div className="text-center py-20 text-text-tertiary text-sm flex flex-col items-center gap-4">
                 <Terminal className="w-12 h-12 text-text-tertiary opacity-40 animate-pulse" />
-                <p>No lab experiments constructed in the database catalog.</p>
+                <p>No lab experiments constructed matching criteria.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -417,7 +489,7 @@ export default function AdminLabsPage() {
                             {lab.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-text-tertiary flex gap-3 items-center">
+                        <td className="px-6 py-4 text-text-tertiary flex gap-3 items-center mt-1">
                           {lab.url && (
                             <a
                               href={lab.url}
@@ -485,6 +557,35 @@ export default function AdminLabsPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+            
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-6 py-4 border-t border-border/40 bg-bg-secondary/20">
+                <span className="text-xs text-text-secondary font-mono">
+                  Page {page} of {totalPages}
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="border-border text-white hover:bg-bg-card text-xs font-semibold"
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="border-border text-white hover:bg-bg-card text-xs font-semibold"
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>

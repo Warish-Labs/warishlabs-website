@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import { validateSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
-
-import { z } from 'zod';
 
 const labInputSchema = z.object({
   name: z.string().min(1, 'Name/Title is required'),
@@ -15,24 +14,50 @@ const labInputSchema = z.object({
   githubUrl: z.string().nullable().optional(), // repoUrl
   demoUrl: z.string().nullable().optional(),
   mediaUrl: z.string().nullable().optional(),   // Cloudinary screenshot
-  techStack: z.string().nullable().optional(),  // comma-separated tags
 });
 
 const labUpdateSchema = labInputSchema.partial().extend({
   id: z.string().min(1, 'Lab ID is required'),
 });
 
-export async function GET() {
+export async function GET(request: Request) {
   const admin = await validateSession();
   if (!admin) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    const labs = await prisma.lab.findMany({
-      orderBy: { createdAt: 'desc' },
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get('search') || '';
+    const page = parseInt(searchParams.get('page') || '1');
+    const pageSize = parseInt(searchParams.get('pageSize') || '15');
+    const skip = (page - 1) * pageSize;
+
+    const where: any = {};
+    if (search) {
+      where.name = { contains: search, mode: 'insensitive' };
+    }
+
+    const [labs, total] = await Promise.all([
+      prisma.lab.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: pageSize,
+      }),
+      prisma.lab.count({ where }),
+    ]);
+
+    return NextResponse.json({
+      success: true,
+      labs,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      }
     });
-    return NextResponse.json({ success: true, labs });
   } catch (error) {
     console.error('[API Admin Labs] Fetch error:', error);
     return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });

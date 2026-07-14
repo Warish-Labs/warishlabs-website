@@ -146,7 +146,6 @@ export async function GET(request: Request) {
             { description: { contains: query, mode: 'insensitive' } },
             { slug: { contains: query, mode: 'insensitive' } },
             { category: { name: { contains: query, mode: 'insensitive' } } },
-            { technologies: { some: { technology: { name: { contains: query, mode: 'insensitive' } } } } },
             { seo: { title: { contains: query, mode: 'insensitive' } } },
             { seo: { description: { contains: query, mode: 'insensitive' } } },
             { seo: { keywords: { contains: query, mode: 'insensitive' } } },
@@ -154,7 +153,6 @@ export async function GET(request: Request) {
         },
         include: {
           category: true,
-          technologies: { include: { technology: true } },
           seo: true,
         },
       }).catch((err) => {
@@ -189,7 +187,6 @@ export async function GET(request: Request) {
             { name: { contains: query, mode: 'insensitive' } },
             { slug: { contains: query, mode: 'insensitive' } },
             { description: { contains: query, mode: 'insensitive' } },
-            { techStack: { contains: query, mode: 'insensitive' } },
           ],
         },
       }).catch((err) => {
@@ -224,7 +221,6 @@ export async function GET(request: Request) {
     // --- Process and Rank Products ---
     const products = dbProducts
       .map((p) => {
-        const techNames = p.technologies.map((t) => t.technology.name);
         const keywordsStr = p.seo?.keywords || '';
         const score = calculateRelevance(
           query,
@@ -233,7 +229,7 @@ export async function GET(request: Request) {
           p.tagline,
           p.description,
           p.category.name,
-          techNames,
+          [],
           keywordsStr
         );
         return {
@@ -280,7 +276,6 @@ export async function GET(request: Request) {
     // --- Process and Rank Labs ---
     const labs = dbLabs
       .map((l) => {
-        const tags = l.techStack ? l.techStack.split(',').map((t) => t.trim()) : [];
         const score = calculateRelevance(
           query,
           l.name,
@@ -288,7 +283,7 @@ export async function GET(request: Request) {
           '',
           l.description,
           '',
-          tags,
+          [],
           ''
         );
         return {

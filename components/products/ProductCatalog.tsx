@@ -31,12 +31,6 @@ interface Product {
     name: string;
     slug: string;
   };
-  technologies: Array<{
-    technology: {
-      id: string;
-      name: string;
-    };
-  }>;
 }
 
 interface ProductCatalogProps {
@@ -139,8 +133,7 @@ export default function ProductCatalog({ initialProducts, categories }: ProductC
         (p) =>
           p.name.toLowerCase().includes(q) ||
           p.tagline.toLowerCase().includes(q) ||
-          p.description.toLowerCase().includes(q) ||
-          p.technologies.some((t) => t.technology.name.toLowerCase().includes(q))
+          p.description.toLowerCase().includes(q)
       );
     }
 
@@ -183,7 +176,7 @@ export default function ProductCatalog({ initialProducts, categories }: ProductC
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
               <Input
                 type="text"
-                placeholder="Search specifications, stacks, names..."
+                placeholder="Search specifications, names..."
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);

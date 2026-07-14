@@ -2,16 +2,25 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { FileText, Plus, Trash2, Eye, EyeOff, Edit, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { FileText, Plus, Trash2, Eye, EyeOff, Edit, X, ChevronDown, ChevronUp, Search, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDate } from '@/utils/formatters';
 import { Button } from '@/components/ui/button';
 import { BlogCoverImageField } from '@/components/admin/BlogCoverImageField';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function AdminBlogPage() {
   const [blogs, setBlogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
+  // Search, Pagination, Filter states
+  const [search, setSearch] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   // Form states
   const [editingId, setEditingId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
@@ -30,12 +39,16 @@ export default function AdminBlogPage() {
   const [seoDescription, setSeoDescription] = useState('');
   const [seoKeywords, setSeoKeywords] = useState('');
 
-  const fetchBlogs = async () => {
+  const fetchBlogs = async (query = '', cat = 'all', pageNum = 1) => {
+    setLoading(true);
     try {
-      const res = await fetch('/api/admin/blog');
+      const res = await fetch(`/api/admin/blog?search=${encodeURIComponent(query)}&category=${encodeURIComponent(cat)}&page=${pageNum}`);
       const data = await res.json();
       if (data.success) {
         setBlogs(data.blogs);
+        if (data.pagination) {
+          setTotalPages(data.pagination.totalPages || 1);
+        }
       } else {
         toast.error(data.error || 'Failed to fetch blogs');
       }
@@ -47,8 +60,21 @@ export default function AdminBlogPage() {
   };
 
   useEffect(() => {
-    fetchBlogs();
-  }, []);
+    fetchBlogs(search, filterCategory, page);
+  }, [page]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    setPage(1);
+    fetchBlogs(e.target.value, filterCategory, 1);
+  };
+
+  const handleCategoryFilterChange = (cat: string | null) => {
+    const val = cat || 'all';
+    setFilterCategory(val);
+    setPage(1);
+    fetchBlogs(search, val, 1);
+  };
 
   const handleEditClick = (blog: any) => {
     setEditingId(blog.id);
@@ -127,7 +153,7 @@ export default function AdminBlogPage() {
       if (data.success) {
         toast.success(editingId ? 'Blog article updated successfully' : 'Blog article created successfully');
         resetForm();
-        fetchBlogs();
+        fetchBlogs(search, filterCategory, page);
       } else {
         toast.error(data.error || 'Failed to submit article');
       }
@@ -149,7 +175,7 @@ export default function AdminBlogPage() {
       if (data.success) {
         toast.success('Article deleted successfully');
         if (editingId === id) resetForm();
-        fetchBlogs();
+        fetchBlogs(search, filterCategory, page);
       } else {
         toast.error(data.error || 'Failed to delete article');
       }
@@ -168,7 +194,7 @@ export default function AdminBlogPage() {
       const data = await res.json();
       if (data.success) {
         toast.success(data.blog.published ? 'Article published' : 'Article unpublished');
-        fetchBlogs();
+        fetchBlogs(search, filterCategory, page);
       } else {
         toast.error(data.error || 'Failed to update publishing status');
       }
@@ -270,12 +296,12 @@ export default function AdminBlogPage() {
 
                 {/* Content */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Content (Markdown supported)</label>
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">HTML Content</label>
                   <textarea
                     required
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
-                    placeholder="# Hello World \n\n Write article contents here..."
+                    placeholder="<h2>Header</h2><p>Write HTML content here...</p>"
                     className="w-full bg-bg-secondary border border-border rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-accent h-40 resize-none font-mono"
                   />
                 </div>
@@ -293,7 +319,12 @@ export default function AdminBlogPage() {
                   {showSeo && (
                     <div className="p-4 space-y-3 border-t border-white/5">
                       <div className="space-y-1">
-                        <label className="text-[9px] font-bold uppercase tracking-widest text-text-tertiary">Meta Title</label>
+                        <div className="flex justify-between items-center">
+                          <label className="text-[9px] font-bold uppercase tracking-widest text-text-tertiary">Meta Title</label>
+                          <span className={`font-mono text-[9px] ${seoTitle.length > 70 ? 'text-destructive' : 'text-text-tertiary'}`}>
+                            {seoTitle.length} / 70
+                          </span>
+                        </div>
                         <input
                           type="text"
                           value={seoTitle}
@@ -303,7 +334,12 @@ export default function AdminBlogPage() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[9px] font-bold uppercase tracking-widest text-text-tertiary">Meta Description</label>
+                        <div className="flex justify-between items-center">
+                          <label className="text-[9px] font-bold uppercase tracking-widest text-text-tertiary">Meta Description</label>
+                          <span className={`font-mono text-[9px] ${seoDescription.length > 160 ? 'text-destructive' : 'text-text-tertiary'}`}>
+                            {seoDescription.length} / 160
+                          </span>
+                        </div>
                         <textarea
                           value={seoDescription}
                           onChange={(e) => setSeoDescription(e.target.value)}
@@ -345,28 +381,64 @@ export default function AdminBlogPage() {
                   disabled={isSubmitting}
                   className="w-full bg-accent hover:bg-accent/80 text-white font-semibold text-xs uppercase tracking-wider py-2.5 rounded-md transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  {isSubmitting ? 'Submitting...' : editingId ? 'Update Article' : 'Create Article'}
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3.5 h-3.5" /> {editingId ? 'Update Article' : 'Create Article'}
+                    </>
+                  )}
                 </button>
               </form>
             </CardContent>
           </Card>
         </div>
 
-        {/* Articles List */}
+        {/* Articles Catalog List */}
         <div className="lg:col-span-7">
           <Card className="glass-panel border-border shadow-card overflow-hidden">
-            <CardHeader className="border-b border-border/40 pb-4">
+            <CardHeader className="border-b border-border/40 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <CardTitle className="text-sm font-semibold text-white">Articles Catalog</CardTitle>
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Search field */}
+                <div className="relative w-44">
+                  <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-zinc-500" />
+                  <Input
+                    placeholder="Search titles..."
+                    value={search}
+                    onChange={handleSearchChange}
+                    className="pl-8 h-8 bg-bg-primary border-border text-white text-xs"
+                  />
+                </div>
+                {/* Category filter dropdown */}
+                <div className="flex items-center gap-2">
+                  <Label className="text-[9px] font-bold uppercase tracking-wider text-text-tertiary shrink-0">Filter by Category</Label>
+                  <Select value={filterCategory} onValueChange={handleCategoryFilterChange}>
+                    <SelectTrigger className="bg-bg-primary border-border text-white h-8 text-xs w-32 focus:border-accent">
+                      <SelectValue placeholder="All Categories" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-bg-card border-border text-white text-xs">
+                      <SelectItem value="all">All Categories</SelectItem>
+                      <SelectItem value="Engineering">Engineering</SelectItem>
+                      <SelectItem value="Research">Research</SelectItem>
+                      <SelectItem value="Security">Security</SelectItem>
+                      <SelectItem value="Design">Design</SelectItem>
+                      <SelectItem value="Changelog">Changelog</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="pt-6 px-0">
               {loading ? (
                 <div className="px-6 py-12 flex justify-center">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-accent" />
+                  <Loader2 className="animate-spin h-6 w-6 text-accent" />
                 </div>
               ) : blogs.length === 0 ? (
-                <div className="px-6 py-12 text-center text-text-tertiary text-sm">
-                  No articles found. Write one on the left.
+                <div className="px-6 py-12 text-center text-text-tertiary text-xs">
+                  No articles found. Write one on the left or adjust filters.
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -379,7 +451,7 @@ export default function AdminBlogPage() {
                         <th className="px-6 py-3 text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border/40 text-sm text-text-secondary">
+                    <tbody className="divide-y divide-border/40 text-xs text-text-secondary">
                       {blogs.map((blog) => (
                         <tr key={blog.id} className="hover:bg-bg-card/30 transition-colors">
                           <td className="px-6 py-4">
@@ -389,14 +461,14 @@ export default function AdminBlogPage() {
                             </p>
                           </td>
                           <td className="px-6 py-4">
-                            <span className="bg-accent-subtle/50 text-accent border border-accent/10 px-2 py-0.5 rounded text-xs font-semibold">
+                            <span className="bg-accent-subtle/50 text-accent border border-accent/10 px-2 py-0.5 rounded text-[10px] font-semibold">
                               {blog.category}
                             </span>
                           </td>
                           <td className="px-6 py-4">
                             <button
                               onClick={() => togglePublish(blog.id, blog.published)}
-                              className={`px-2 py-0.5 rounded text-xs font-semibold border flex items-center gap-1 cursor-pointer transition-colors ${
+                              className={`px-2 py-0.5 rounded text-[10px] font-semibold border flex items-center gap-1 cursor-pointer transition-colors ${
                                 blog.published
                                   ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                                   : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
@@ -437,6 +509,35 @@ export default function AdminBlogPage() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              )}
+
+              {/* Pagination controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-6 py-4 border-t border-border/40 bg-bg-secondary/20">
+                  <span className="text-xs text-text-secondary font-mono">
+                    Page {page} of {totalPages}
+                  </span>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className="border-border text-white hover:bg-bg-card text-xs font-semibold"
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={page === totalPages}
+                      className="border-border text-white hover:bg-bg-card text-xs font-semibold"
+                    >
+                      Next
+                    </Button>
+                  </div>
                 </div>
               )}
             </CardContent>

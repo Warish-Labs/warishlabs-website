@@ -19,7 +19,6 @@ interface Lab {
   mediaUrl: string | null;
   status: string;
   type: string;
-  techStack: string | null;
 }
 
 interface LabCardProps {
@@ -27,11 +26,6 @@ interface LabCardProps {
 }
 
 export default function LabCard({ lab }: LabCardProps) {
-  // Parse tech stack comma separated string to tags array
-  const tags = lab.techStack
-    ? lab.techStack.split(',').map((tag) => tag.trim()).filter(Boolean)
-    : [];
-
   return (
     <motion.div
       whileHover={{ scale: 1.02 }}
@@ -86,23 +80,9 @@ export default function LabCard({ lab }: LabCardProps) {
         <CardContent className="text-text-secondary text-xs leading-relaxed flex-1 flex flex-col justify-between pt-2 pb-6">
           <p className="mb-6 line-clamp-3">{lab.description}</p>
           
-          <div className="space-y-4">
-            {/* Tech stack tags */}
-            {tags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="px-2 py-0.5 bg-black/40 border border-white/5 rounded text-[9px] font-semibold text-zinc-400 uppercase tracking-wider select-none"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
-
+          <div className="pt-2 border-t border-white/5">
             {/* Action Links */}
-            <div className="flex flex-wrap items-center gap-4 pt-2 border-t border-white/5">
+            <div className="flex flex-wrap items-center gap-4">
               {lab.url && (
                 <a
                   href={lab.url}

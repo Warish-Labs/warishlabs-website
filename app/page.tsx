@@ -2,7 +2,7 @@ import React from 'react';
 import prisma from '@/lib/prisma';
 import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/hero/HeroSection';
-import FeaturedProducts from '@/components/home/FeaturedProducts';
+import PopularToolsSection from '@/components/home/PopularToolsSection';
 import CategoryGrid from '@/components/home/CategoryGrid';
 import StatsSection from '@/components/home/StatsSection';
 import LatestBlogPosts from '@/components/home/LatestBlogPosts';
@@ -53,8 +53,8 @@ export default async function Home() {
           config={heroConfig}
         />
         
-        {/* Featured Products Showcase */}
-        <FeaturedProducts />
+        {/* Popular Tools Showcase */}
+        <PopularToolsSection />
 
         {/* Categories Grid */}
         <CategoryGrid />
@@ -86,5 +86,3 @@ export default async function Home() {
     </>
   );
 }
-
-
