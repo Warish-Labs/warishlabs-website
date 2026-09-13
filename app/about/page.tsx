@@ -1,4 +1,5 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Card, CardTitle, CardContent } from '@/components/ui/card';
@@ -13,6 +14,24 @@ const iconMap: Record<string, LucideIcon> = {
   Globe: Globe,
   Code2: Code2,
 };
+
+export async function generateMetadata(): Promise<Metadata> {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://warishlabs.in';
+  return {
+    title: 'About WarishLabs — Shipped Software Products & Mission',
+    description: 'Learn about WarishLabs, an independent software studio founded by MD Warish Ansari, building production-grade web and Android applications.',
+    alternates: {
+      canonical: `${baseUrl}/about`,
+    },
+    openGraph: {
+      title: 'About WarishLabs — Shipped Software Products & Mission',
+      description: 'Learn about WarishLabs, an independent software studio founded by MD Warish Ansari, building production-grade web and Android applications.',
+      url: `${baseUrl}/about`,
+      siteName: 'WarishLabs',
+      type: 'website',
+    },
+  };
+}
 
 export default async function AboutPage() {
   // Opt-out of static rendering to query DB dynamically

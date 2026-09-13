@@ -7,6 +7,35 @@
 
 ## Changelog
 
+### 2026-09-13 — Analytics System, Admin Hardening & Public-Page Follow-Ups (feat/analytics-admin-hardening-2026-09-13)
+
+#### Phase A — Dependency & CI Policy
+- PRs #23 (`actions/setup-node` 4→7) and #11 (`github/codeql-action` 3→4) verified and rebased.
+- Conservative major bump policy: major version jumps (`eslint` 9→10, `vitest` 4→5, `@testing-library/jest-dom` 6→7, `@tanstack/react-table` 8→9, `typescript` 5.9.3→7.0.2) must be validated individually with full build + test passes before applying, rather than applied wholesale.
+
+#### Phase B & F — Centralized Visitor Analytics System
+- **Separate Neon Project Architecture**: Pointed `@prisma/analytics-client` at a dedicated, separate Neon PostgreSQL project (`ANALYTICS_DATABASE_URL` for runtime queries, `ANALYTICS_DIRECT_URL` for Prisma migrations). Main app DB and analytics DB are completely isolated with zero cross-database foreign keys.
+- **Schema (`prisma/analytics.prisma`)**: Models `Project`, `Session`, `PageView`, and `Event` with indexes on `projectId`, `sessionId`, `createdAt`, and `path`.
+- **Client & Services**: `CentralAnalyticsService.ts` handles session tracking (cookie token `warishlabs_vid`), User-Agent device/browser parsing, Vercel geo header extraction (`x-vercel-ip-country`), rate-limiting (Upstash Redis 60 req/min), project registration validation, and silent ingest failure handling.
+- **Admin Analytics UI (`app/(admin)/admin/analytics/page.tsx`)**: Displays KPIs (total visitors, unique visitors, sessions, page views, today's visitors), recharts line chart for visitor trends, project breakdown, top pages, top referrers, and a Phase F **"Copy Setup Prompt for New Project"** button to copy integration instructions for external subdomains.
+
+#### Phase C — Admin Panel Corrections
+- **Products**: Removed GitHub repo URL field, fixed Category Group label binding (`category.name` instead of raw UUID), added Cloudinary image upload/preview for Brand Logo & Showcase Banner, added field tooltips (`components/ui/tooltip.tsx`), and verified SEO metadata persistence.
+- **Categories**: Centralized Category model usage, added `PUT` endpoint for category edits (`/api/admin/categories`), and blocked deletion of categories with active products.
+- **Blog**: Redesigned form into top section, added inline cover image upload/preview, added search & pagination to article catalog list.
+- **Media Library**: Cloudinary sync auto-refresh on page load & folder list synchronization.
+- **Broadcasting & Email Alerting**: Throttled broadcast email sends with 10-second batch delays (`EmailService.ts`). Added runtime failure alerting (`AlertService.ts`) with 15-minute de-duplication emailing `warishdeveloper@gmail.com` and `warishlabs@gmail.com` on Cloudinary/Clerk failures (falling back to Sentry/console if Resend fails).
+- **Navigation & Layout**: Added topbar/sidebar "Back to WarishLabs Site" control in admin panel.
+
+#### Phase D — Public-Page & Signature Distinction
+- **Owner Signature Architecture**: Permanent distinction established:
+  - **Machine-readable signature**: JSON-LD `Person` / `Organization` schema in `app/layout.tsx` and `public/llms.txt` MUST BE RETAINED for AI agent and crawler discoverability.
+  - **Human-visible signature**: Visible badge/text on homepage footer removed per owner request. Do NOT re-add visible badges in future passes.
+- **Hero & Blog UI**: Removed floating "ALL SYSTEMS OPERATIONAL" badge from hero (`HeroSection.tsx`). Removed "Filter by Category" dropdown from `/blog` (`BlogCatalog.tsx`), making search full-width.
+- **SEO Audit**: All doc and legal pages (`/privacy`, `/terms`, `/cookies`, `/disclaimer`, `/contact`, `/about`) export explicit `generateMetadata` with titles, descriptions, canonical URLs, and OpenGraph parameters.
+
+---
+
 ### 2026-09-13 — Production Hardening & Rebrand (feat/production-hardening-and-rebrand-2026-09-13)
 
 #### Phase 0 — Build Fix (Critical)

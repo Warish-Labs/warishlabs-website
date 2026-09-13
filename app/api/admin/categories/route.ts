@@ -77,6 +77,46 @@ export async function POST(request: Request) {
   }
 }
 
+export async function PUT(request: Request) {
+  const admin = await validateSession();
+  if (!admin) {
+    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const body = await request.json();
+    const { id, name, description } = body;
+
+    if (!id || !name) {
+      return NextResponse.json({ success: false, error: 'ID and Name are required' }, { status: 400 });
+    }
+
+    const slug = slugify(name);
+
+    const category = await prisma.category.update({
+      where: { id },
+      data: {
+        name,
+        slug,
+        description,
+      },
+    });
+
+    await prisma.activityLog.create({
+      data: {
+        adminId: admin.id,
+        action: 'UPDATE_CATEGORY',
+        details: `Updated category: ${name} (${slug})`,
+      },
+    }).catch(err => console.error('Failed to log activity:', err));
+
+    return NextResponse.json({ success: true, category });
+  } catch (error: any) {
+    console.error('[API Categories] Update error:', error);
+    return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
 export async function DELETE(request: Request) {
   const admin = await validateSession();
   if (!admin) {

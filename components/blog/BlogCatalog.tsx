@@ -7,8 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Terminal, Search, SlidersHorizontal, RotateCcw, ArrowRight } from 'lucide-react';
+import { Search, SlidersHorizontal, RotateCcw, ArrowRight, Terminal } from 'lucide-react';
 import NewsletterCTA from '../shared/NewsletterCTA';
 import { cn } from '@/utils/cn';
 
@@ -29,7 +28,6 @@ interface BlogCatalogProps {
 export default function BlogCatalog({ initialPosts }: BlogCatalogProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
@@ -39,34 +37,20 @@ export default function BlogCatalog({ initialPosts }: BlogCatalogProps) {
   const handleResetFilters = () => {
     setSearchQuery('');
     setDebouncedQuery('');
-    setSelectedCategory('all');
   };
-
-  // Get distinct list of categories dynamically
-  const categories = useMemo(() => {
-    const cats = new Set(initialPosts.map((p) => p.category).filter(Boolean));
-    return Array.from(cats);
-  }, [initialPosts]);
 
   // Filter logic (in-memory)
   const fuse = useMemo(() => new Fuse(initialPosts, { keys: ['title', 'excerpt', 'category'], threshold: 0.3 }), [initialPosts]);
 
   const filteredPosts = useMemo(() => {
-    let result = [...initialPosts];
-
     if (debouncedQuery.trim()) {
-      result = fuse.search(debouncedQuery).map(res => res.item);
+      return fuse.search(debouncedQuery).map(res => res.item);
     }
+    return [...initialPosts];
+  }, [initialPosts, debouncedQuery, fuse]);
 
-    if (selectedCategory !== 'all') {
-      result = result.filter((p) => p.category === selectedCategory);
-    }
-
-    return result;
-  }, [initialPosts, debouncedQuery, selectedCategory, fuse]);
-
-  // Highlight featured post only if no search filters are active
-  const isFiltering = debouncedQuery.trim() !== '' || selectedCategory !== 'all';
+  // Highlight featured post only if no search filter is active
+  const isFiltering = debouncedQuery.trim() !== '';
   const featuredPost = !isFiltering && filteredPosts.length > 0 ? filteredPosts[0] : null;
   const regularPosts = !isFiltering && filteredPosts.length > 1 ? filteredPosts.slice(1) : filteredPosts;
 
@@ -87,55 +71,32 @@ export default function BlogCatalog({ initialPosts }: BlogCatalogProps) {
 
   return (
     <div className="space-y-12">
-      {/* Search & Filter matrix bar */}
-      <div className="glass-panel border border-white/10 bg-white/5 backdrop-blur-md p-6 rounded-xl space-y-6">
-        <div className="flex items-center justify-between border-b border-white/8 pb-4">
+      {/* Search Bar */}
+      <div className="glass-panel border border-white/10 bg-white/5 backdrop-blur-md p-6 rounded-xl space-y-4">
+        <div className="flex items-center justify-between border-b border-white/8 pb-3">
           <div className="flex items-center gap-2 text-white">
             <SlidersHorizontal className="w-4 h-4 text-accent" />
-            <h3 className="text-xs font-bold uppercase tracking-wider">Search & Filter</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wider">Search Articles</h3>
           </div>
           {isFiltering && (
             <button
               onClick={handleResetFilters}
               className="flex items-center gap-1 text-[10px] uppercase font-bold text-accent hover:text-accent-hover transition-colors"
             >
-              <RotateCcw className="w-3.5 h-3.5" /> Clear Filters
+              <RotateCcw className="w-3.5 h-3.5" /> Clear Search
             </button>
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-          {/* Text Search Input */}
-          <div className="md:col-span-8 relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
-            <Input
-              type="text"
-              placeholder="Search specifications, logs, titles..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 bg-black/40 border-white/10 text-white rounded-lg focus-visible:ring-accent"
-            />
-          </div>
-
-          {/* Category Dropdown */}
-          <div className="md:col-span-4 space-y-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">
-              Filter by Category
-            </label>
-            <Select value={selectedCategory} onValueChange={(val) => setSelectedCategory(val || 'all')}>
-              <SelectTrigger className="bg-black/40 border-white/10 text-white rounded-lg">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-950 border-white/10 text-white">
-                <SelectItem value="all">All Bulletins</SelectItem>
-                {categories.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="relative">
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+          <Input
+            type="text"
+            placeholder="Search guides, how-tos, articles..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 bg-black/40 border-white/10 text-white rounded-lg focus-visible:ring-accent w-full"
+          />
         </div>
       </div>
 

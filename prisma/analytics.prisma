@@ -1,0 +1,85 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/@prisma/analytics-client"
+}
+
+model Project {
+  id        String     @id @default(uuid())
+  slug      String     @unique
+  name      String
+  domain    String?
+  apiKey    String     @unique @default(uuid())
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  sessions  Session[]
+  pageViews PageView[]
+  events    Event[]
+
+  @@map("projects")
+}
+
+model Session {
+  id         String     @id @default(uuid())
+  projectId  String     @map("project_id")
+  visitorId  String     @map("visitor_id")
+  userAgent  String?    @map("user_agent")
+  browser    String?
+  os         String?
+  device     String?
+  country    String?
+  region     String?
+  city       String?
+  referrer   String?
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+  lastSeenAt DateTime   @default(now()) @map("last_seen_at")
+  project    Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  pageViews  PageView[]
+  events     Event[]
+
+  @@index([projectId, createdAt])
+  @@index([visitorId])
+  @@index([createdAt])
+  @@map("sessions")
+}
+
+model PageView {
+  id        String   @id @default(uuid())
+  projectId String   @map("project_id")
+  sessionId String   @map("session_id")
+  visitorId String   @map("visitor_id")
+  path      String
+  url       String
+  referrer  String?
+  createdAt DateTime @default(now()) @map("created_at")
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt])
+  @@index([sessionId])
+  @@index([visitorId])
+  @@index([path])
+  @@map("page_views")
+}
+
+model Event {
+  id        String   @id @default(uuid())
+  projectId String   @map("project_id")
+  sessionId String   @map("session_id")
+  visitorId String   @map("visitor_id")
+  eventName String   @map("event_name")
+  eventData Json?    @map("event_data")
+  path      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt])
+  @@index([sessionId])
+  @@index([eventName])
+  @@map("events")
+}

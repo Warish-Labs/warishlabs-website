@@ -2,10 +2,13 @@
  * Generates a URL-friendly slug from a string
  */
 export function slugify(str: string): string {
+  if (!str) return '';
   return str
     .toLowerCase()
     .trim()
-    .replace(/[^\w\s-]/g, '')     // Remove non-word characters (except spaces and hyphens)
-    .replace(/[\s_-]+/g, '-')     // Replace spaces, underscores, and hyphens with a single hyphen
-    .replace(/^-+|-+$/g, '');     // Trim leading and trailing hyphens
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_]+/g, '-')
+    .split('-')
+    .filter(Boolean)
+    .join('-');
 }

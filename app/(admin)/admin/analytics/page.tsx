@@ -24,38 +24,31 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
+  Copy,
+  Check,
+  Users,
+  Eye,
+  Activity,
+  Layers,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatDate } from '@/utils/formatters';
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
 interface AnalyticsData {
-  totalEvents: number;
-  eventCounts: Array<{ eventName: string; _count: { id: number } }>;
-  referrers: Array<{ referrer: string | null; _count: { id: number } }>;
-  recentEvents: Array<{
-    id: string;
-    eventName: string;
-    eventData: any;
-    url: string;
-    referrer: string | null;
-    userAgent: string | null;
-    ipAddress: string | null;
-    createdAt: string;
-  }>;
-  viewsOverTime: Array<{ date: string; views: number }>;
-  topSearches: Array<{ term: string; count: number }>;
+  totalVisitors: number;
+  uniqueVisitors: number;
+  sessions: number;
+  pageViews: number;
+  visitorsToday: number;
+  visitorsOverTime: Array<{ date: string; pageViews: number; visitors: number }>;
+  visitorsByProject: Array<{ project: string; slug: string; sessions: number; pageViews: number }>;
+  topPages: Array<{ path: string; views: number }>;
+  topReferrers: Array<{ referrer: string; count: number }>;
 }
 
-// ---------------------------------------------------------------------------
-// Custom Tooltip for Recharts
-// ---------------------------------------------------------------------------
 function ChartTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="glass-panel border border-white/10 bg-bg-card/90 backdrop-blur-sm px-3 py-2 rounded-lg text-xs">
+    <div className="glass-panel border border-white/10 bg-zinc-900/90 backdrop-blur-sm px-3 py-2 rounded-lg text-xs">
       <p className="text-text-tertiary font-mono mb-1">{label}</p>
       {payload.map((p: any, i: number) => (
         <p key={i} className="font-bold" style={{ color: p.color }}>
@@ -66,51 +59,17 @@ function ChartTooltip({ active, payload, label }: any) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Referrer label helper
-// Uses proper URL parsing (new URL) and an allowlist of known hostnames.
-// Never uses substring checks on raw URL strings.
-// ---------------------------------------------------------------------------
-const REFERRER_ALLOWLIST: Record<string, string> = {
-  'www.google.com': 'Google Search',
-  'google.com': 'Google Search',
-  'github.com': 'GitHub',
-  'www.github.com': 'GitHub',
-  'www.linkedin.com': 'LinkedIn',
-  'linkedin.com': 'LinkedIn',
-  't.co': 'X / Twitter',
-  'twitter.com': 'X / Twitter',
-  'www.twitter.com': 'X / Twitter',
-  'x.com': 'X / Twitter',
-  'www.x.com': 'X / Twitter',
-  'localhost': 'Local Staging',
-  '127.0.0.1': 'Local Staging',
-};
-
-function getReferrerLabel(ref: string | null): string {
-  if (!ref) return 'Direct / Unknown';
-  try {
-    const { hostname } = new URL(ref);
-    return REFERRER_ALLOWLIST[hostname] ?? hostname;
-  } catch {
-    // ref is not a valid URL — return as-is (already sanitised by the server)
-    return ref;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Main Component
-// ---------------------------------------------------------------------------
 export default function AdminAnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState('7d');
-  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [selectedProject, setSelectedProject] = useState('all');
+  const [copied, setCopied] = useState(false);
 
-  const fetchAnalytics = async (selectedRange: string) => {
+  const fetchAnalytics = async (selectedRange: string, project: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/analytics?range=${selectedRange}`);
+      const res = await fetch(`/api/admin/analytics?range=${selectedRange}&project=${project}`);
       const resData = await res.json();
       if (resData.success) {
         setData(resData);
@@ -125,43 +84,84 @@ export default function AdminAnalyticsPage() {
   };
 
   useEffect(() => {
-    fetchAnalytics(range);
-  }, [range]);
+    fetchAnalytics(range, selectedProject);
+  }, [range, selectedProject]);
 
-  const handleRangeChange = (r: string) => {
-    if (r !== range) {
-      setRange(r);
-      setExpandedRow(null);
-    }
+  const handleCopySetupPrompt = () => {
+    const promptTemplate = `You are integrating this project into WarishLabs' existing centralized
+analytics system. Do NOT create a new database or new schema — a shared
+analytics service already exists.
+
+1. Inspect this project's codebase (framework, routing, existing
+   analytics/tracking code if any).
+2. Add the WarishLabs analytics tracker client to this project the same
+   way it's used in warishlabs-website: install the shared tracker script in the root layout or add the <script> snippet to document head.
+3. Point the tracker at the existing central API endpoint:
+   https://warishlabs.in/api/analytics/event
+   Do not create a new endpoint or a new database for this.
+4. Add the required environment variable(s) to this project:
+   NEXT_PUBLIC_ANALYTICS_API_URL=https://warishlabs.in/api/analytics/event
+   NEXT_PUBLIC_ANALYTICS_PROJECT_ID=<YOUR_PROJECT_SLUG>
+5. This project must be registered as a known project in the central
+   \`projects\` table before events will be accepted (unregistered project
+   identifiers are rejected). Registration happens via the WarishLabs
+   admin panel or a POST to https://warishlabs.in/api/admin/analytics/register.
+6. Run this project's build/lint/tests and confirm nothing else broke.
+7. Do all of this on a new branch, do not push to main, open a PR.
+
+At the very end, tell the user exactly what they must do manually,
+clearly separated as:
+"You need to do these manually:" — e.g. add the env var to this
+project's Vercel settings (Production/Preview/Development as
+appropriate) and redeploy, then register the project in the WarishLabs
+admin panel.
+"Antigravity has already handled these automatically:" — e.g. adding the
+tracker client code, wiring the API call, updating .env.example.`;
+
+    navigator.clipboard.writeText(promptTemplate);
+    setCopied(true);
+    toast.success('Analytics integration prompt copied to clipboard!');
+    setTimeout(() => setCopied(false), 3000);
   };
-
-  const maxReferrerCount = data?.referrers?.[0]?._count?.id || 1;
 
   return (
     <div className="space-y-8 select-none">
-      {/* Header with Range Filter */}
+      {/* Header Bar */}
       <Card className="glass-panel border-border shadow-card overflow-hidden">
         <CardHeader className="border-b border-border/40 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <CardTitle className="text-xs font-bold uppercase tracking-widest text-text-tertiary flex items-center gap-2">
-            <LineChartIcon className="w-4 h-4 text-accent" /> Analytics Dashboard
+            <LineChartIcon className="w-4 h-4 text-accent" /> Centralized Visitor Analytics
           </CardTitle>
-          <div className="flex bg-black/40 border border-white/10 rounded-lg p-0.5 shrink-0 self-start sm:self-center">
-            {(['7d', '30d', 'all'] as const).map((r) => (
-              <button
-                key={r}
-                onClick={() => handleRangeChange(r)}
-                className={`px-3 py-1 text-xs font-bold uppercase rounded-md transition-colors cursor-pointer ${
-                  range === r ? 'bg-accent text-white' : 'text-zinc-400 hover:text-white'
-                }`}
-              >
-                {r === '7d' ? '7 Days' : r === '30d' ? '30 Days' : 'All Time'}
-              </button>
-            ))}
+
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Copy Setup Prompt Button */}
+            <button
+              onClick={handleCopySetupPrompt}
+              className="px-3 py-1.5 bg-accent/10 border border-accent/30 hover:border-accent text-accent hover:text-white rounded-lg text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer"
+            >
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? 'Prompt Copied!' : 'Copy Setup Prompt for New Project'}
+            </button>
+
+            {/* Range Selector */}
+            <div className="flex bg-black/40 border border-white/10 rounded-lg p-0.5">
+              {(['7d', '30d', '90d'] as const).map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setRange(r)}
+                  className={`px-3 py-1 text-xs font-bold uppercase rounded-md transition-colors cursor-pointer ${
+                    range === r ? 'bg-accent text-white' : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  {r === '7d' ? '7 Days' : r === '30d' ? '30 Days' : '90 Days'}
+                </button>
+              ))}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="pt-4">
           <p className="text-text-secondary text-sm">
-            Auditing application traffic, page views, and visitor events tracked by the rate-limited secure analytics proxy.
+            Real-time multi-site visitor telemetry powered by Neon PostgreSQL and Upstash Redis.
           </p>
         </CardContent>
       </Card>
@@ -169,370 +169,125 @@ export default function AdminAnalyticsPage() {
       {loading ? (
         <div className="py-24 flex flex-col items-center justify-center gap-4">
           <Loader2 className="w-8 h-8 text-accent animate-spin" />
-          <p className="text-text-tertiary text-xs">Loading analytics data...</p>
+          <p className="text-text-tertiary text-xs">Fetching analytics telemetry...</p>
         </div>
       ) : (
         <div className="space-y-8">
-          {/* ── KPI WIDGETS ─────────────────────────────────────────────────── */}
+          {/* KPI Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Total Events */}
-            <Card className="glass-panel border-border bg-bg-secondary p-6 hover:border-accent/20 transition-all duration-200">
+            <Card className="glass-panel border-border bg-bg-secondary p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] uppercase font-bold text-text-tertiary tracking-wider">Total Events</p>
-                  <h3 className="text-3xl font-black text-white mt-1">{data?.totalEvents ?? 0}</h3>
+                  <p className="text-[10px] uppercase font-bold text-text-tertiary tracking-wider">Total Page Views</p>
+                  <h3 className="text-3xl font-black text-white mt-1">{data?.pageViews ?? 0}</h3>
                 </div>
                 <div className="bg-accent/10 border border-accent/20 p-2.5 rounded-lg text-accent">
-                  <BarChart2 className="w-5 h-5" />
+                  <Eye className="w-5 h-5" />
                 </div>
               </div>
             </Card>
 
-            {/* Page Views */}
-            <Card className="glass-panel border-border bg-bg-secondary p-6 hover:border-accent/20 transition-all duration-200">
+            <Card className="glass-panel border-border bg-bg-secondary p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] uppercase font-bold text-text-tertiary tracking-wider">Page Views</p>
-                  <h3 className="text-3xl font-black text-white mt-1">
-                    {data?.eventCounts?.find((e) => e.eventName === 'page_view')?._count?.id ?? 0}
-                  </h3>
+                  <p className="text-[10px] uppercase font-bold text-text-tertiary tracking-wider">Unique Visitors</p>
+                  <h3 className="text-3xl font-black text-white mt-1">{data?.uniqueVisitors ?? 0}</h3>
                 </div>
                 <div className="bg-cyan-500/10 border border-cyan-500/20 p-2.5 rounded-lg text-cyan-400">
-                  <Globe className="w-5 h-5" />
+                  <Users className="w-5 h-5" />
                 </div>
               </div>
             </Card>
 
-            {/* Product Views */}
-            <Card className="glass-panel border-border bg-bg-secondary p-6 hover:border-accent/20 transition-all duration-200">
+            <Card className="glass-panel border-border bg-bg-secondary p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] uppercase font-bold text-text-tertiary tracking-wider">Product Views</p>
-                  <h3 className="text-3xl font-black text-white mt-1">
-                    {data?.eventCounts?.find((e) => e.eventName === 'product_view')?._count?.id ?? 0}
-                  </h3>
+                  <p className="text-[10px] uppercase font-bold text-text-tertiary tracking-wider">Total Sessions</p>
+                  <h3 className="text-3xl font-black text-white mt-1">{data?.sessions ?? 0}</h3>
+                </div>
+                <div className="bg-purple-500/10 border border-purple-500/20 p-2.5 rounded-lg text-purple-400">
+                  <Activity className="w-5 h-5" />
+                </div>
+              </div>
+            </Card>
+
+            <Card className="glass-panel border-border bg-bg-secondary p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-text-tertiary tracking-wider">Visitors Today</p>
+                  <h3 className="text-3xl font-black text-white mt-1">{data?.visitorsToday ?? 0}</h3>
                 </div>
                 <div className="bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-lg text-emerald-400">
                   <TrendingUp className="w-5 h-5" />
                 </div>
               </div>
             </Card>
+          </div>
 
-            {/* Searches */}
-            <Card className="glass-panel border-border bg-bg-secondary p-6 hover:border-accent/20 transition-all duration-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] uppercase font-bold text-text-tertiary tracking-wider">Searches</p>
-                  <h3 className="text-3xl font-black text-white mt-1">
-                    {data?.eventCounts?.find((e) => e.eventName === 'search')?._count?.id ?? 0}
-                  </h3>
-                </div>
-                <div className="bg-purple-500/10 border border-purple-500/20 p-2.5 rounded-lg text-purple-400">
-                  <Search className="w-5 h-5" />
-                </div>
+          {/* Visitors Over Time Chart */}
+          <Card className="glass-panel border-border shadow-card p-6 space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-text-tertiary flex items-center gap-2">
+              <BarChart2 className="w-4 h-4 text-accent" /> Traffic & Page Views Over Time
+            </h3>
+            <div className="h-72 w-full pt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={data?.visitorsOverTime || []}>
+                  <defs>
+                    <linearGradient id="pvGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                  <XAxis dataKey="date" stroke="#71717a" fontSize={10} />
+                  <YAxis stroke="#71717a" fontSize={10} />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Area type="monotone" dataKey="pageViews" name="Page Views" stroke="#3B82F6" strokeWidth={2} fill="url(#pvGrad)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+
+          {/* Grid split: Top Pages & Top Referrers */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Top Pages */}
+            <Card className="glass-panel border-border shadow-card p-6 space-y-4">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-text-tertiary flex items-center gap-2">
+                <Compass className="w-4 h-4 text-cyan-400" /> Top Visited Pages
+              </h3>
+              <div className="space-y-2">
+                {data?.topPages?.length ? (
+                  data.topPages.map((page, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-2.5 rounded-lg bg-black/40 border border-white/5 text-xs">
+                      <span className="font-mono text-white truncate max-w-[280px]">{page.path}</span>
+                      <span className="font-bold text-accent">{page.views} views</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-text-tertiary">No page view data recorded yet.</p>
+                )}
+              </div>
+            </Card>
+
+            {/* Top Referrers */}
+            <Card className="glass-panel border-border shadow-card p-6 space-y-4">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-text-tertiary flex items-center gap-2">
+                <Globe className="w-4 h-4 text-purple-400" /> Top Referrers
+              </h3>
+              <div className="space-y-2">
+                {data?.topReferrers?.length ? (
+                  data.topReferrers.map((ref, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-2.5 rounded-lg bg-black/40 border border-white/5 text-xs">
+                      <span className="font-mono text-white truncate max-w-[280px]">{ref.referrer}</span>
+                      <span className="font-bold text-purple-400">{ref.count} visits</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-text-tertiary">Direct traffic or internal navigation.</p>
+                )}
               </div>
             </Card>
           </div>
-
-          {/* ── PAGE VIEWS OVER TIME (Area Chart) ───────────────────────────── */}
-          <Card className="glass-panel border-border shadow-card overflow-hidden">
-            <CardHeader className="border-b border-border/40 pb-4">
-              <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
-                <LineChartIcon className="w-4 h-4 text-accent" /> Page Views Over Time
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
-              {!data?.viewsOverTime?.length || data.viewsOverTime.every((d) => d.views === 0) ? (
-                <div className="py-12 text-center text-text-tertiary text-xs">
-                  No page view data available for this range.
-                </div>
-              ) : (
-                <ResponsiveContainer width="100%" height={220}>
-                  <AreaChart data={data.viewsOverTime} margin={{ top: 5, right: 10, bottom: 0, left: -20 }}>
-                    <defs>
-                      <linearGradient id="viewsGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="var(--color-accent)" stopOpacity={0.3} />
-                        <stop offset="100%" stopColor="var(--color-accent)" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                    <XAxis
-                      dataKey="date"
-                      tick={{ fill: '#6b7280', fontSize: 9 }}
-                      tickLine={false}
-                      axisLine={false}
-                      interval="preserveStartEnd"
-                    />
-                    <YAxis
-                      tick={{ fill: '#6b7280', fontSize: 9 }}
-                      tickLine={false}
-                      axisLine={false}
-                      allowDecimals={false}
-                    />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Area
-                      type="monotone"
-                      dataKey="views"
-                      name="Page Views"
-                      stroke="hsl(var(--accent))"
-                      strokeWidth={2}
-                      fill="url(#viewsGradient)"
-                      dot={false}
-                      activeDot={{ r: 4, fill: 'hsl(var(--accent))' }}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* ── REFERRERS + TOP SEARCHES ─────────────────────────────────────── */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* Referrer Channels */}
-            <div className="lg:col-span-5">
-              <Card className="glass-panel border-border shadow-card overflow-hidden h-full">
-                <CardHeader className="border-b border-border/40 pb-4">
-                  <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
-                    <Compass className="w-4 h-4 text-accent" /> Referrer Channels
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  {!data?.referrers?.length ? (
-                    <div className="py-8 text-center text-text-tertiary text-xs">
-                      No referral data available for this range.
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {data.referrers.map((ref, idx) => {
-                        const count = ref._count?.id || 0;
-                        const pct = maxReferrerCount > 0 ? Math.round((count / maxReferrerCount) * 100) : 0;
-                        return (
-                          <div key={idx} className="space-y-1.5">
-                            <div className="flex justify-between items-center text-xs">
-                              <span className="font-semibold text-zinc-300 truncate max-w-[200px]" title={ref.referrer || ''}>
-                                {getReferrerLabel(ref.referrer)}
-                              </span>
-                              <span className="text-text-secondary font-mono shrink-0 ml-2">{count}</span>
-                            </div>
-                            <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-accent rounded-full transition-all duration-500"
-                                style={{ width: `${pct}%` }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Top Search Terms (Bar Chart) */}
-            <div className="lg:col-span-7">
-              <Card className="glass-panel border-border shadow-card overflow-hidden h-full">
-                <CardHeader className="border-b border-border/40 pb-4">
-                  <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
-                    <Search className="w-4 h-4 text-accent" /> Top Search Queries
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  {!data?.topSearches?.length ? (
-                    <div className="py-8 text-center text-text-tertiary text-xs">
-                      No search data recorded for this range.
-                    </div>
-                  ) : (
-                    <ResponsiveContainer width="100%" height={220}>
-                      <BarChart
-                        data={data.topSearches}
-                        layout="vertical"
-                        margin={{ top: 0, right: 10, bottom: 0, left: 0 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" horizontal={false} />
-                        <XAxis
-                          type="number"
-                          tick={{ fill: '#6b7280', fontSize: 9 }}
-                          tickLine={false}
-                          axisLine={false}
-                          allowDecimals={false}
-                        />
-                        <YAxis
-                          type="category"
-                          dataKey="term"
-                          tick={{ fill: '#9ca3af', fontSize: 9 }}
-                          tickLine={false}
-                          axisLine={false}
-                          width={90}
-                        />
-                        <Tooltip content={<ChartTooltip />} />
-                        <Bar
-                          dataKey="count"
-                          name="Searches"
-                          fill="hsl(var(--accent))"
-                          radius={[0, 3, 3, 0]}
-                          maxBarSize={16}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* ── EVENT BREAKDOWN BAR CHART ────────────────────────────────────── */}
-          {data?.eventCounts && data.eventCounts.length > 0 && (
-            <Card className="glass-panel border-border shadow-card overflow-hidden">
-              <CardHeader className="border-b border-border/40 pb-4">
-                <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
-                  <BarChart2 className="w-4 h-4 text-accent" /> Event Breakdown
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <ResponsiveContainer width="100%" height={180}>
-                  <BarChart
-                    data={data.eventCounts.map((e) => ({ name: e.eventName.replace(/_/g, ' '), count: e._count.id }))}
-                    margin={{ top: 0, right: 10, bottom: 20, left: -20 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                    <XAxis
-                      dataKey="name"
-                      tick={{ fill: '#6b7280', fontSize: 9 }}
-                      tickLine={false}
-                      axisLine={false}
-                      angle={-30}
-                      textAnchor="end"
-                    />
-                    <YAxis
-                      tick={{ fill: '#6b7280', fontSize: 9 }}
-                      tickLine={false}
-                      axisLine={false}
-                      allowDecimals={false}
-                    />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Bar dataKey="count" name="Events" fill="hsl(var(--accent))" radius={[3, 3, 0, 0]} maxBarSize={32} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* ── RECENT EVENT STREAMS (Expandable) ────────────────────────────── */}
-          <Card className="glass-panel border-border shadow-card overflow-hidden">
-            <CardHeader className="border-b border-border/40 pb-4">
-              <CardTitle className="text-sm font-semibold text-white">
-                Recent Event Streams <span className="text-text-tertiary font-normal text-xs">(Last 100)</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6 px-0">
-              {!data?.recentEvents?.length ? (
-                <div className="py-12 text-center text-text-tertiary text-sm">
-                  No tracking events recorded yet.
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse text-left">
-                    <thead>
-                      <tr className="border-b border-border text-[10px] uppercase font-bold text-text-tertiary tracking-wider">
-                        <th className="px-6 py-3 w-8" />
-                        <th className="px-6 py-3">Event</th>
-                        <th className="px-6 py-3">URL / Payload</th>
-                        <th className="px-6 py-3">Source</th>
-                        <th className="px-6 py-3">Time</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/40 text-sm text-text-secondary">
-                      {data.recentEvents.map((evt) => {
-                        const isExpanded = expandedRow === evt.id;
-                        return (
-                          <React.Fragment key={evt.id}>
-                            <tr
-                              className="hover:bg-bg-card/30 transition-colors cursor-pointer"
-                              onClick={() => setExpandedRow(isExpanded ? null : evt.id)}
-                            >
-                              <td className="px-4 py-4 text-text-tertiary">
-                                {isExpanded ? (
-                                  <ChevronUp className="w-3.5 h-3.5" />
-                                ) : (
-                                  <ChevronDown className="w-3.5 h-3.5" />
-                                )}
-                              </td>
-                              <td className="px-6 py-4">
-                                <span className="bg-accent-subtle/50 text-accent border border-accent/10 px-2 py-0.5 rounded text-xs font-semibold whitespace-nowrap">
-                                  {evt.eventName}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 max-w-xs">
-                                <p className="text-white truncate text-xs" title={evt.url}>
-                                  {evt.url}
-                                </p>
-                                {evt.eventData && (
-                                  <p className="text-[10px] text-text-tertiary truncate">
-                                    {JSON.stringify(evt.eventData)}
-                                  </p>
-                                )}
-                              </td>
-                              <td className="px-6 py-4 max-w-[150px]">
-                                <p className="text-xs text-text-secondary truncate" title={evt.referrer || 'Direct'}>
-                                  {getReferrerLabel(evt.referrer)}
-                                </p>
-                              </td>
-                              <td className="px-6 py-4 text-xs">
-                                <span className="flex items-center gap-1.5 text-text-tertiary whitespace-nowrap">
-                                  <Clock className="w-3.5 h-3.5 shrink-0" />
-                                  {formatDate(evt.createdAt, {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                  })}
-                                </span>
-                              </td>
-                            </tr>
-                            {isExpanded && (
-                              <tr className="bg-black/30">
-                                <td colSpan={5} className="px-8 py-4">
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
-                                    <div>
-                                      <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary mb-1">Full URL</p>
-                                      <p className="text-white font-mono break-all">{evt.url || '—'}</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary mb-1">IP Address</p>
-                                      <p className="text-white font-mono">{evt.ipAddress || 'Not recorded'}</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary mb-1">Referrer</p>
-                                      <p className="text-white font-mono break-all">{evt.referrer || 'Direct / None'}</p>
-                                    </div>
-                                    {evt.eventData && (
-                                      <div className="sm:col-span-2 md:col-span-3">
-                                        <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary mb-1">Event Payload</p>
-                                        <pre className="text-accent font-mono text-[10px] bg-black/40 border border-white/5 rounded p-3 overflow-x-auto">
-                                          {JSON.stringify(evt.eventData, null, 2)}
-                                        </pre>
-                                      </div>
-                                    )}
-                                    {evt.userAgent && (
-                                      <div className="sm:col-span-2 md:col-span-3">
-                                        <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary mb-1">User Agent</p>
-                                        <p className="text-white font-mono text-[10px] break-all">{evt.userAgent}</p>
-                                      </div>
-                                    )}
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
-                          </React.Fragment>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
       )}
     </div>
