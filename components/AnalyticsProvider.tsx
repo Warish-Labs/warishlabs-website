@@ -45,6 +45,9 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    // Do NOT track admin panel or internal API routes as public visitor traffic
+    if (pathname.startsWith('/admin') || pathname.startsWith('/api')) return;
+
     const currentPath = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : '');
     
     // Prevent double tracking of identical paths on mount
