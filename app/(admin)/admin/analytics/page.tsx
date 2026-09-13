@@ -66,6 +66,13 @@ export default function AdminAnalyticsPage() {
   const [selectedProject, setSelectedProject] = useState('all');
   const [copied, setCopied] = useState(false);
 
+  // Add Project Modal state
+  const [isAddProjectOpen, setIsAddProjectOpen] = useState(false);
+  const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectSlug, setNewProjectSlug] = useState('');
+  const [newProjectDomain, setNewProjectDomain] = useState('');
+  const [isCreatingProject, setIsCreatingProject] = useState(false);
+
   const fetchAnalytics = async (selectedRange: string, project: string) => {
     setLoading(true);
     try {
@@ -86,6 +93,43 @@ export default function AdminAnalyticsPage() {
   useEffect(() => {
     fetchAnalytics(range, selectedProject);
   }, [range, selectedProject]);
+
+  const handleCreateProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newProjectName.trim() || !newProjectSlug.trim()) {
+      toast.error('Project Name and Slug are required');
+      return;
+    }
+
+    setIsCreatingProject(true);
+    try {
+      const res = await fetch('/api/admin/analytics/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newProjectName.trim(),
+          slug: newProjectSlug.trim().toLowerCase(),
+          domain: newProjectDomain.trim() || undefined,
+        }),
+      });
+
+      const resData = await res.json();
+      if (resData.success) {
+        toast.success(`Project '${resData.project.name}' registered successfully!`);
+        setIsAddProjectOpen(false);
+        setNewProjectName('');
+        setNewProjectSlug('');
+        setNewProjectDomain('');
+        fetchAnalytics(range, selectedProject);
+      } else {
+        toast.error(resData.error || 'Failed to register project');
+      }
+    } catch {
+      toast.error('Network error registering project');
+    } finally {
+      setIsCreatingProject(false);
+    }
+  };
 
   const handleCopySetupPrompt = () => {
     const promptTemplate = `# ANTIGRAVITY CENTRALIZED VISITOR ANALYTICS INTEGRATION PROMPT
@@ -169,6 +213,14 @@ At the very end of your response, clearly separate manual requirements from auto
           </CardTitle>
 
           <div className="flex flex-wrap items-center gap-3">
+            {/* Add Project Button */}
+            <button
+              onClick={() => setIsAddProjectOpen(true)}
+              className="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 hover:border-emerald-400 text-emerald-400 hover:text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+            >
+              <Layers className="w-3.5 h-3.5" /> + Add Project
+            </button>
+
             {/* Copy Setup Prompt Button */}
             <button
               onClick={handleCopySetupPrompt}
@@ -397,6 +449,87 @@ At the very end of your response, clearly separate manual requirements from auto
                 )}
               </div>
             </Card>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Add Project */}
+      {isAddProjectOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-zinc-950 border border-white/10 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl relative">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-2">
+                <Layers className="w-4 h-4 text-emerald-400" /> Register Ecosystem Project
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsAddProjectOpen(false)}
+                className="text-zinc-400 hover:text-white text-xs font-bold p-1 rounded"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateProject} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-300">Project Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={newProjectName}
+                  onChange={(e) => {
+                    setNewProjectName(e.target.value);
+                    if (!newProjectSlug) {
+                      setNewProjectSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''));
+                    }
+                  }}
+                  placeholder="e.g. Toolkit"
+                  className="w-full bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-300">Slug Identifier *</label>
+                <input
+                  type="text"
+                  required
+                  value={newProjectSlug}
+                  onChange={(e) => setNewProjectSlug(e.target.value.toLowerCase())}
+                  placeholder="e.g. toolkit"
+                  className="w-full bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-accent"
+                />
+                <p className="text-[10px] text-zinc-400">Must match NEXT_PUBLIC_ANALYTICS_PROJECT_ID in external app.</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-300">Domain URL (Optional)</label>
+                <input
+                  type="text"
+                  value={newProjectDomain}
+                  onChange={(e) => setNewProjectDomain(e.target.value)}
+                  placeholder="e.g. toolkit.warishlabs.in"
+                  className="w-full bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setIsAddProjectOpen(false)}
+                  className="px-4 py-2 rounded-lg text-xs font-semibold text-zinc-400 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreatingProject}
+                  className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-md flex items-center gap-2"
+                >
+                  {isCreatingProject ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                  {isCreatingProject ? 'Creating...' : 'Register Project'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
