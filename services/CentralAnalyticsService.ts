@@ -50,13 +50,64 @@ export class CentralAnalyticsService {
    * Tracks a visitor event or page view silently in the separate analytics database
    */
   static async trackEvent(payload: TrackEventPayload): Promise<boolean> {
+    const result = await this.trackEventResult(payload);
+    return result.success;
+  }
+
+  /**
+   * Tracks a visitor event and returns the resolved project slug for accurate downstream routing
+   */
+  static async trackEventResult(payload: TrackEventPayload): Promise<{ success: boolean; resolvedSlug: string }> {
     try {
-      const projectSlug = payload.projectSlug || process.env.NEXT_PUBLIC_ANALYTICS_PROJECT_ID || 'warishlabs-website';
-      
+      let projectSlug = (payload.projectSlug || '').trim().toLowerCase();
+
+      // Extract hostname from payload URL if present
+      let derivedHostname = '';
+      if (payload.url) {
+        try {
+          derivedHostname = new URL(payload.url).hostname.toLowerCase();
+        } catch {
+          // ignore invalid URL
+        }
+      }
+
+      // Domain auto-detection: If request URL is from a subdomain (e.g. toolkit.warishlabs.in, forgeflow.warishlabs.in),
+      // match against existing project domains or subdomain slug to prevent misattribution
+      if (derivedHostname && derivedHostname.endsWith('.warishlabs.in') && derivedHostname !== 'warishlabs.in' && derivedHostname !== 'www.warishlabs.in') {
+        const subdomain = derivedHostname.replace('.warishlabs.in', '');
+        const domainMatch = await prismaAnalytics.project.findFirst({
+          where: {
+            OR: [
+              { domain: derivedHostname },
+              { slug: subdomain },
+            ],
+          },
+        }).catch(() => null);
+
+        if (domainMatch) {
+          projectSlug = domainMatch.slug;
+        } else if (!projectSlug || projectSlug === 'warishlabs-website') {
+          projectSlug = subdomain;
+        }
+      }
+
+      if (!projectSlug) {
+        projectSlug = process.env.NEXT_PUBLIC_ANALYTICS_PROJECT_ID || 'warishlabs-website';
+      }
+
       // 1. Ensure project exists (auto-register default project if missing)
       let project = await prismaAnalytics.project.findUnique({
         where: { slug: projectSlug },
       }).catch(() => null);
+
+      if (!project && derivedHostname) {
+        project = await prismaAnalytics.project.findFirst({
+          where: { domain: derivedHostname },
+        }).catch(() => null);
+        if (project) {
+          projectSlug = project.slug;
+        }
+      }
 
       if (!project) {
         // Auto-register project on first hit without requiring manual Admin Console setup
@@ -64,26 +115,17 @@ export class CentralAnalyticsService {
           ? 'WarishLabs Main Website'
           : projectSlug.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
 
-        let derivedDomain = 'warishlabs.in';
-        if (payload.url) {
-          try {
-            derivedDomain = new URL(payload.url).hostname;
-          } catch {
-            // fallback
-          }
-        }
-
         project = await prismaAnalytics.project.create({
           data: {
             slug: projectSlug,
             name: formattedName,
-            domain: derivedDomain,
+            domain: derivedHostname || `${projectSlug}.warishlabs.in`,
           },
         }).catch(() => null);
       }
 
       if (!project) {
-        return false;
+        return { success: false, resolvedSlug: projectSlug };
       }
 
       const { browser, os, device } = this.parseUserAgent(payload.userAgent);
@@ -123,7 +165,7 @@ export class CentralAnalyticsService {
         }).catch(() => null);
       }
 
-      if (!session) return false;
+      if (!session) return { success: false, resolvedSlug: project.slug };
 
       const pathName = payload.path || (payload.url ? new URL(payload.url, 'https://warishlabs.in').pathname : '/');
 
@@ -155,10 +197,10 @@ export class CentralAnalyticsService {
         }).catch(() => null);
       }
 
-      return true;
-    } catch (err) {
+      return { success: true, resolvedSlug: project.slug };
+    } catch {
       // Fail silently without interrupting visitor rendering
-      return false;
+      return { success: false, resolvedSlug: payload.projectSlug || 'warishlabs-website' };
     }
   }
 
