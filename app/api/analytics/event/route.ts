@@ -92,10 +92,10 @@ export async function POST(request: Request) {
 
     // 4. Track event in Main App DB (backward compatibility)
     await AnalyticsService.trackEvent({
-      visitorId,
+      visitorId: finalVisitorId,
       eventName,
       eventData: eventData || undefined,
-      url,
+      url: resolvedUrl,
       referrer: referrer || undefined,
       userAgent,
       ipAddress,
