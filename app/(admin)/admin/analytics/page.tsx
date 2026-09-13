@@ -132,72 +132,99 @@ export default function AdminAnalyticsPage() {
   };
 
   const handleCopySetupPrompt = () => {
-    const promptTemplate = `# ANTIGRAVITY CENTRALIZED VISITOR ANALYTICS INTEGRATION PROMPT
+    const promptLines = [
+      '# ANTIGRAVITY CENTRALIZED VISITOR ANALYTICS INTEGRATION PROMPT',
+      '',
+      "You are integrating this application into WarishLabs' centralized visitor analytics system.",
+      'Do NOT create a new database or new schema — a shared, multi-tenant analytics service exists on WarishLabs.',
+      '',
+      '---',
+      '',
+      '## 0. Architecture & API Payload Contract',
+      '',
+      '- **Central Ingest API Endpoint**: https://warishlabs.in/api/analytics/event',
+      '- **Project Identifier Slug**: `<THIS_PROJECT_SLUG>` (e.g. `toolkit`, `forgeflow`, etc.)',
+      '- **CORS Support**: Cross-origin requests from subdomains (e.g. `toolkit.warishlabs.in`) are enabled via CORS headers.',
+      '- **Fail-Safe Guarantee**: Analytics tracking MUST fail silently. A network timeout or DB glitch must NEVER throw errors, block rendering, or impact user experience.',
+      '',
+      '### Required JSON Payload Structure (POST to Ingest API):',
+      '```json',
+      '{',
+      '  "projectSlug": "<THIS_PROJECT_SLUG>",',
+      '  "projectId": "<THIS_PROJECT_SLUG>",',
+      '  "eventName": "page_view",',
+      '  "url": "https://toolkit.warishlabs.in/tools/age-calculator",',
+      '  "path": "/tools/age-calculator",',
+      '  "referrer": null,',
+      '  "visitorId": "v_unique_uuid_token"',
+      '}',
+      '```',
+      '*(Note: Send both `projectSlug` and `projectId`. Use `null` for referrer if empty string).*',
+      '',
+      '---',
+      '',
+      '## 1. Automated Antigravity Implementation Instructions',
+      '',
+      '1. **Inspect Framework & Layout**:',
+      "   Inspect this project's framework (Next.js App Router, Vite, HTML/JS, or React) and root layout file.",
+      '',
+      '2. **Add Environment Variables**:',
+      '   Add these environment variables to `.env.example` and local `.env`:',
+      '   NEXT_PUBLIC_ANALYTICS_API_URL="https://warishlabs.in/api/analytics/event"',
+      '   NEXT_PUBLIC_ANALYTICS_PROJECT_ID="<THIS_PROJECT_SLUG>"',
+      '',
+      '3. **Install / Update Tracker Client (`lib/analytics.ts` or `utils/analytics.ts`)**:',
+      '   Create a fail-safe tracking client that persists a first-party `warishlabs_vid` token in local storage and dispatches `page_view` events:',
+      '   ```typescript',
+      '   export async function trackPageView(path?: string): Promise<void> {',
+      "     if (typeof window === 'undefined') return;",
+      '     try {',
+      '       const visitorId = getOrCreateVisitorId();',
+      '       const payload = {',
+      "         projectSlug: process.env.NEXT_PUBLIC_ANALYTICS_PROJECT_ID || '<THIS_PROJECT_SLUG>',",
+      "         projectId: process.env.NEXT_PUBLIC_ANALYTICS_PROJECT_ID || '<THIS_PROJECT_SLUG>',",
+      "         eventName: 'page_view',",
+      '         url: window.location.href,',
+      '         path: path || window.location.pathname,',
+      '         referrer: document.referrer || null,',
+      '         visitorId,',
+      '       };',
+      "       fetch(process.env.NEXT_PUBLIC_ANALYTICS_API_URL || 'https://warishlabs.in/api/analytics/event', {",
+      "         method: 'POST',",
+      "         mode: 'cors',",
+      "         headers: { 'Content-Type': 'application/json' },",
+      '         body: JSON.stringify(payload),',
+      '       }).catch(() => null);',
+      '     } catch {',
+      '       // Fail silently',
+      '     }',
+      '   }',
+      '   ```',
+      '',
+      '4. **Mount Global Route Change Listener**:',
+      '   Mount AnalyticsTracker in the root layout (app/layout.tsx or pages/_app.tsx) so route changes trigger trackPageView().',
+      '',
+      '5. **Validation & Verification**:',
+      '   Run npm run typecheck, npm run lint, and npm run build to verify clean compilation.',
+      '',
+      '---',
+      '',
+      '## 2. Final Status Summary Output',
+      '',
+      'At the end of your response, output a clear summary:',
+      '',
+      '"What user needs to do manually:"',
+      '1. Ensure NEXT_PUBLIC_ANALYTICS_API_URL and NEXT_PUBLIC_ANALYTICS_PROJECT_ID are added to Vercel project environment variables for Production & Preview.',
+      '2. Ensure PR #34 on warishlabs-website is merged to main so production endpoints support CORS and direct foreign key filtering.',
+      '',
+      '"What Antigravity handled automatically:"',
+      '1. Created fail-safe client tracker (lib/analytics.ts).',
+      '2. Integrated root layout route change listener.',
+      '3. Updated .env.example and project type definitions.',
+      '4. Passed production build verification.',
+    ];
 
-You are integrating this project into WarishLabs' centralized analytics system.
-Do NOT create a new database or new schema — a shared, multi-tenant analytics service already exists.
-
----
-
-## 0. Context & Architecture
-
-- **Organization**: WarishLabs (Founded & maintained by MD Warish Ansari).
-- **Project Ecosystem**: WarishLabs ships real production software products — Web Utilities (Toolkit), AI Platforms (ForgeFlow AI), SaaS applications, and Developer Tools.
-- **Central Analytics Infrastructure**:
-  - Central Ingest API Endpoint: https://warishlabs.in/api/analytics/event
-  - Analytics Database: Dedicated multi-tenant PostgreSQL (Neon) storing projects, sessions, page_views, and events.
-  - Zero Setup / Auto-Registration: You DO NOT need to manually register project keys or create projects in WarishLabs Admin Console. The central API automatically auto-registers missing project slugs on the very first visitor hit.
-  - Fail-Safe Guarantee: Analytics tracking MUST fail silently. A network timeout or DB glitch must NEVER throw errors, block rendering, or impact user experience.
-
----
-
-## 1. Step-by-Step Implementation Instructions
-
-1. **Inspect Codebase**:
-   Inspect this project's framework (Next.js App Router, Vite, HTML/JS, or React) and existing layout files.
-
-2. **Add Environment Variables**:
-   Add these environment variables to .env.example and your local .env:
-   NEXT_PUBLIC_ANALYTICS_API_URL="https://warishlabs.in/api/analytics/event"
-   NEXT_PUBLIC_ANALYTICS_PROJECT_ID="<THIS_PROJECT_SLUG>"
-
-3. **Install / Add Analytics Tracker Client**:
-   Add the WarishLabs analytics tracker script/module. It must automatically track:
-   - Page view events on route change (path, url, referrer).
-   - Visitor sessions (issue a first-party warishlabs_vid token in local storage / cookie; no third-party tracking or intrusive fingerprinting).
-   - User-Agent browser/OS/device details.
-   - Vercel IP location headers (x-vercel-ip-country).
-
-4. **Add Custom Event Tracking (Optional)**:
-   Export a trackEvent(eventName: string, data?: Record<string, unknown>) helper function so components can track button clicks or feature usage.
-
-5. **Silent Execution**:
-   Wrap all fetch calls to the analytics API in a try/catch block with silent error suppression:
-   fetch(analyticsUrl, { method: 'POST', mode: 'cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(() => null);
-
-6. **Validation & Verification**:
-   Run this project's build, lint, and test commands (npm run build, npm run lint, npm run test) to verify clean compilation.
-
-7. **Branching & PR**:
-   Work on a feature branch (e.g. feat/integrate-central-analytics), do NOT push directly to main, and open a Pull Request.
-
----
-
-## 2. Final Output Summary Required
-
-At the very end of your response, clearly separate manual requirements from automated tasks:
-
-"You need to do these manually:"
-- Add NEXT_PUBLIC_ANALYTICS_API_URL and NEXT_PUBLIC_ANALYTICS_PROJECT_ID to this project's Vercel settings (Production / Preview / Development) and redeploy.
-- (NOTE: No manual setup in WarishLabs Admin is required! Hits auto-register automatically).
-
-"Antigravity has already handled these automatically:"
-- Added the tracker client and layout integration.
-- Configured automatic page view & session reporting with CORS support.
-- Updated .env.example and project types.
-- Verified build and test suites pass cleanly.`;
-
-    navigator.clipboard.writeText(promptTemplate);
+    navigator.clipboard.writeText(promptLines.join('\n'));
     setCopied(true);
     toast.success('Enhanced analytics setup prompt copied to clipboard!');
     setTimeout(() => setCopied(false), 3000);

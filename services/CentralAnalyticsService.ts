@@ -128,14 +128,16 @@ export class CentralAnalyticsService {
       const pathName = payload.path || (payload.url ? new URL(payload.url, 'https://warishlabs.in').pathname : '/');
 
       // 3. Record PageView or Custom Event
-      if (payload.eventName === 'page_view') {
+      const isPageView = !payload.eventName || payload.eventName === 'page_view' || payload.eventName === 'pageview';
+
+      if (isPageView) {
         await prismaAnalytics.pageView.create({
           data: {
             projectId: project.id,
             sessionId: session.id,
             visitorId: payload.visitorId,
             path: pathName,
-            url: payload.url,
+            url: payload.url || pathName,
             referrer: payload.referrer || undefined,
           },
         }).catch(() => null);
@@ -171,7 +173,23 @@ export class CentralAnalyticsService {
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
 
-      const projectFilter = projectSlug && projectSlug !== 'all' ? { project: { slug: projectSlug } } : {};
+      // Look up target project by slug if specified to filter directly on project_id foreign key
+      let targetProjectId: string | undefined = undefined;
+      if (projectSlug && projectSlug !== 'all') {
+        const targetProj = await prismaAnalytics.project.findUnique({
+          where: { slug: projectSlug },
+          select: { id: true },
+        }).catch(() => null);
+
+        if (targetProj) {
+          targetProjectId = targetProj.id;
+        } else {
+          // If project slug does not exist in DB yet, use an impossible ID so queries return 0
+          targetProjectId = '00000000-0000-0000-0000-000000000000';
+        }
+      }
+
+      const projectFilter = targetProjectId ? { projectId: targetProjectId } : {};
 
       const [
         totalPageViews,
