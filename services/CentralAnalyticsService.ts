@@ -169,6 +169,11 @@ export class CentralAnalyticsService {
 
       const pathName = payload.path || (payload.url ? new URL(payload.url, 'https://warishlabs.in').pathname : '/');
 
+      // Ignore admin routes and internal API routes across all projects
+      if (pathName.startsWith('/admin') || pathName.startsWith('/api')) {
+        return { success: true, resolvedSlug: project.slug };
+      }
+
       // 3. Record PageView or Custom Event
       const isPageView = !payload.eventName || payload.eventName === 'page_view' || payload.eventName === 'pageview';
 

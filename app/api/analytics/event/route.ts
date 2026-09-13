@@ -70,6 +70,11 @@ export async function POST(request: Request) {
     const origin = headerStore.get('origin') || headerStore.get('referer') || 'https://warishlabs.in';
     const resolvedUrl = bodyUrl || (bodyPath ? `${origin}${bodyPath}` : origin);
     
+    // Ignore tracking if the event path is an admin route or API route
+    if (bodyPath?.startsWith('/admin') || resolvedUrl.includes('/admin/') || bodyPath?.startsWith('/api')) {
+      return NextResponse.json({ success: true }, { headers: corsHeaders });
+    }
+
     // Vercel Geolocation Headers
     const country = headerStore.get('x-vercel-ip-country') || null;
     const region = headerStore.get('x-vercel-ip-country-region') || null;
