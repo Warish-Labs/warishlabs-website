@@ -12,6 +12,7 @@ import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
 import NewsletterCTA from '@/components/shared/NewsletterCTA';
 import { renderMarkdown } from '@/lib/markdown';
+import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
 
