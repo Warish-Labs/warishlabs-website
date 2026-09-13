@@ -14,6 +14,20 @@ const eventSchema = z.object({
   referrer: z.string().nullable().optional(),
 });
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-project-slug',
+  'Access-Control-Max-Age': '86400',
+};
+
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: corsHeaders,
+  });
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
@@ -23,7 +37,7 @@ export async function POST(request: Request) {
     if (!validation.success) {
       return NextResponse.json(
         { success: false, error: 'Validation failed', errors: validation.error.flatten().fieldErrors },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -53,7 +67,7 @@ export async function POST(request: Request) {
     const region = headerStore.get('x-vercel-ip-country-region') || null;
     const city = headerStore.get('x-vercel-ip-city') || null;
 
-    // 3. Track event in Central Analytics DB
+    // 3. Track event in Central Analytics DB (Auto-registers project if missing)
     const centralSuccess = await CentralAnalyticsService.trackEvent({
       projectSlug: projectSlug || process.env.NEXT_PUBLIC_ANALYTICS_PROJECT_ID || 'warishlabs-website',
       visitorId,
@@ -79,9 +93,9 @@ export async function POST(request: Request) {
       ipAddress,
     }).catch(() => null);
 
-    return NextResponse.json({ success: centralSuccess });
+    return NextResponse.json({ success: centralSuccess }, { headers: corsHeaders });
   } catch (error) {
     // Fail silently without interrupting visitor rendering
-    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500, headers: corsHeaders });
   }
 }

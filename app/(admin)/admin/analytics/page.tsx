@@ -102,7 +102,7 @@ Do NOT create a new database or new schema — a shared, multi-tenant analytics 
 - **Central Analytics Infrastructure**:
   - Central Ingest API Endpoint: https://warishlabs.in/api/analytics/event
   - Analytics Database: Dedicated multi-tenant PostgreSQL (Neon) storing projects, sessions, page_views, and events.
-  - Ingestion Security: Unregistered project slugs are rejected with 403 Forbidden.
+  - Zero Setup / Auto-Registration: You DO NOT need to manually register project keys or create projects in WarishLabs Admin Console. The central API automatically auto-registers missing project slugs on the very first visitor hit.
   - Fail-Safe Guarantee: Analytics tracking MUST fail silently. A network timeout or DB glitch must NEVER throw errors, block rendering, or impact user experience.
 
 ---
@@ -129,7 +129,7 @@ Do NOT create a new database or new schema — a shared, multi-tenant analytics 
 
 5. **Silent Execution**:
    Wrap all fetch calls to the analytics API in a try/catch block with silent error suppression:
-   fetch(analyticsUrl, { method: 'POST', body: JSON.stringify(payload) }).catch(() => null);
+   fetch(analyticsUrl, { method: 'POST', mode: 'cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(() => null);
 
 6. **Validation & Verification**:
    Run this project's build, lint, and test commands (npm run build, npm run lint, npm run test) to verify clean compilation.
@@ -145,11 +145,11 @@ At the very end of your response, clearly separate manual requirements from auto
 
 "You need to do these manually:"
 - Add NEXT_PUBLIC_ANALYTICS_API_URL and NEXT_PUBLIC_ANALYTICS_PROJECT_ID to this project's Vercel settings (Production / Preview / Development) and redeploy.
-- Register this project slug in the WarishLabs Admin Console (https://warishlabs.in/admin/analytics).
+- (NOTE: No manual setup in WarishLabs Admin is required! Hits auto-register automatically).
 
 "Antigravity has already handled these automatically:"
 - Added the tracker client and layout integration.
-- Configured automatic page view & session reporting.
+- Configured automatic page view & session reporting with CORS support.
 - Updated .env.example and project types.
 - Verified build and test suites pass cleanly.`;
 
@@ -178,6 +178,21 @@ At the very end of your response, clearly separate manual requirements from auto
               {copied ? 'Prompt Copied!' : 'Copy Setup Prompt for New Project'}
             </button>
 
+            {/* Project Filter Selector */}
+            <select
+              value={selectedProject}
+              onChange={(e) => setSelectedProject(e.target.value)}
+              className="bg-black/60 border border-white/10 text-white rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:border-accent cursor-pointer"
+            >
+              <option value="all">All Ecosystem Projects</option>
+              <option value="warishlabs-website">WarishLabs Main Website</option>
+              {data?.visitorsByProject?.filter(p => p.slug !== 'warishlabs-website').map((p) => (
+                <option key={p.slug} value={p.slug}>
+                  {p.project} ({p.slug})
+                </option>
+              ))}
+            </select>
+
             {/* Range Selector */}
             <div className="flex bg-black/40 border border-white/10 rounded-lg p-0.5">
               {(['7d', '30d', '90d'] as const).map((r) => (
@@ -196,7 +211,10 @@ At the very end of your response, clearly separate manual requirements from auto
         </CardHeader>
         <CardContent className="pt-4">
           <p className="text-text-secondary text-sm">
-            Real-time multi-site visitor telemetry powered by Neon PostgreSQL and Upstash Redis.
+            Real-time multi-site visitor telemetry powered by Neon PostgreSQL. Viewing metrics for:{' '}
+            <span className="font-bold text-accent">
+              {selectedProject === 'all' ? 'All Ecosystem Applications' : selectedProject}
+            </span>
           </p>
         </CardContent>
       </Card>
@@ -262,7 +280,7 @@ At the very end of your response, clearly separate manual requirements from auto
           {/* Visitors Over Time Chart */}
           <Card className="glass-panel border-border shadow-card p-6 space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-widest text-text-tertiary flex items-center gap-2">
-              <BarChart2 className="w-4 h-4 text-accent" /> Traffic & Page Views Over Time
+              <BarChart2 className="w-4 h-4 text-accent" /> Traffic &amp; Page Views Over Time ({selectedProject})
             </h3>
             <div className="h-72 w-full pt-4">
               <ResponsiveContainer width="100%" height="100%">
@@ -283,12 +301,69 @@ At the very end of your response, clearly separate manual requirements from auto
             </div>
           </Card>
 
+          {/* Multi-Site Applications & External Projects Breakdown Table */}
+          <Card className="glass-panel border-border shadow-card p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-text-tertiary flex items-center gap-2">
+                <Layers className="w-4 h-4 text-emerald-400" /> Multi-Site Applications &amp; Subdomains Traffic Breakdown
+              </h3>
+              <span className="text-[10px] text-text-tertiary">Auto-registers new sites on first hit</span>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-white/10 text-text-tertiary font-semibold uppercase text-[10px] tracking-wider">
+                    <th className="py-3 px-4">Application Name</th>
+                    <th className="py-3 px-4">Slug ID</th>
+                    <th className="py-3 px-4 text-center">Sessions</th>
+                    <th className="py-3 px-4 text-center">Page Views</th>
+                    <th className="py-3 px-4 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {data?.visitorsByProject?.length ? (
+                    data.visitorsByProject.map((proj) => (
+                      <tr key={proj.slug} className="hover:bg-white/5 transition-colors">
+                        <td className="py-3.5 px-4 font-bold text-white flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                          {proj.project}
+                        </td>
+                        <td className="py-3.5 px-4 font-mono text-text-secondary">{proj.slug}</td>
+                        <td className="py-3.5 px-4 text-center font-semibold text-cyan-400">{proj.sessions}</td>
+                        <td className="py-3.5 px-4 text-center font-semibold text-accent">{proj.pageViews}</td>
+                        <td className="py-3.5 px-4 text-right">
+                          <button
+                            onClick={() => setSelectedProject(proj.slug)}
+                            className={`px-2.5 py-1 rounded text-[11px] font-bold uppercase transition-all ${
+                              selectedProject === proj.slug
+                                ? 'bg-accent text-white'
+                                : 'bg-white/5 text-zinc-300 hover:bg-white/10 hover:text-white'
+                            }`}
+                          >
+                            {selectedProject === proj.slug ? 'Active Filter' : 'Filter View'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="py-6 text-center text-text-tertiary text-xs">
+                        No external projects recorded yet. Send your first analytics payload to test.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
           {/* Grid split: Top Pages & Top Referrers */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Top Pages */}
             <Card className="glass-panel border-border shadow-card p-6 space-y-4">
               <h3 className="text-xs font-bold uppercase tracking-widest text-text-tertiary flex items-center gap-2">
-                <Compass className="w-4 h-4 text-cyan-400" /> Top Visited Pages
+                <Compass className="w-4 h-4 text-cyan-400" /> Top Visited Pages ({selectedProject})
               </h3>
               <div className="space-y-2">
                 {data?.topPages?.length ? (
@@ -299,7 +374,7 @@ At the very end of your response, clearly separate manual requirements from auto
                     </div>
                   ))
                 ) : (
-                  <p className="text-xs text-text-tertiary">No page view data recorded yet.</p>
+                  <p className="text-xs text-text-tertiary">No page view data recorded yet for {selectedProject}.</p>
                 )}
               </div>
             </Card>
@@ -307,7 +382,7 @@ At the very end of your response, clearly separate manual requirements from auto
             {/* Top Referrers */}
             <Card className="glass-panel border-border shadow-card p-6 space-y-4">
               <h3 className="text-xs font-bold uppercase tracking-widest text-text-tertiary flex items-center gap-2">
-                <Globe className="w-4 h-4 text-purple-400" /> Top Referrers
+                <Globe className="w-4 h-4 text-purple-400" /> Top Referrers ({selectedProject})
               </h3>
               <div className="space-y-2">
                 {data?.topReferrers?.length ? (
