@@ -45,7 +45,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         <CardHeader className="space-y-3 pt-8 pb-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {/* Status Badge */}
               <Badge
                 className={cn(
@@ -62,6 +62,10 @@ export default function ProductCard({ product }: ProductCardProps) {
               {/* Type Badge */}
               <Badge className="text-[10px] font-bold bg-white/5 border-white/5 text-zinc-400 select-none pointer-events-none">
                 {product.type}
+              </Badge>
+              {/* Category Tag */}
+              <Badge className="text-[10px] font-medium bg-accent/8 border-accent/15 text-accent/80 select-none pointer-events-none">
+                {product.category.name}
               </Badge>
             </div>
             {product.logoUrl ? (
@@ -99,7 +103,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                 href={`/products/${product.slug}`}
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-accent hover:text-accent-hover transition-colors"
               >
-                Console details <ArrowRight className="w-3.5 h-3.5" />
+                View Details <ArrowRight className="w-3.5 h-3.5" />
               </Link>
 
               {product.visitUrl && (

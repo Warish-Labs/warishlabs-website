@@ -27,7 +27,7 @@ export default async function BlogPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 bg-black text-white pt-32 pb-24 relative select-none">
+      <main className="flex-1 bg-black text-white pt-32 pb-24 relative">
         {/* Glow halo backdrop */}
         <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-accent/3 blur-3xl -z-10 pointer-events-none" />
 
@@ -36,13 +36,13 @@ export default async function BlogPage() {
           <div className="max-w-2xl space-y-4 mb-16 text-left">
             <span className="inline-flex items-center gap-1.5 text-accent text-xs font-bold uppercase tracking-wider">
               <FileText className="w-3.5 h-3.5" />
-              ENGINEERING BULLETINS
+              GUIDES & ARTICLES
             </span>
             <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white leading-none">
-              Technical Journal
+              Blog
             </h1>
             <p className="text-text-secondary text-sm md:text-base leading-relaxed">
-              Bulletins detailing architectural research, workflow system designs, WebGL optimizations, and case studies constructed at WarishLabs.
+              Practical guides, how-to articles, and product updates from WarishLabs.
             </p>
           </div>
 

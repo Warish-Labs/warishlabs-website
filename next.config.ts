@@ -20,6 +20,22 @@ const cspHeader = `
 `;
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      // /labs → /products (301 permanent) for any bookmarks or indexed URLs
+      // Labs positioning removed 2026-09-13 — products are real shipped software, not experiments
+      {
+        source: '/labs',
+        destination: '/products',
+        permanent: true,
+      },
+      {
+        source: '/labs/:path*',
+        destination: '/products',
+        permanent: true,
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {

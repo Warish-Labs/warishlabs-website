@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
+import Fuse from 'fuse.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,10 +28,17 @@ interface BlogCatalogProps {
 
 export default function BlogCatalog({ initialPosts }: BlogCatalogProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const handleResetFilters = () => {
     setSearchQuery('');
+    setDebouncedQuery('');
     setSelectedCategory('all');
   };
 
@@ -41,30 +49,24 @@ export default function BlogCatalog({ initialPosts }: BlogCatalogProps) {
   }, [initialPosts]);
 
   // Filter logic (in-memory)
+  const fuse = useMemo(() => new Fuse(initialPosts, { keys: ['title', 'excerpt', 'category'], threshold: 0.3 }), [initialPosts]);
+
   const filteredPosts = useMemo(() => {
     let result = [...initialPosts];
 
-    // Filter by category
+    if (debouncedQuery.trim()) {
+      result = fuse.search(debouncedQuery).map(res => res.item);
+    }
+
     if (selectedCategory !== 'all') {
       result = result.filter((p) => p.category === selectedCategory);
     }
 
-    // Filter by search query
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      result = result.filter(
-        (p) =>
-          p.title.toLowerCase().includes(q) ||
-          p.excerpt.toLowerCase().includes(q) ||
-          p.category.toLowerCase().includes(q)
-      );
-    }
-
     return result;
-  }, [initialPosts, selectedCategory, searchQuery]);
+  }, [initialPosts, debouncedQuery, selectedCategory, fuse]);
 
   // Highlight featured post only if no search filters are active
-  const isFiltering = searchQuery.trim() !== '' || selectedCategory !== 'all';
+  const isFiltering = debouncedQuery.trim() !== '' || selectedCategory !== 'all';
   const featuredPost = !isFiltering && filteredPosts.length > 0 ? filteredPosts[0] : null;
   const regularPosts = !isFiltering && filteredPosts.length > 1 ? filteredPosts.slice(1) : filteredPosts;
 
@@ -84,20 +86,20 @@ export default function BlogCatalog({ initialPosts }: BlogCatalogProps) {
   };
 
   return (
-    <div className="space-y-12 select-none">
+    <div className="space-y-12">
       {/* Search & Filter matrix bar */}
       <div className="glass-panel border border-white/10 bg-white/5 backdrop-blur-md p-6 rounded-xl space-y-6">
         <div className="flex items-center justify-between border-b border-white/8 pb-4">
           <div className="flex items-center gap-2 text-white">
             <SlidersHorizontal className="w-4 h-4 text-accent" />
-            <h3 className="text-xs font-bold uppercase tracking-wider">Journal Matrix Controls</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wider">Search & Filter</h3>
           </div>
           {isFiltering && (
             <button
               onClick={handleResetFilters}
               className="flex items-center gap-1 text-[10px] uppercase font-bold text-accent hover:text-accent-hover transition-colors"
             >
-              <RotateCcw className="w-3.5 h-3.5" /> Reset Matrix
+              <RotateCcw className="w-3.5 h-3.5" /> Clear Filters
             </button>
           )}
         </div>
@@ -116,7 +118,10 @@ export default function BlogCatalog({ initialPosts }: BlogCatalogProps) {
           </div>
 
           {/* Category Dropdown */}
-          <div className="md:col-span-4">
+          <div className="md:col-span-4 space-y-1.5">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">
+              Filter by Category
+            </label>
             <Select value={selectedCategory} onValueChange={(val) => setSelectedCategory(val || 'all')}>
               <SelectTrigger className="bg-black/40 border-white/10 text-white rounded-lg">
                 <SelectValue placeholder="Category" />
@@ -197,12 +202,12 @@ export default function BlogCatalog({ initialPosts }: BlogCatalogProps) {
       {filteredPosts.length === 0 ? (
         <div className="text-center py-24 border border-white/8 bg-white/4 backdrop-blur-sm rounded-xl flex flex-col items-center gap-4">
           <Terminal className="w-12 h-12 text-text-tertiary animate-pulse" />
-          <p className="text-text-secondary text-sm">No engineering bulletins found matching matrix filters.</p>
+          <p className="text-text-secondary text-sm">No articles found matching filters.</p>
           <button
             onClick={handleResetFilters}
             className="px-4 py-2 rounded bg-accent text-white text-xs font-bold uppercase hover:bg-accent-hover transition-colors"
           >
-            Clear Matrix
+            Clear Filters
           </button>
         </div>
       ) : (

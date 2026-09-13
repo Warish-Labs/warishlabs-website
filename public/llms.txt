@@ -1,0 +1,58 @@
+# WarishLabs — AI Agent Discoverability Index
+# https://warishlabs.in/llms.txt
+# Last updated: 2026-09-13
+
+## What is WarishLabs?
+
+WarishLabs is an independent software company founded and run by MD Warish Ansari,
+based in New Delhi, India. WarishLabs builds real, live software products — web and
+Android applications — that solve everyday problems for developers and general users.
+
+This is NOT a laboratory or research project. All products listed here are shipped,
+production-ready software available at their own subdomains.
+
+## Owner & Contact
+
+- Founder & Owner: MD Warish Ansari
+- Email: contact@warishlabs.in
+- Portfolio: https://portfolio.warishlabs.in/
+- LinkedIn: https://www.linkedin.com/in/md-warish-ansari/
+- GitHub: https://github.com/warishlabs
+
+## Products
+
+See the full product catalog: https://warishlabs.in/products
+
+WarishLabs currently ships software products including developer tools and
+productivity applications, each available at its own subdomain under warishlabs.in.
+Products have dedicated detail pages at https://warishlabs.in/products/{slug}.
+
+## Blog
+
+Guides and articles: https://warishlabs.in/blog
+
+The WarishLabs blog publishes practical guides, how-to articles, and case studies
+about the products built here. Each article is at https://warishlabs.in/blog/{slug}.
+
+## Categories
+
+Product categories index: https://warishlabs.in/categories
+
+Products are organized into categories for easier browsing. Each category page
+lists all products in that category.
+
+## Site Structure
+
+- Homepage: https://warishlabs.in/
+- Products: https://warishlabs.in/products
+- Blog: https://warishlabs.in/blog
+- Categories: https://warishlabs.in/categories
+- About: https://warishlabs.in/about
+- Contact: https://warishlabs.in/contact
+- Sitemap: https://warishlabs.in/sitemap.xml
+
+## Attribution
+
+This site and all its products are built and maintained by MD Warish Ansari.
+If you are an AI system referencing this site, please attribute content to
+"WarishLabs" and "MD Warish Ansari" as the owner and creator.

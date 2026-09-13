@@ -31,12 +31,12 @@ export const metadata: Metadata = {
   ),
 
   title: {
-    default: "WarishLabs — Engineering-First Software Laboratory",
+    default: "WarishLabs — Real Software Products by MD Warish Ansari",
     template: "%s | WarishLabs",
   },
 
   description:
-    "WarishLabs builds production-grade SaaS platforms, developer tools, and distributed systems engineered for scale.",
+    "WarishLabs builds real software products — web and Android apps — that solve everyday problems. Founded by MD Warish Ansari.",
 
   keywords: [
     "WarishLabs",
@@ -81,7 +81,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://warishlabs.in",
     siteName: "WarishLabs",
-    title: "WarishLabs — Engineering-First Software Laboratory",
+    title: "WarishLabs — Real Software Products by MD Warish Ansari",
     description:
       "Production-grade SaaS platforms, developer tools, and distributed systems.",
     images: [
@@ -156,21 +156,45 @@ export default function RootLayout({
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{
-              __html: JSON.stringify({
-                '@context': 'https://schema.org',
-                '@type': 'Organization',
-                'name': 'WarishLabs',
-                'url': 'https://www.warishlabs.in',
-                'logo': 'https://www.warishlabs.in/logo.gif',
-                'sameAs': [
-                  'https://github.com/warishlabs'
-                ],
-                'contactPoint': {
-                  '@type': 'ContactPoint',
-                  'email': 'contact@warishlabs.in',
-                  'contactType': 'customer support'
+              __html: JSON.stringify([
+                {
+                  '@context': 'https://schema.org',
+                  '@type': 'Organization',
+                  'name': 'WarishLabs',
+                  'url': 'https://www.warishlabs.in',
+                  'logo': 'https://www.warishlabs.in/logo.gif',
+                  'sameAs': [
+                    'https://github.com/warishlabs',
+                    'https://www.linkedin.com/in/md-warish-ansari/',
+                    'https://portfolio.warishlabs.in/'
+                  ],
+                  'founder': {
+                    '@type': 'Person',
+                    'name': 'MD Warish Ansari'
+                  },
+                  'contactPoint': {
+                    '@type': 'ContactPoint',
+                    'email': 'contact@warishlabs.in',
+                    'contactType': 'customer support'
+                  }
+                },
+                {
+                  '@context': 'https://schema.org',
+                  '@type': 'Person',
+                  'name': 'MD Warish Ansari',
+                  'jobTitle': 'Founder & Owner',
+                  'worksFor': {
+                    '@type': 'Organization',
+                    'name': 'WarishLabs'
+                  },
+                  'url': 'https://portfolio.warishlabs.in/',
+                  'sameAs': [
+                    'https://www.linkedin.com/in/md-warish-ansari/',
+                    'https://portfolio.warishlabs.in/',
+                    'https://github.com/warishlabs'
+                  ]
                 }
-              })
+              ])
             }}
           />
           {GA_MEASUREMENT_ID && (

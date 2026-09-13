@@ -32,12 +32,12 @@ export default async function AboutPage() {
   ];
 
   const defaultPhilosophy = [
-    "We believe that modern web applications should feel like hardware. They should be responsive, tactile, and built with extreme restraint. We avoid flashy, decorative widgets that slow down load times or distract the user.",
-    "Our architectural direction is centered around strict type guarantees, relational data integrity, database-backed security systems, and highly optimized edge rendering pipelines."
+    "We build software that people actually use — not demos or experiments. Every product WarishLabs ships is production-ready, maintained, and designed to solve a real problem for real users.",
+    "Our engineering approach centers on strict type guarantees, relational data integrity, database-backed security, and highly optimized rendering pipelines. We believe software should feel fast, reliable, and honest."
   ];
 
   const title = aboutSection?.title || 'About WarishLabs';
-  const subtitle = aboutSection?.subtitle || 'WarishLabs is a software engineering laboratory focused on building high-performance, beautiful, and highly stable developer tools and full-stack systems.';
+  const subtitle = aboutSection?.subtitle || 'WarishLabs builds real, live software products — web and Android apps — that solve everyday problems, currently including Toolkit and ForgeFlow, each shipped at its own subdomain.';
   
   const config = (aboutSection?.config as Record<string, unknown>) || {};
   const philosophy = (config.philosophy as string[]) || defaultPhilosophy;
@@ -46,7 +46,7 @@ export default async function AboutPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 bg-black text-white pt-32 pb-24 relative select-none">
+      <main className="flex-1 bg-black text-white pt-32 pb-24 relative">
         {/* Glow backdrop */}
         <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-accent/3 blur-3xl -z-10 pointer-events-none" />
 
@@ -55,7 +55,7 @@ export default async function AboutPage() {
           <div className="space-y-4 text-left">
             <span className="inline-flex items-center gap-1.5 text-accent text-xs font-bold uppercase tracking-wider">
               <Terminal className="w-3.5 h-3.5" />
-              LABORATORY PROFILE
+              ABOUT WARISHLABS
             </span>
             <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white leading-none">
               {title}

@@ -45,11 +45,10 @@ export async function POST() {
     }
 
     // 2. Orphan Check: Scan DB for referenced media URLs
-    const [products, productMedia, blogs, labs] = await Promise.all([
+    const [products, productMedia, blogs] = await Promise.all([
       prisma.product.findMany({ select: { logoUrl: true, bannerUrl: true } }),
       prisma.productMedia.findMany({ select: { url: true } }),
       prisma.blog.findMany({ select: { coverImage: true } }),
-      prisma.lab.findMany({ select: { mediaUrl: true } }),
     ]);
 
     const activeUrls = new Set<string>();
@@ -69,7 +68,6 @@ export async function POST() {
     });
     productMedia.forEach(m => addUrl(m.url));
     blogs.forEach(b => addUrl(b.coverImage));
-    labs.forEach(l => addUrl(l.mediaUrl));
 
     // 3. Retrieve all assets across synced folders
     const allAssets = await MediaService.listAllAssets();

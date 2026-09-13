@@ -1,5 +1,7 @@
 import React from 'react';
 import prisma from '@/lib/prisma';
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 import LatestBlogPostsList from './LatestBlogPostsList';
 
 export default async function LatestBlogPosts() {
@@ -11,7 +13,7 @@ export default async function LatestBlogPosts() {
     orderBy: {
       publishedAt: 'desc',
     },
-    take: 3,
+    take: 12,
   }).catch((err) => {
     console.error('[LatestBlogPosts] Failed to fetch blog posts:', err);
     return [];
@@ -33,7 +35,7 @@ export default async function LatestBlogPosts() {
   }));
 
   return (
-    <section className="py-24 bg-bg-primary relative border-t border-border/40 select-none">
+    <section className="py-24 bg-bg-primary relative border-t border-border/40">
       <div className="container mx-auto px-6 max-w-7xl">
         {/* Section Header */}
         <div className="space-y-3 mb-16 text-center lg:text-left">
@@ -46,7 +48,14 @@ export default async function LatestBlogPosts() {
         </div>
 
         {/* Latest Blog Cards */}
-        <LatestBlogPostsList posts={formattedPosts} />
+        <LatestBlogPostsList posts={formattedPosts} limit={12} />
+
+        <div className="mt-12 text-center">
+          <Link href="/blog" className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-sm font-semibold text-white">
+            View all articles
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
       </div>
     </section>
   );

@@ -16,7 +16,6 @@ import { ROUTES } from '@/constants/routes';
 import {
   Briefcase,
   FileText,
-  FlaskConical,
   Mail,
   Home,
   LayoutDashboard,
@@ -32,7 +31,6 @@ interface SearchPanelProps {
 interface SearchResults {
   products: Array<{ id: string; name: string; slug: string; tagline: string }>;
   categories: Array<{ id: string; name: string; slug: string }>;
-  labs: Array<{ id: string; name: string; slug: string }>;
   blogs: Array<{ id: string; title: string; slug: string }>;
   pages: Array<{ id: string; name: string; path: string; description: string }>;
 }
@@ -54,7 +52,6 @@ export default function SearchPanel({ isOpen, onClose }: SearchPanelProps) {
   const [results, setResults] = useState<SearchResults>({
     products: [],
     categories: [],
-    labs: [],
     blogs: [],
     pages: [],
   });
@@ -65,7 +62,7 @@ export default function SearchPanel({ isOpen, onClose }: SearchPanelProps) {
     if (!isOpen) return;
     if (!searchQuery.trim()) {
       const t = setTimeout(() => {
-        setResults({ products: [], categories: [], labs: [], blogs: [], pages: [] });
+        setResults({ products: [], categories: [], blogs: [], pages: [] });
       }, 0);
       return () => clearTimeout(t);
     }
@@ -79,7 +76,6 @@ export default function SearchPanel({ isOpen, onClose }: SearchPanelProps) {
           setResults({
             products: data.products || [],
             categories: data.categories || [],
-            labs: data.labs || [],
             blogs: data.blogs || [],
             pages: data.pages || [],
           });
@@ -135,7 +131,6 @@ export default function SearchPanel({ isOpen, onClose }: SearchPanelProps) {
   const hasResults =
     results.products.length > 0 ||
     results.categories.length > 0 ||
-    results.labs.length > 0 ||
     results.blogs.length > 0 ||
     results.pages.length > 0;
 
@@ -175,17 +170,13 @@ export default function SearchPanel({ isOpen, onClose }: SearchPanelProps) {
                 <Briefcase className="mr-2 h-4 w-4" />
                 <span>Explore Products</span>
               </CommandItem>
-              <CommandItem onSelect={() => handleSelect(ROUTES.LABS)}>
-                <FlaskConical className="mr-2 h-4 w-4" />
-                <span>Labs Sandbox</span>
-              </CommandItem>
               <CommandItem onSelect={() => handleSelect(ROUTES.BLOG)}>
                 <FileText className="mr-2 h-4 w-4" />
                 <span>Blog Articles</span>
               </CommandItem>
               <CommandItem onSelect={() => handleSelect(ROUTES.CONTACT)}>
                 <Mail className="mr-2 h-4 w-4" />
-                <span>Contact Engineering</span>
+                <span>Contact Us</span>
               </CommandItem>
             </CommandGroup>
             
@@ -240,19 +231,8 @@ export default function SearchPanel({ isOpen, onClose }: SearchPanelProps) {
               </CommandGroup>
             )}
 
-            {results.labs.length > 0 && (
-              <CommandGroup heading="Labs Sandbox">
-                {results.labs.map((l) => (
-                  <CommandItem key={l.id} onSelect={() => handleSelect(ROUTES.LABS)}>
-                    <FlaskConical className="mr-2 h-4 w-4 text-accent" />
-                    <span>{l.name}</span>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            )}
-
             {results.blogs.length > 0 && (
-              <CommandGroup heading="Engineering Blog">
+              <CommandGroup heading="Blog">
                 {results.blogs.map((b) => (
                   <CommandItem key={b.id} onSelect={() => handleSelect(`/blog/${b.slug}`)}>
                     <FileText className="mr-2 h-4 w-4 text-accent" />

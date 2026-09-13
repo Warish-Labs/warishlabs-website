@@ -36,9 +36,8 @@ export default function Navbar() {
 
   const navLinks = [
     { label: 'Products', path: ROUTES.PRODUCTS },
-    { label: 'Labs', path: ROUTES.LABS },
-    { label: 'Categories', path: ROUTES.CATEGORIES },
     { label: 'Blog', path: ROUTES.BLOG },
+    { label: 'Categories', path: ROUTES.CATEGORIES },
     { label: 'About', path: ROUTES.ABOUT },
     { label: 'Contact', path: ROUTES.CONTACT },
   ];

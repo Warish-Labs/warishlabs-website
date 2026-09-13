@@ -5,8 +5,8 @@
 <h1 align="center">WarishLabs Website</h1>
 
 <p align="center">
-  <em>Seriousness in Engineering, Modern Product Thinking.</em><br/>
-  An engineering-first software laboratory showcasing premium SaaS platforms, developer tools, and interactive WebGL canvas playgrounds.
+  <em>Real Software Products for Real Problems.</em><br/>
+  WarishLabs builds and ships web and Android apps used by real people, maintained by MD Warish Ansari.
 </p>
 
 <p align="center">
@@ -23,16 +23,16 @@
 
 ## ⚡ Technical Highlights
 
-- **WebGL Canvas Playground**: Full-bleed background Canvas rendering interactive 3D particle fields (Three.js + R3F) with mouse-repulsion physics, diagonal orbital rings, and dynamic floating shards.
+- **WebGL Canvas Background**: Full-bleed background Canvas rendering interactive 3D particle fields (Three.js + R3F) with mouse-repulsion physics, diagonal orbital rings, and dynamic floating shards.
 - **Relational Seeded CMS**: Layout components (Hero, dynamic About paragraphs, Contact addresses) are fully decoupled and driven dynamically by a PostgreSQL database via Prisma ORM.
 - **About Highlights CRUD Manager**: Allows admin configuration of values/about highlights cards with custom emoji support.
 - **Dynamic Site Statistics**: Hides fake numbers and dynamically queries the database for actual values: **Total Site Visitors** (linked to unique tracking visitor IDs) and **Active Projects** (linked to product catalogs).
-- **Robust Administrative Console**: Full operational CRUD dashboards for Categories, Products, Sandbox Labs, Blog Articles, Media Uploads, Newsletter subscribers, and Activity Trails.
+- **Robust Administrative Console**: Full operational CRUD dashboards for Categories, Products, Blog Articles, Media Uploads, Newsletter subscribers, and Activity Trails.
 - **Blog Cover Image Upload**: Two-mode field (Paste Link | Upload File) with instant local blob preview before upload, real-time dimension probe, social-ratio aspect ratio helper, and seamless Cloudinary upload with retry on failure.
 - **Media Library with Folder Browser**: Navigable Cloudinary folder tree with breadcrumb, per-folder asset grid showing Cloudinary-native dimensions (width, height, size), and copy/delete actions. Fully server-side — API secret never exposed to client.
 - **Dynamic Cloud Folder Dropdown**: DB-backed `MediaFolder` records synced from Cloudinary. React Query-powered dropdown updates instantly after a "Sync Cloudinary" run — no page reload.
 - **Real Cloudinary Folder Sync**: Recursive tree walk (`root_folders` → `sub_folders`) diffs against the local DB and returns `{ added, removed, unchanged }` in a detailed toast.
-- **Dynamic Help Playbook**: Step-by-step console playbook built into the admin home interface explaining how to catalog products, preview sandbox labs, and customize CMS settings.
+- **Dynamic Help Playbook**: Step-by-step console playbook built into the admin home interface explaining how to catalog products, preview products, and customize CMS settings.
 - **Distributed Security rate-limiting**: Global Upstash Redis rate-limiter guards contacts, newsletter submissions, search, and tracking endpoints in `proxy.ts`, with custom rate limits on administrative routes (`/api/admin/*`). Falls back to local token buckets in development.
 - **Clerk SSO & User Profile integration**: Managed through Clerk's secure dynamic `<UserButton />` in the header, letting the admin configure security options, manage active devices, and log out securely. Hidden from regular public users.
 - **Sentry Monitoring & Session Replay**: Integrated error tracking and transaction profiling across browser, server, and edge runtimes, featuring real-time Session Replays and ad-blocker bypassing.
@@ -41,7 +41,9 @@
 - **Legal Compliance Pages**: Completely pre-rendered static legal pages: **Privacy Policy** (`/privacy`), **Terms & Conditions** (`/terms`), **Cookie Policy** (`/cookies`), and **Disclaimer** (`/disclaimer`).
 - **Communications Engine**: Includes tools to reply to visitor inquiries using Resend templates, compile HTML newsletter broadcast campaigns using Resend Batch API, and download client-side audience registry CSV files.
 - **Traffic Analytics Filters**: Extends traffic logs with date selectors (7 Days, 30 Days, All Time) and referral source channel breakdowns (Google Search, GitHub, LinkedIn, X/Twitter).
-- **Hardened SEO & Open Graph Banners**: Configures dynamic `sitemap.xml` listing blogs, products, and labs, organization schema JSON-LD metadata, and Edge runtime-rendered dynamic Open Graph image banner generators (`/api/og`).
+- **Hardened SEO & Open Graph Banners**: Configures dynamic `sitemap.xml` listing blogs, products, and categories; Organization + Person JSON-LD schema; and Edge runtime-rendered dynamic Open Graph image banner generators (`/api/og`).
+- **AI Agent Discoverability**: `public/llms.txt` index allows GPTBot, ClaudeBot, PerplexityBot, Google-Extended, and other AI crawlers to discover products, blog content, and site structure.
+- **No Repo Links Policy**: Product cards and detail pages never expose repository URLs to visitors. Live product links only — permanent architectural decision recorded in brain.md.
 
 ---
 

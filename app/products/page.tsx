@@ -46,7 +46,7 @@ export default async function ProductsPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 bg-black text-white pt-32 pb-24 relative select-none">
+      <main className="flex-1 bg-black text-white pt-32 pb-24 relative">
         {/* Glow backdrop */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-accent/3 blur-3xl -z-10 pointer-events-none" />
 
@@ -58,15 +58,15 @@ export default async function ProductsPage() {
               PRODUCT CATALOG
             </span>
             <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white leading-none">
-              Engineering Console
+              All Products
             </h1>
             <p className="text-text-secondary text-sm md:text-base leading-relaxed">
-              Explore the laboratory software pipeline. From internal distributed computing engines to WebGL visual sandboxes.
+              Browse all products built and maintained by WarishLabs — web tools, Android apps, and developer utilities.
             </p>
           </div>
 
           {/* Suspense catalog container */}
-          <Suspense fallback={<div className="text-center py-20 text-text-secondary font-mono text-sm animate-pulse">Initializing filter matrix...</div>}>
+          <Suspense fallback={<div className="text-center py-20 text-text-secondary text-sm animate-pulse">Loading products...</div>}>
             <ProductCatalog initialProducts={serializedProducts} categories={serializedCategories} />
           </Suspense>
         </div>
