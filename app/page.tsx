@@ -59,11 +59,11 @@ export default async function Home() {
         {/* Categories Grid */}
         <CategoryGrid />
 
+        {/* Latest Blog Posts — high priority for SEO: blog posts about tools get homepage visibility */}
+        <LatestBlogPosts />
+
         {/* Live Statistics */}
         <StatsSection />
-
-        {/* Latest Blog Bulletins */}
-        <LatestBlogPosts />
 
         {/* Engineering Philosophy */}
         <WhyWarishLabs />

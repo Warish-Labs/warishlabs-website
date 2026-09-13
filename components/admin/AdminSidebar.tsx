@@ -13,7 +13,6 @@ import {
   Briefcase,
   FolderTree,
   FileText,
-  FlaskConical,
   Image as ImageIcon,
   Mail,
   MailQuestion,
@@ -32,7 +31,6 @@ const menuItems = [
     { label: 'Products', path: ROUTES.ADMIN_PRODUCTS, icon: Briefcase },
     { label: 'Categories', path: ROUTES.ADMIN_CATEGORIES, icon: FolderTree },
     { label: 'Blog Articles', path: ROUTES.ADMIN_BLOG, icon: FileText },
-    { label: 'Labs Projects', path: ROUTES.ADMIN_LABS, icon: FlaskConical },
   ]},
   { group: 'Growth & Inbound', items: [
     { label: 'Media Library', path: ROUTES.ADMIN_MEDIA, icon: ImageIcon },

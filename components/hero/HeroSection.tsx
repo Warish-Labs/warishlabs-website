@@ -66,7 +66,7 @@ export default function HeroSection({ title, subtitle, config }: HeroProps) {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center pt-24 pb-16 bg-[#020b1a] overflow-hidden select-none">
+    <section className="relative min-h-screen flex items-center justify-center pt-24 pb-16 bg-[#020b1a] overflow-hidden">
       {/* 1. Full-Bleed 3D WebGL Canvas Layer */}
       <HeroCanvas key={pathname} />
 
@@ -88,12 +88,12 @@ export default function HeroSection({ title, subtitle, config }: HeroProps) {
             initial="initial"
             animate="animate"
             variants={STAGGER_CONTAINER}
-            className="lg:col-span-7 space-y-8 text-left"
+            className="lg:col-span-6 space-y-8 text-left"
           >
             {/* Laboratory Badge */}
             <motion.div variants={FADE_UP} transition={SPRING_DEFAULT}>
               <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/25 text-xs font-semibold text-blue-400 tracking-wide uppercase">
-                ◈ LABS · BUILD ACTIVE
+                ◈ LIVE PRODUCTS
               </span>
             </motion.div>
 
@@ -112,7 +112,7 @@ export default function HeroSection({ title, subtitle, config }: HeroProps) {
               transition={SPRING_DEFAULT}
               className="text-text-secondary text-base md:text-lg max-w-2xl leading-relaxed"
             >
-              {subtitle || 'WarishLabs is an engineering-first software laboratory constructing immersive 3D architectures, developer utilities, and resilient distributed platforms.'}
+              {subtitle || 'WarishLabs builds real software products — web and Android apps — that solve everyday problems. Explore Toolkit, ForgeFlow, and more.'}
             </motion.p>
 
             {/* Action CTAs */}
@@ -165,7 +165,7 @@ export default function HeroSection({ title, subtitle, config }: HeroProps) {
           </motion.div>
 
           {/* Right Floating Console Info Cards (Desktop Only) */}
-          <div className="hidden lg:flex lg:col-span-5 flex-col gap-6 justify-end items-end h-[480px]">
+          <div className="hidden lg:flex lg:col-span-6 flex-col gap-6 justify-center items-center h-[480px]">
             {/* Status Card */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
@@ -179,7 +179,7 @@ export default function HeroSection({ title, subtitle, config }: HeroProps) {
               </div>
               <div>
                 <p className="text-xs font-bold text-white uppercase tracking-wider">All Systems Operational</p>
-                <p className="text-[10px] text-text-secondary">WarishLabs Nodes Online & Verifying</p>
+                <p className="text-[10px] text-text-secondary">warishlabs.in · All systems live</p>
               </div>
             </motion.div>
           </div>

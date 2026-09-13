@@ -78,7 +78,7 @@ export default async function CategoryDetailPage({ params }: CategoryDetailPageP
   return (
     <>
       <Navbar />
-      <main className="flex-1 bg-black text-white pt-32 pb-24 relative select-none">
+      <main className="flex-1 bg-black text-white pt-32 pb-24 relative">
         {/* Glow backdrop */}
         <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-accent/3 blur-3xl -z-10 pointer-events-none" />
 
@@ -109,7 +109,7 @@ export default async function CategoryDetailPage({ params }: CategoryDetailPageP
               <p className="text-text-secondary text-sm">No products currently active in this landscape.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                {serializedProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />
                ))}

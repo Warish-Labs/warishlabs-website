@@ -41,7 +41,7 @@ export default async function ContactPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 bg-black text-white pt-32 pb-24 relative select-none">
+      <main className="flex-1 bg-black text-white pt-32 pb-24 relative">
         {/* Glow backdrop */}
         <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-accent/3 blur-3xl -z-10 pointer-events-none" />
 

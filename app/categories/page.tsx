@@ -20,13 +20,17 @@ export default async function CategoriesPage() {
         select: { products: true },
       },
     },
-    orderBy: { name: 'asc' },
+    orderBy: [
+      // Sort by product count descending (most products first), then alphabetically
+      { products: { _count: 'desc' } },
+      { name: 'asc' },
+    ],
   }).catch(() => []);
 
   return (
     <>
       <Navbar />
-      <main className="flex-1 bg-mesh-gradient blueprint-grid text-white pt-32 pb-24 relative select-none overflow-hidden">
+      <main className="flex-1 bg-mesh-gradient blueprint-grid text-white pt-32 pb-24 relative overflow-hidden">
         {/* Glow decoration */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-accent/[0.03] blur-[120px] -z-10 pointer-events-none" />
 

@@ -135,7 +135,7 @@ export async function GET(request: Request) {
     }
 
     // Query databases in parallel for candidates
-    const [dbProducts, dbCategories, dbLabs, dbBlogs] = await Promise.all([
+    const [dbProducts, dbCategories, dbBlogs] = await Promise.all([
       // 1. Products - Active & Beta
       prisma.product.findMany({
         where: {
@@ -180,21 +180,7 @@ export async function GET(request: Request) {
         return [];
       }),
 
-      // 3. Labs - All statuses (active/completed/deprecated)
-      prisma.lab.findMany({
-        where: {
-          OR: [
-            { name: { contains: query, mode: 'insensitive' } },
-            { slug: { contains: query, mode: 'insensitive' } },
-            { description: { contains: query, mode: 'insensitive' } },
-          ],
-        },
-      }).catch((err) => {
-        console.error('Labs search DB query error:', err);
-        return [];
-      }),
-
-      // 4. Blogs - Published
+      // 3. Blogs - Published
       prisma.blog.findMany({
         where: {
           published: true,
@@ -273,32 +259,6 @@ export async function GET(request: Request) {
         return a.name.localeCompare(b.name);
       });
 
-    // --- Process and Rank Labs ---
-    const labs = dbLabs
-      .map((l) => {
-        const score = calculateRelevance(
-          query,
-          l.name,
-          l.slug,
-          '',
-          l.description,
-          '',
-          [],
-          ''
-        );
-        return {
-          id: l.id,
-          name: l.name,
-          slug: l.slug,
-          score,
-        };
-      })
-      .filter((l) => l.score > 0)
-      .sort((a, b) => {
-        if (b.score !== a.score) return b.score - a.score;
-        return a.name.localeCompare(b.name);
-      });
-
     // --- Process and Rank Blogs ---
     const blogs = dbBlogs
       .map((b) => {
@@ -356,7 +316,6 @@ export async function GET(request: Request) {
       success: true,
       products,
       categories,
-      labs,
       blogs,
       pages,
     });

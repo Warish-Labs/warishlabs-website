@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import Fuse from 'fuse.js';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import ProductCard from './ProductCard';
@@ -49,6 +50,9 @@ export default function ProductCatalog({ initialProducts, categories }: ProductC
   const sortParam = searchParams.get('sort') || 'default';
   const searchParam = searchParams.get('search') || searchParams.get('q') || '';
 
+  // Debounce timer for search input
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Local filter states
   const [searchQuery, setSearchQuery] = useState(searchParam);
   const [selectedCategory, setSelectedCategory] = useState(categoryParam);
@@ -90,6 +94,17 @@ export default function ProductCatalog({ initialProducts, categories }: ProductC
     router.push(`/products?${params.toString()}`);
   };
 
+  // Debounced URL update for search (300ms) to avoid firing on every keystroke
+  const debouncedUpdateSearch = useCallback(
+    (value: string) => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+      searchDebounceRef.current = setTimeout(() => {
+        updateParams({ search: value });
+      }, 300);
+    },
+    []
+  );
+
   const handleResetFilters = () => {
     setSearchQuery('');
     setSelectedCategory('all');
@@ -126,15 +141,19 @@ export default function ProductCatalog({ initialProducts, categories }: ProductC
       result = result.filter((p) => p.type === selectedType);
     }
 
-    // Filter by text search
+    // Fuzzy text search using Fuse.js — tolerates near-miss spellings
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      result = result.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.tagline.toLowerCase().includes(q) ||
-          p.description.toLowerCase().includes(q)
-      );
+      const fuse = new Fuse(result, {
+        keys: [
+          { name: 'name', weight: 0.5 },
+          { name: 'tagline', weight: 0.3 },
+          { name: 'description', weight: 0.2 },
+        ],
+        threshold: 0.4,
+        includeScore: false,
+        minMatchCharLength: 2,
+      });
+      result = fuse.search(searchQuery.trim()).map((r) => r.item);
     }
 
     // Sort options
@@ -156,7 +175,7 @@ export default function ProductCatalog({ initialProducts, categories }: ProductC
         <div className="flex items-center justify-between border-b border-white/8 pb-4">
           <div className="flex items-center gap-2 text-white">
             <SlidersHorizontal className="w-4 h-4 text-accent" />
-            <h3 className="text-xs font-bold uppercase tracking-wider">Sort & Filter Options</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wider">Filter & Sort</h3>
           </div>
           {(searchQuery || selectedCategory !== 'all' || selectedStatus !== 'all' || selectedType !== 'all' || sortBy !== 'default') && (
             <button
@@ -171,16 +190,16 @@ export default function ProductCatalog({ initialProducts, categories }: ProductC
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
           {/* Text Search Input */}
           <div className="md:col-span-4 space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary block">Search Specifications</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary block">Search Products</span>
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
               <Input
                 type="text"
-                placeholder="Search specifications, names..."
+                placeholder="Search products..."
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
-                  updateParams({ search: e.target.value });
+                  debouncedUpdateSearch(e.target.value);
                 }}
                 className="pl-9 bg-black/40 border-white/10 text-white rounded-lg focus-visible:ring-accent"
               />
@@ -297,7 +316,7 @@ export default function ProductCatalog({ initialProducts, categories }: ProductC
           layout
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="grid grid-cols-1 md:grid-cols-2 gap-8"
+          className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8"
         >
           <AnimatePresence mode="popLayout">
             {filteredProducts.map((product) => (

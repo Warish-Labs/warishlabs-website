@@ -75,7 +75,6 @@ async function main() {
       tagline: 'High-velocity host for modern full-stack systems.',
       description: '<h2>The High-Velocity Host for Modern Apps</h2><p>WarishLabs Cloud delivers global edge latency, automated builds, and serverless database integration out of the box. Designed for teams who build software that cannot afford downtime.</p>',
       status: 'active',
-      githubUrl: 'https://github.com/warishlabs/cloud',
       visitUrl: 'https://cloud.warishlabs.com',
       categoryId: seededCategories[0].id,
     },
@@ -85,7 +84,6 @@ async function main() {
       tagline: 'Deterministic workflow scheduler with 3D canvas builder.',
       description: '<h2>Build Workflows in 3D Space</h2><p>A high-performance state machine scheduler providing precise execution guarantees, live visualization, and visual debugging via a Canvas-based 3D workspace. Boosts complex task runner observability to 100%.</p>',
       status: 'beta',
-      githubUrl: 'https://github.com/warishlabs/antigravity',
       visitUrl: null,
       categoryId: seededCategories[1].id,
     },
@@ -99,7 +97,6 @@ async function main() {
         tagline: prod.tagline,
         description: prod.description,
         status: prod.status,
-        githubUrl: prod.githubUrl,
         visitUrl: prod.visitUrl,
         categoryId: prod.categoryId,
       },
@@ -111,11 +108,10 @@ async function main() {
   // 5. Seed Nav Items
   const navItems = [
     { label: 'Products', path: '/products', sortOrder: 1 },
-    { label: 'Labs', path: '/labs', sortOrder: 2 },
-    { label: 'Open Source', path: '/open-source', sortOrder: 3 },
-    { label: 'Blog', path: '/blog', sortOrder: 4 },
-    { label: 'About', path: '/about', sortOrder: 5 },
-    { label: 'Contact', path: '/contact', sortOrder: 6 },
+    { label: 'Blog', path: '/blog', sortOrder: 2 },
+    { label: 'Categories', path: '/categories', sortOrder: 3 },
+    { label: 'About', path: '/about', sortOrder: 4 },
+    { label: 'Contact', path: '/contact', sortOrder: 5 },
   ];
 
   for (const item of navItems) {

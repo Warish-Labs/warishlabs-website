@@ -19,6 +19,7 @@ interface BlogPost {
 
 interface LatestBlogPostsListProps {
   posts: BlogPost[];
+  limit?: number;
 }
 
 const containerVariants = {
@@ -39,7 +40,9 @@ const cardVariants = {
   },
 };
 
-export default function LatestBlogPostsList({ posts }: LatestBlogPostsListProps) {
+export default function LatestBlogPostsList({ posts, limit }: LatestBlogPostsListProps) {
+  const displayPosts = limit ? posts.slice(0, limit) : posts;
+
   return (
     <motion.div 
       variants={containerVariants}
@@ -48,7 +51,7 @@ export default function LatestBlogPostsList({ posts }: LatestBlogPostsListProps)
       viewport={{ once: true, margin: '-50px' }}
       className="grid grid-cols-1 md:grid-cols-3 gap-8"
     >
-      {posts.map((post) => (
+      {displayPosts.map((post) => (
         <motion.div
           key={post.id}
           variants={cardVariants}

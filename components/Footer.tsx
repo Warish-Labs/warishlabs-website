@@ -11,7 +11,7 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-bg-secondary border-t border-border mt-auto select-none relative overflow-hidden">
+    <footer className="bg-bg-secondary border-t border-border mt-auto relative overflow-hidden">
       {/* Decorative Grid Backdrop */}
       <div className="absolute inset-0 blueprint-grid opacity-[0.01] pointer-events-none" />
 
@@ -32,8 +32,30 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-text-secondary text-xs leading-relaxed max-w-sm">
-              Engineering-first laboratory building immersive 3D interfaces, high-performance distributed systems, and developer tools built with precision.
+              WarishLabs builds real software products — web and Android apps — that solve everyday problems. Founded and maintained by MD Warish Ansari.
             </p>
+            <div className="pt-1 space-y-0.5">
+              <p className="text-[10px] text-text-tertiary">
+                Built &amp; maintained by{' '}
+                <a
+                  href="https://www.linkedin.com/in/md-warish-ansari/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-accent hover:text-accent-hover transition-colors underline underline-offset-2"
+                >
+                  MD Warish Ansari
+                </a>
+                {' '}—{' '}Owner, WarishLabs
+              </p>
+              <a
+                href="https://portfolio.warishlabs.in/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] text-text-tertiary hover:text-accent transition-colors"
+              >
+                portfolio.warishlabs.in →
+              </a>
+            </div>
           </div>
 
           {/* Products (2 cols) */}
@@ -63,7 +85,7 @@ export default function Footer() {
             <ul className="space-y-2">
               <li>
                 <Link href={ROUTES.ABOUT} className="text-xs text-text-secondary hover:text-white transition-colors">
-                  About Lab
+                  About
                 </Link>
               </li>
               <li>
@@ -73,7 +95,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link href={ROUTES.BLOG} className="text-xs text-text-secondary hover:text-white transition-colors">
-                  Engineering Blog
+                  Blog
                 </Link>
               </li>
             </ul>

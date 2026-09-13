@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { buttonVariants } from '@/components/ui/button';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
-import { ArrowLeft, ExternalLink, Info, GitBranch } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Info } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { sanitizeServer } from '@/lib/sanitize';
 import { Metadata } from 'next';
@@ -173,20 +173,6 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                     )}>
                       Visit Unavailable
                     </div>
-                  )}
-
-                  {product.githubUrl && (
-                    <a
-                      href={product.githubUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={cn(
-                        buttonVariants({ variant: "outline" }),
-                        "w-full border-border hover:border-accent hover:text-white py-5 font-semibold text-sm flex items-center justify-center gap-2"
-                      )}
-                    >
-                      <GitBranch className="w-4 h-4 text-accent" /> GitHub Repository
-                    </a>
                   )}
                 </div>
               </Card>

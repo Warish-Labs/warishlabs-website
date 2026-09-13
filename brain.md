@@ -1,13 +1,57 @@
 # brain.md — WarishLabs Website
 
-> **Last Updated:** 2026-07-06
+> **Last Updated:** 2026-09-13
 > **Status:** Production-Ready (Compiled, Security-Hardened, Monitored & Tested)
 
 ---
 
-## 1. System Overview
+## Changelog
 
-WarishLabs is a modern, CMS-driven software laboratory profile presenting SaaS tools, open source contributions, and visual canvas sandboxes.
+### 2026-09-13 — Production Hardening & Rebrand (feat/production-hardening-and-rebrand-2026-09-13)
+
+#### Phase 0 — Build Fix (Critical)
+- **Root cause**: `prisma.config.ts` used `@prisma/config`'s `env()` helper, which fails on Vercel because Vercel injects env vars as `process.env` variables, not as a `.env` file. Fixed by reading `DATABASE_URL` directly from `process.env` with a clear throw if missing.
+- **`lib/env.ts`** created: Zod-based startup validation that lists all missing required env vars at boot time instead of propagating opaque Prisma/Clerk/Cloudinary crashes.
+- **`instrumentation.ts`** updated: calls `validateEnv()` in Node.js runtime path before Sentry init.
+- **`.npmrc`** updated: added `allow-scripts` entries for `@clerk/shared`, `@prisma/engines`, `@sentry/cli`, `prisma`, `unrs-resolver` to eliminate CI noise.
+- **Action required on Vercel**: ensure `DATABASE_URL`, Clerk keys, Cloudinary keys, and `RESEND_API_KEY` are all scoped to the **Production** environment in Vercel dashboard.
+
+#### Phase 1 — AI Discoverability
+- `public/llms.txt` created: plain-text index for AI agents.
+- `app/layout.tsx`: Organization + Person JSON-LD, updated title/description to drop lab framing.
+- `app/robots.ts`: explicit allow rules for GPTBot, ClaudeBot, PerplexityBot, Google-Extended, anthropic-ai, CCBot.
+- `app/sitemap.ts`: removed labs routes, added categories routes.
+
+#### Phase 2 — Labs Removal
+- **Architectural decision**: WarishLabs ships real products, not experiments. Labs positioning retired permanently.
+- Deleted: `app/labs/page.tsx`, `app/(admin)/admin/labs/page.tsx`, `app/api/admin/labs/route.ts`, `components/labs/LabCard.tsx`, `components/labs/LabCatalog.tsx`.
+- Prisma migration `20260913000000_drop_lab_open_source_remove_github_url`: drops `Lab` table, `OpenSourceProject` table, removes `githubUrl` from `Product`.
+- **Architectural decision**: `githubUrl` removed from `Product` permanently — no repository links are ever shown to visitors. Live product links only.
+- `/labs` → `/products` (301 redirect) added in `next.config.ts`.
+- `Navbar.tsx`: nav order now Products → Blog → Categories → About → Contact.
+- `AdminSidebar.tsx`: Labs entry removed.
+- `constants/routes.ts`: Labs and OpenSourceProject route constants removed.
+
+#### Phase 3 — Homepage
+- HeroSection: `LABS · BUILD ACTIVE` badge → `LIVE PRODUCTS`, subtitle updated, status card copy updated, 50/50 grid split (6/6), `select-none` removed.
+- Homepage section order: HeroSection → PopularToolsSection → CategoryGrid → LatestBlogPosts → StatsSection → WhyWarishLabs → FAQ → Newsletter.
+- LatestBlogPosts: limit increased to 12, "View all articles" button added.
+
+#### Phases 4-8 — UI Overhaul
+- Products page: "Engineering Console" → "All Products", lab copy removed, Fuse.js fuzzy search + 300ms debounce, 3-col grid at xl.
+- ProductCard: "Console details" → "View Details", category tag added.
+- Categories: sorted by product count desc, `select-none` removed.
+- Category detail: 3-col grid at xl, `select-none` removed.
+- About page: lab framing removed from all copy, `LABORATORY PROFILE` → `ABOUT WARISHLABS`.
+- Blog page: `ENGINEERING BULLETINS` → `GUIDES & ARTICLES`, `Technical Journal` → `Blog`, Fuse.js fuzzy search added.
+- Global: `select-none` removed from all public `<main>` elements (products, blog, categories, about, contact, hero).
+- Footer: `select-none` removed, attribution line added (MD Warish Ansari, LinkedIn, portfolio links).
+
+---
+
+
+
+WarishLabs is a modern, CMS-driven software product website for real, shipped software products — web and Android apps — built and maintained by MD Warish Ansari.
 
 - **Stack:** Next.js 16 (App Router, Turbopack), React 19, TypeScript, Prisma ORM, PostgreSQL (Neon), Clerk SSO, Cloudinary, Resend transactional mail, Upstash Redis, Sentry SDK, Microsoft Clarity, Cloudflare Turnstile.
 - **Base Style:** Slate Blue/Black glassmorphism cards and smooth custom micro-animations (Framer Motion).

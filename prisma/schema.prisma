@@ -56,7 +56,6 @@ model Product {
   description    String         @db.Text // HTML or Rich Text from Tiptap
   status         String // "active", "beta", "archived"
   type           String         @default("Tool")
-  githubUrl      String?
   visitUrl       String?
   logoUrl        String?
   bannerUrl      String?
@@ -232,33 +231,6 @@ model ProductFAQ {
   @@index([productId])
 }
 
-model Lab {
-  id          String   @id @default(uuid())
-  name        String
-  slug        String   @unique
-  description String   @db.Text
-  url         String? // liveUrl
-  githubUrl   String? // repoUrl
-  demoUrl     String?
-  mediaUrl    String? // Cloudinary upload
-  status      String // "active", "completed", "deprecated"
-  type        String   @default("experiment") // open source / experiment / tool / sandbox
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model OpenSourceProject {
-  id          String   @id @default(uuid())
-  name        String
-  slug        String   @unique
-  description String
-  githubUrl   String
-  stars       Int      @default(0)
-  forks       Int      @default(0)
-  status      String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
 
 model HomepageSection {
   id          String   @id @default(uuid())
