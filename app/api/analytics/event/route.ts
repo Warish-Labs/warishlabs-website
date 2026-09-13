@@ -75,8 +75,8 @@ export async function POST(request: Request) {
     const region = headerStore.get('x-vercel-ip-country-region') || null;
     const city = headerStore.get('x-vercel-ip-city') || null;
 
-    // 3. Track event in Central Analytics DB (Auto-registers project if missing)
-    const centralSuccess = await CentralAnalyticsService.trackEvent({
+    // 3. Track event in Central Analytics DB (Auto-registers project & auto-detects domain)
+    const centralResult = await CentralAnalyticsService.trackEventResult({
       projectSlug: targetSlug,
       visitorId: finalVisitorId,
       eventName: eventName || 'page_view',
@@ -90,8 +90,8 @@ export async function POST(request: Request) {
       city,
     });
 
-    // 4. Track event in Main App DB (only for warishlabs-website to avoid cross-project homepage metric inflation)
-    if (targetSlug === 'warishlabs-website') {
+    // 4. Track event in Main App DB (strictly for warishlabs-website to avoid cross-project homepage metric inflation)
+    if (centralResult.resolvedSlug === 'warishlabs-website') {
       await AnalyticsService.trackEvent({
         visitorId: finalVisitorId,
         eventName: eventName || 'page_view',
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
       }).catch(() => null);
     }
 
-    return NextResponse.json({ success: centralSuccess }, { headers: corsHeaders });
+    return NextResponse.json({ success: centralResult.success }, { headers: corsHeaders });
   } catch (error) {
     // Fail silently without interrupting visitor rendering
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500, headers: corsHeaders });
