@@ -8,7 +8,7 @@ export default function ProductNotFound() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 bg-black text-white pt-32 pb-24 relative flex flex-col items-center justify-center min-h-[70vh] select-none">
+      <main className="flex-1 bg-mesh-gradient blueprint-grid text-white pt-32 pb-24 relative flex flex-col items-center justify-center min-h-[70vh] overflow-hidden">
         {/* Glow backdrop */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-accent/5 blur-3xl -z-10 pointer-events-none" />
 

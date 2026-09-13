@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Briefcase, Plus, Edit2, Trash2, X, Terminal, Loader2, ExternalLink, Search, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { renderMarkdown } from '@/lib/markdown';
 
 interface Product {
   id: string;
@@ -63,6 +64,10 @@ export default function AdminProductsPage() {
   const [bannerUrl, setBannerUrl] = useState('');
   const [isBannerUploading, setIsBannerUploading] = useState(false);
   const [type, setType] = useState('Tool');
+
+  // Format & Live Preview state for description
+  const [descFormat, setDescFormat] = useState<'markdown' | 'html'>('markdown');
+  const [showDescPreview, setShowDescPreview] = useState(false);
 
   // SEO fields state
   const [seoTitle, setSeoTitle] = useState('');
@@ -555,26 +560,86 @@ export default function AdminProductsPage() {
                     </div>
                   </div>
 
-                  {/* Description Details HTML */}
-                  <div className="space-y-2 md:col-span-2">
-                    <div className="flex items-center gap-1.5">
-                      <Label htmlFor="prod-desc" className="text-xs font-semibold text-text-secondary">
-                        Full Product Description &amp; Technical Specs (HTML supported) <span className="text-destructive">*</span>
-                      </Label>
-                      <Tooltip>
-                        <TooltipTrigger type="button"><HelpCircle className="w-3.5 h-3.5 text-text-tertiary" /></TooltipTrigger>
-                        <TooltipContent>Renders styled headings, lists, and paragraphs on public product page.</TooltipContent>
-                      </Tooltip>
+                  {/* Description Details with Format Toggle & Live Preview */}
+                  <div className="space-y-3 md:col-span-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-2">
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="prod-desc" className="text-xs font-semibold text-text-secondary">
+                          Full Product Description &amp; Technical Specs <span className="text-destructive">*</span>
+                        </Label>
+                        <Tooltip>
+                          <TooltipTrigger type="button"><HelpCircle className="w-3.5 h-3.5 text-text-tertiary" /></TooltipTrigger>
+                          <TooltipContent>Compose in Markdown or HTML. Will render styled on public product page.</TooltipContent>
+                        </Tooltip>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        {/* Format Mode Selector */}
+                        <div className="flex bg-black/60 border border-white/10 rounded-md overflow-hidden text-[11px]">
+                          <button
+                            type="button"
+                            onClick={() => setDescFormat('markdown')}
+                            className={`px-2.5 py-1 font-bold uppercase transition-colors ${
+                              descFormat === 'markdown' ? 'bg-accent text-white' : 'text-zinc-400 hover:text-white'
+                            }`}
+                          >
+                            Markdown Mode
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDescFormat('html')}
+                            className={`px-2.5 py-1 font-bold uppercase transition-colors ${
+                              descFormat === 'html' ? 'bg-accent text-white' : 'text-zinc-400 hover:text-white'
+                            }`}
+                          >
+                            HTML Mode
+                          </button>
+                        </div>
+
+                        {/* Toggle Live Preview */}
+                        <button
+                          type="button"
+                          onClick={() => setShowDescPreview(!showDescPreview)}
+                          className={`text-xs font-bold px-2.5 py-1 rounded-md border transition-colors ${
+                            showDescPreview
+                              ? 'bg-accent/20 border-accent text-accent'
+                              : 'bg-white/5 border-white/10 text-zinc-300 hover:text-white'
+                          }`}
+                        >
+                          {showDescPreview ? 'Hide Live Preview' : 'Show Live Preview'}
+                        </button>
+                      </div>
                     </div>
+
                     <Textarea
                       id="prod-desc"
                       rows={6}
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      placeholder="<h2>Overview</h2><p>Describe product features and technical details using HTML markup.</p>"
+                      placeholder={
+                        descFormat === 'markdown'
+                          ? "# Overview\n\n- Key feature 1\n- Key feature 2\n\nWrite product specs using Markdown..."
+                          : "<h2>Overview</h2><p>Describe product features and technical details using HTML markup.</p>"
+                      }
                       required
                       className="bg-bg-primary border-border focus:border-accent text-white font-mono text-xs"
                     />
+
+                    {/* Live Formatting Preview */}
+                    {showDescPreview && (
+                      <div className="mt-4 bg-zinc-950 border border-white/10 p-5 rounded-xl space-y-2">
+                        <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-3">
+                          <span className="text-[10px] font-bold text-accent uppercase tracking-wider">
+                            Live Render Preview ({descFormat.toUpperCase()})
+                          </span>
+                          <span className="text-[10px] text-text-tertiary">Exact view as rendered on public product page</span>
+                        </div>
+                        <div
+                          className="prose prose-invert max-w-none text-text-secondary text-sm leading-relaxed"
+                          dangerouslySetInnerHTML={{ __html: renderMarkdown(description) }}
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* SEO Metadata Settings */}

@@ -46,7 +46,7 @@ export default async function ProductsPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 bg-black text-white pt-32 pb-24 relative">
+      <main className="flex-1 bg-mesh-gradient blueprint-grid text-white pt-32 pb-24 relative overflow-hidden">
         {/* Glow backdrop */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-accent/3 blur-3xl -z-10 pointer-events-none" />
 
