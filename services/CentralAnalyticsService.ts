@@ -59,12 +59,25 @@ export class CentralAnalyticsService {
       }).catch(() => null);
 
       if (!project) {
-        // Register default project automatically
+        // Auto-register project on first hit without requiring manual Admin Console setup
+        const formattedName = projectSlug === 'warishlabs-website'
+          ? 'WarishLabs Main Website'
+          : projectSlug.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+
+        let derivedDomain = 'warishlabs.in';
+        if (payload.url) {
+          try {
+            derivedDomain = new URL(payload.url).hostname;
+          } catch {
+            // fallback
+          }
+        }
+
         project = await prismaAnalytics.project.create({
           data: {
             slug: projectSlug,
-            name: projectSlug === 'warishlabs-website' ? 'WarishLabs Main Website' : projectSlug,
-            domain: 'warishlabs.in',
+            name: formattedName,
+            domain: derivedDomain,
           },
         }).catch(() => null);
       }
