@@ -3,6 +3,7 @@ import { validateSession } from '@/lib/auth';
 import { ProductService } from '@/services/ProductService';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
+import { slugify } from '@/utils/slugify';
 
 export const dynamic = 'force-dynamic';
 
@@ -117,7 +118,7 @@ export async function POST(request: Request) {
     const { name, ...restData } = validation.data;
 
     // Auto-generate slug
-    const slug = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const slug = slugify(name);
 
     const product = await ProductService.create({
       name,
@@ -162,7 +163,7 @@ export async function PUT(request: Request) {
     const { id, ...updatedFields } = validation.data;
 
     if (updatedFields.name) {
-      (updatedFields as any).slug = updatedFields.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      (updatedFields as any).slug = slugify(updatedFields.name);
     }
 
     const product = await ProductService.update(id, updatedFields);
