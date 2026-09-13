@@ -57,34 +57,18 @@ export default async function AdminDashboardPage() {
     });
   }
 
-  // 4. Fetch/Aggregate Top Viewed Products
-  const products = await prisma.product.findMany({ take: 5 });
-  const productPerformance = [];
-  
-  for (const p of products) {
-    const count = await prisma.analyticsEvent.count({
-      where: {
-        eventName: 'product_view',
-        eventData: {
-          path: ['slug'],
-          equals: p.slug,
-        },
-      },
-    });
-    productPerformance.push({
-      name: p.name.split(' ')[0], // Compact name for chart
-      views: count || (process.env.NODE_ENV === 'development' ? Math.floor(Math.random() * 50) + 10 : 0),
-    });
-  }
+  // 4. Fetch Top Viewed Products using viewCount stored directly on Product model
+  const products = await prisma.product.findMany({
+    take: 5,
+    orderBy: { viewCount: 'desc' },
+    select: { name: true, slug: true, viewCount: true },
+  });
+  const productPerformance = products.map((p) => ({
+    name: p.name.split(' ')[0], // Compact name for chart
+    views: p.viewCount ?? 0,
+  }));
 
-  // Provide mock product metrics if database has no products seeded yet
-  if (productPerformance.length === 0 && process.env.NODE_ENV === 'development') {
-    productPerformance.push(
-      { name: 'CloudHost', views: 84 },
-      { name: 'Scheduler', views: 56 },
-      { name: 'Canvas3D', views: 32 }
-    );
-  }
+
 
   const kpis = [
     { label: 'Products Active', value: productCount, icon: Briefcase, color: 'text-blue-500', link: '/admin/products' },
