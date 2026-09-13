@@ -30,6 +30,7 @@ import {
   Eye,
   Activity,
   Layers,
+  RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -92,6 +93,9 @@ export default function AdminAnalyticsPage() {
 
   useEffect(() => {
     fetchAnalytics(range, selectedProject);
+    // Auto-refresh every 30 seconds so counts stay live without full page reload
+    const interval = setInterval(() => fetchAnalytics(range, selectedProject), 30_000);
+    return () => clearInterval(interval);
   }, [range, selectedProject]);
 
   const handleCreateProject = async (e: React.FormEvent) => {
@@ -276,6 +280,16 @@ export default function AdminAnalyticsPage() {
               className="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 hover:border-emerald-400 text-emerald-400 hover:text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
             >
               <Layers className="w-3.5 h-3.5" /> + Add Project
+            </button>
+
+            {/* Refresh Button */}
+            <button
+              onClick={() => fetchAnalytics(range, selectedProject)}
+              className="px-3 py-1.5 bg-white/5 border border-white/10 hover:border-white/30 text-zinc-300 hover:text-white rounded-lg text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer"
+              title="Refresh analytics data"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Refresh
             </button>
 
             {/* Copy Setup Prompt Button */}

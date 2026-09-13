@@ -293,7 +293,11 @@ export class CentralAnalyticsService {
         }).catch(() => []),
 
         prismaAnalytics.project.findMany({
-          include: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            domain: true,
             _count: {
               select: { sessions: true, pageViews: true },
             },
@@ -353,12 +357,28 @@ export class CentralAnalyticsService {
         .sort((a, b) => b.count - a.count)
         .slice(0, 10);
 
-      // Visitors by Project
-      const visitorsByProject = projectsList.map((p: { name: string; slug: string; _count: { sessions: number; pageViews: number } }) => ({
+      // Visitors by Project — count sessions/pageViews within the selected date range (not all-time)
+      const perProjectCounts = await prismaAnalytics.$transaction(
+        (projectsList as Array<{ id: string; name: string; slug: string; domain: string | null; _count: { sessions: number; pageViews: number } }>).map((p) =>
+          prismaAnalytics.pageView.count({
+            where: { projectId: p.id, createdAt: { gte: startDate } },
+          })
+        )
+      ).catch(() => (projectsList as Array<{ _count: { pageViews: number } }>).map((p) => p._count.pageViews));
+
+      const perProjectSessionCounts = await prismaAnalytics.$transaction(
+        (projectsList as Array<{ id: string; name: string; slug: string; domain: string | null; _count: { sessions: number; pageViews: number } }>).map((p) =>
+          prismaAnalytics.session.count({
+            where: { projectId: p.id, createdAt: { gte: startDate } },
+          })
+        )
+      ).catch(() => (projectsList as Array<{ _count: { sessions: number } }>).map((p) => p._count.sessions));
+
+      const visitorsByProject = (projectsList as Array<{ id: string; name: string; slug: string; _count: { sessions: number; pageViews: number } }>).map((p, i) => ({
         project: p.name || p.slug,
         slug: p.slug,
-        sessions: p._count.sessions,
-        pageViews: p._count.pageViews,
+        sessions: (perProjectSessionCounts as number[])[i] ?? p._count.sessions,
+        pageViews: (perProjectCounts as number[])[i] ?? p._count.pageViews,
       }));
 
       return {
