@@ -471,14 +471,17 @@ export default function AdminProductsPage() {
 
                   {/* Brand Logo Upload with Inline Preview */}
                   <div className="space-y-2 md:col-span-2">
-                    <div className="flex items-center gap-1.5">
-                      <Label htmlFor="prod-logo-file" className="text-xs font-semibold text-text-secondary">
-                        Product Brand Logo
-                      </Label>
-                      <Tooltip>
-                        <TooltipTrigger type="button"><HelpCircle className="w-3.5 h-3.5 text-text-tertiary" /></TooltipTrigger>
-                        <TooltipContent>Square logo shown on product card headers and detail page.</TooltipContent>
-                      </Tooltip>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <Label htmlFor="prod-logo-file" className="text-xs font-semibold text-text-secondary">
+                          Product Brand Logo
+                        </Label>
+                        <Tooltip>
+                          <TooltipTrigger type="button"><HelpCircle className="w-3.5 h-3.5 text-text-tertiary" /></TooltipTrigger>
+                          <TooltipContent>Square logo shown on product card headers and detail page.</TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <span className="text-[11px] text-accent font-medium">Recommended: 512×512 (1:1 Square)</span>
                     </div>
                     <div className="flex items-center gap-4 bg-black/40 border border-white/10 p-3 rounded-lg">
                       {logoUrl ? (
@@ -514,19 +517,22 @@ export default function AdminProductsPage() {
 
                   {/* Hero Banner Upload with Inline Preview */}
                   <div className="space-y-2 md:col-span-2">
-                    <div className="flex items-center gap-1.5">
-                      <Label htmlFor="prod-banner-file" className="text-xs font-semibold text-text-secondary">
-                        Product Hero Showcase Banner
-                      </Label>
-                      <Tooltip>
-                        <TooltipTrigger type="button"><HelpCircle className="w-3.5 h-3.5 text-text-tertiary" /></TooltipTrigger>
-                        <TooltipContent>Wide header image rendered at top of product detail page.</TooltipContent>
-                      </Tooltip>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <Label htmlFor="prod-banner-file" className="text-xs font-semibold text-text-secondary">
+                          Product Hero Showcase Banner
+                        </Label>
+                        <Tooltip>
+                          <TooltipTrigger type="button"><HelpCircle className="w-3.5 h-3.5 text-text-tertiary" /></TooltipTrigger>
+                          <TooltipContent>Wide header image rendered at top of product detail page.</TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <span className="text-[11px] text-accent font-medium">Recommended: 1200×630 (16:9 Landscape)</span>
                     </div>
                     <div className="flex flex-col gap-3 bg-black/40 border border-white/10 p-3 rounded-lg">
                       {bannerUrl && (
-                        <div className="relative w-full h-32 rounded-lg border border-white/20 overflow-hidden bg-black/60">
-                          <img src={bannerUrl} alt="Banner preview" className="w-full h-full object-cover" />
+                        <div className="relative w-full h-36 rounded-lg border border-white/20 overflow-hidden bg-black/60 flex items-center justify-center">
+                          <img src={bannerUrl} alt="Banner preview" className="w-full h-full object-contain" />
                           <button
                             type="button"
                             onClick={() => setBannerUrl('')}

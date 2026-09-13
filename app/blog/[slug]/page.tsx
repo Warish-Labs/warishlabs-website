@@ -11,8 +11,8 @@ import { formatDate } from '@/utils/formatters';
 import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
 import NewsletterCTA from '@/components/shared/NewsletterCTA';
-import { sanitizeServer } from '@/lib/sanitize';
-import { Metadata } from 'next';
+import { renderMarkdown } from '@/lib/markdown';
+import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
 
@@ -124,16 +124,16 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
 
           {/* Cover Image */}
           {post.coverImage && (
-            <div className="w-full h-80 md:h-[420px] rounded-2xl overflow-hidden border border-white/10 select-none pointer-events-none">
+            <div className="w-full h-80 md:h-[420px] rounded-2xl overflow-hidden border border-white/10 select-none pointer-events-none bg-black/40 flex items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover" />
+              <img src={post.coverImage} alt={post.title} className="w-full h-full object-contain" />
             </div>
           )}
 
           {/* Article Body */}
           <Card className="glass-panel border-border shadow-card overflow-hidden">
             <CardContent className="pt-8 px-6 md:px-10 prose prose-invert max-w-none text-text-secondary text-sm leading-relaxed space-y-4">
-              <div dangerouslySetInnerHTML={{ __html: sanitizeServer(post.content) }} />
+              <div dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }} />
             </CardContent>
           </Card>
 

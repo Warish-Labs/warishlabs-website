@@ -283,6 +283,12 @@ export function BlogCoverImageField({ value, onChange }: BlogCoverImageFieldProp
 
   return (
     <div className="space-y-3">
+      {/* Recommended size hint */}
+      <div className="flex items-center justify-between text-[11px] text-zinc-400">
+        <span>Image source:</span>
+        <span className="text-accent font-semibold">Recommended size: 1200×630 (16:9 Landscape)</span>
+      </div>
+
       {/* Mode toggle */}
       <div className="flex rounded-md overflow-hidden border border-border">
         <button
@@ -409,7 +415,7 @@ export function BlogCoverImageField({ value, onChange }: BlogCoverImageFieldProp
             <img
               src={localBlobUrl}
               alt="Local upload preview"
-              className="w-full max-h-48 object-cover"
+              className="w-full max-h-48 object-contain bg-black/60"
             />
           ) : (
             <Image
@@ -417,7 +423,7 @@ export function BlogCoverImageField({ value, onChange }: BlogCoverImageFieldProp
               alt="Cover image preview"
               width={dimensions?.width ?? 400}
               height={dimensions?.height ?? 200}
-              className="w-full max-h-48 object-cover"
+              className="w-full max-h-48 object-contain bg-black/60"
             />
           )}
           {localBlobUrl && (

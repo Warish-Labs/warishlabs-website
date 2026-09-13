@@ -88,39 +88,74 @@ export default function AdminAnalyticsPage() {
   }, [range, selectedProject]);
 
   const handleCopySetupPrompt = () => {
-    const promptTemplate = `You are integrating this project into WarishLabs' existing centralized
-analytics system. Do NOT create a new database or new schema — a shared
-analytics service already exists.
+    const promptTemplate = `# ANTIGRAVITY CENTRALIZED VISITOR ANALYTICS INTEGRATION PROMPT
 
-1. Inspect this project's codebase (framework, routing, existing
-   analytics/tracking code if any).
-2. Add the WarishLabs analytics tracker client to this project the same
-   way it's used in warishlabs-website: install the shared tracker script in the root layout or add the <script> snippet to document head.
-3. Point the tracker at the existing central API endpoint:
-   https://warishlabs.in/api/analytics/event
-   Do not create a new endpoint or a new database for this.
-4. Add the required environment variable(s) to this project:
-   NEXT_PUBLIC_ANALYTICS_API_URL=https://warishlabs.in/api/analytics/event
-   NEXT_PUBLIC_ANALYTICS_PROJECT_ID=<YOUR_PROJECT_SLUG>
-5. This project must be registered as a known project in the central
-   \`projects\` table before events will be accepted (unregistered project
-   identifiers are rejected). Registration happens via the WarishLabs
-   admin panel or a POST to https://warishlabs.in/api/admin/analytics/register.
-6. Run this project's build/lint/tests and confirm nothing else broke.
-7. Do all of this on a new branch, do not push to main, open a PR.
+You are integrating this project into WarishLabs' centralized analytics system.
+Do NOT create a new database or new schema — a shared, multi-tenant analytics service already exists.
 
-At the very end, tell the user exactly what they must do manually,
-clearly separated as:
-"You need to do these manually:" — e.g. add the env var to this
-project's Vercel settings (Production/Preview/Development as
-appropriate) and redeploy, then register the project in the WarishLabs
-admin panel.
-"Antigravity has already handled these automatically:" — e.g. adding the
-tracker client code, wiring the API call, updating .env.example.`;
+---
+
+## 0. Context & Architecture
+
+- **Organization**: WarishLabs (Founded & maintained by MD Warish Ansari).
+- **Project Ecosystem**: WarishLabs ships real production software products — Web Utilities (Toolkit), AI Platforms (ForgeFlow AI), SaaS applications, and Developer Tools.
+- **Central Analytics Infrastructure**:
+  - Central Ingest API Endpoint: https://warishlabs.in/api/analytics/event
+  - Analytics Database: Dedicated multi-tenant PostgreSQL (Neon) storing projects, sessions, page_views, and events.
+  - Ingestion Security: Unregistered project slugs are rejected with 403 Forbidden.
+  - Fail-Safe Guarantee: Analytics tracking MUST fail silently. A network timeout or DB glitch must NEVER throw errors, block rendering, or impact user experience.
+
+---
+
+## 1. Step-by-Step Implementation Instructions
+
+1. **Inspect Codebase**:
+   Inspect this project's framework (Next.js App Router, Vite, HTML/JS, or React) and existing layout files.
+
+2. **Add Environment Variables**:
+   Add these environment variables to .env.example and your local .env:
+   NEXT_PUBLIC_ANALYTICS_API_URL="https://warishlabs.in/api/analytics/event"
+   NEXT_PUBLIC_ANALYTICS_PROJECT_ID="<THIS_PROJECT_SLUG>"
+
+3. **Install / Add Analytics Tracker Client**:
+   Add the WarishLabs analytics tracker script/module. It must automatically track:
+   - Page view events on route change (path, url, referrer).
+   - Visitor sessions (issue a first-party warishlabs_vid token in local storage / cookie; no third-party tracking or intrusive fingerprinting).
+   - User-Agent browser/OS/device details.
+   - Vercel IP location headers (x-vercel-ip-country).
+
+4. **Add Custom Event Tracking (Optional)**:
+   Export a trackEvent(eventName: string, data?: Record<string, unknown>) helper function so components can track button clicks or feature usage.
+
+5. **Silent Execution**:
+   Wrap all fetch calls to the analytics API in a try/catch block with silent error suppression:
+   fetch(analyticsUrl, { method: 'POST', body: JSON.stringify(payload) }).catch(() => null);
+
+6. **Validation & Verification**:
+   Run this project's build, lint, and test commands (npm run build, npm run lint, npm run test) to verify clean compilation.
+
+7. **Branching & PR**:
+   Work on a feature branch (e.g. feat/integrate-central-analytics), do NOT push directly to main, and open a Pull Request.
+
+---
+
+## 2. Final Output Summary Required
+
+At the very end of your response, clearly separate manual requirements from automated tasks:
+
+"You need to do these manually:"
+- Add NEXT_PUBLIC_ANALYTICS_API_URL and NEXT_PUBLIC_ANALYTICS_PROJECT_ID to this project's Vercel settings (Production / Preview / Development) and redeploy.
+- Register this project slug in the WarishLabs Admin Console (https://warishlabs.in/admin/analytics).
+
+"Antigravity has already handled these automatically:"
+- Added the tracker client and layout integration.
+- Configured automatic page view & session reporting.
+- Updated .env.example and project types.
+- Verified build and test suites pass cleanly.`;
 
     navigator.clipboard.writeText(promptTemplate);
     setCopied(true);
-    toast.success('Analytics integration prompt copied to clipboard!');
+    toast.success('Enhanced analytics setup prompt copied to clipboard!');
     setTimeout(() => setCopied(false), 3000);
   };
 

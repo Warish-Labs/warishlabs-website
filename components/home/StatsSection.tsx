@@ -65,7 +65,7 @@ export default function StatsSection() {
   const stats: StatItem[] = [
     { value: statsData?.products || 0, label: 'Active Projects', suffix: '+' },
     { value: statsData?.visitors || 0, label: 'Total Site Visitors', suffix: '+' },
-    { value: statsData?.labs || 0, label: 'Sandbox Experiments', suffix: '+' },
+    { value: 99.9, label: 'System Uptime', suffix: '%' },
     { value: 12, label: 'Global Regions', suffix: '+' },
   ];
 

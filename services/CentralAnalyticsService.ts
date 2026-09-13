@@ -206,6 +206,7 @@ export class CentralAnalyticsService {
           select: {
             path: true,
             referrer: true,
+            visitorId: true,
             createdAt: true,
             project: { select: { name: true, slug: true } },
           },
@@ -234,18 +235,21 @@ export class CentralAnalyticsService {
         chartMap.set(dateStr, { date: dateStr, pageViews: 0, visitors: new Set() });
       }
 
-      pageViewsList.forEach((pv: { createdAt: Date; path: string; referrer: string | null }) => {
+      pageViewsList.forEach((pv: { createdAt: Date; path: string; referrer: string | null; visitorId?: string }) => {
         const dateStr = pv.createdAt.toISOString().split('T')[0];
         if (chartMap.has(dateStr)) {
           const item = chartMap.get(dateStr)!;
           item.pageViews += 1;
+          if (pv.visitorId) {
+            item.visitors.add(pv.visitorId);
+          }
         }
       });
 
       const visitorsOverTime = Array.from(chartMap.values()).map((item) => ({
         date: item.date,
         pageViews: item.pageViews,
-        visitors: item.pageViews > 0 ? Math.ceil(item.pageViews * 0.7) : 0,
+        visitors: item.visitors.size,
       }));
 
       // Top pages
