@@ -234,7 +234,7 @@ export class CentralAnalyticsService {
         chartMap.set(dateStr, { date: dateStr, pageViews: 0, visitors: new Set() });
       }
 
-      pageViewsList.forEach((pv) => {
+      pageViewsList.forEach((pv: { createdAt: Date; path: string; referrer: string | null }) => {
         const dateStr = pv.createdAt.toISOString().split('T')[0];
         if (chartMap.has(dateStr)) {
           const item = chartMap.get(dateStr)!;
@@ -250,7 +250,7 @@ export class CentralAnalyticsService {
 
       // Top pages
       const pageCounts = new Map<string, number>();
-      pageViewsList.forEach((pv) => {
+      pageViewsList.forEach((pv: { path: string }) => {
         pageCounts.set(pv.path, (pageCounts.get(pv.path) || 0) + 1);
       });
       const topPages = Array.from(pageCounts.entries())
@@ -260,7 +260,7 @@ export class CentralAnalyticsService {
 
       // Top referrers
       const referrerCounts = new Map<string, number>();
-      pageViewsList.forEach((pv) => {
+      pageViewsList.forEach((pv: { referrer: string | null }) => {
         if (pv.referrer && !pv.referrer.includes('warishlabs')) {
           const domain = pv.referrer.replace(/^https?:\/\//, '').split('/')[0];
           referrerCounts.set(domain, (referrerCounts.get(domain) || 0) + 1);
@@ -272,7 +272,7 @@ export class CentralAnalyticsService {
         .slice(0, 10);
 
       // Visitors by Project
-      const visitorsByProject = projectsList.map((p) => ({
+      const visitorsByProject = projectsList.map((p: { name: string; slug: string; _count: { sessions: number; pageViews: number } }) => ({
         project: p.name || p.slug,
         slug: p.slug,
         sessions: p._count.sessions,
