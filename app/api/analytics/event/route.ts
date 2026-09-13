@@ -8,9 +8,12 @@ import { z } from 'zod';
 
 const eventSchema = z.object({
   projectSlug: z.string().optional(),
-  eventName: z.string().min(1, { message: 'eventName is required' }),
+  projectId: z.string().optional(),
+  visitorId: z.string().optional(),
+  eventName: z.string().optional().default('page_view'),
   eventData: z.record(z.string(), z.any()).optional().nullable(),
-  url: z.string().url({ message: 'A valid URL is required' }),
+  url: z.string().optional().nullable(),
+  path: z.string().optional().nullable(),
   referrer: z.string().nullable().optional(),
 });
 
@@ -41,15 +44,16 @@ export async function POST(request: Request) {
       );
     }
 
-    const { projectSlug, eventName, eventData, url, referrer } = validation.data;
+    const { projectSlug, projectId, visitorId: bodyVisitorId, eventName, eventData, url: bodyUrl, path: bodyPath, referrer } = validation.data;
+    const targetSlug = projectSlug || projectId || process.env.NEXT_PUBLIC_ANALYTICS_PROJECT_ID || 'warishlabs-website';
 
     // 2. Retrieve or dynamically allocate visitor ID in cookies (Next.js 16 await cookies())
     const cookieStore = await cookies();
-    let visitorId = cookieStore.get(CONFIG.VISITOR_COOKIE_NAME)?.value;
+    let cookieVisitorId = cookieStore.get(CONFIG.VISITOR_COOKIE_NAME)?.value;
 
-    if (!visitorId) {
-      visitorId = crypto.randomUUID();
-      cookieStore.set(CONFIG.VISITOR_COOKIE_NAME, visitorId, {
+    if (!cookieVisitorId) {
+      cookieVisitorId = bodyVisitorId || crypto.randomUUID();
+      cookieStore.set(CONFIG.VISITOR_COOKIE_NAME, cookieVisitorId, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
@@ -58,9 +62,13 @@ export async function POST(request: Request) {
       });
     }
 
+    const finalVisitorId = bodyVisitorId || cookieVisitorId;
+
     const headerStore = await headers();
     const userAgent = headerStore.get('user-agent');
     const ipAddress = headerStore.get('x-real-ip') || headerStore.get('x-forwarded-for') || '127.0.0.1';
+    const origin = headerStore.get('origin') || headerStore.get('referer') || 'https://warishlabs.in';
+    const resolvedUrl = bodyUrl || (bodyPath ? `${origin}${bodyPath}` : origin);
     
     // Vercel Geolocation Headers
     const country = headerStore.get('x-vercel-ip-country') || null;
@@ -69,11 +77,11 @@ export async function POST(request: Request) {
 
     // 3. Track event in Central Analytics DB (Auto-registers project if missing)
     const centralSuccess = await CentralAnalyticsService.trackEvent({
-      projectSlug: projectSlug || process.env.NEXT_PUBLIC_ANALYTICS_PROJECT_ID || 'warishlabs-website',
-      visitorId,
-      eventName,
+      projectSlug: targetSlug,
+      visitorId: finalVisitorId,
+      eventName: eventName || 'page_view',
       eventData: eventData || undefined,
-      url,
+      url: resolvedUrl,
       referrer: referrer || undefined,
       userAgent,
       ipAddress,
