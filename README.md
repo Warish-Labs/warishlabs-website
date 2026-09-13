@@ -40,7 +40,8 @@
 - **Cloudflare Turnstile CAPTCHA**: Secure all public-facing submission forms (Contact form, Newsletter CTA, and Footer forms) client-side and server-side.
 - **Legal Compliance Pages**: Completely pre-rendered static legal pages: **Privacy Policy** (`/privacy`), **Terms & Conditions** (`/terms`), **Cookie Policy** (`/cookies`), and **Disclaimer** (`/disclaimer`).
 - **Communications Engine**: Includes tools to reply to visitor inquiries using Resend templates, compile HTML newsletter broadcast campaigns using Resend Batch API, and download client-side audience registry CSV files.
-- **Traffic Analytics Filters**: Extends traffic logs with date selectors (7 Days, 30 Days, All Time) and referral source channel breakdowns (Google Search, GitHub, LinkedIn, X/Twitter).
+- **Centralized Multi-Tenant Visitor Analytics**: Neon PostgreSQL-backed cross-origin ingest API (`/api/analytics/event`) powering real-time visitor tracking and metrics dashboards for WarishLabs and all ecosystem subdomains (e.g. Toolkit). Includes copyable setup prompt generator for instant Antigravity integration into new projects. See [docs/CENTRAL_ANALYTICS_SETUP.md](docs/CENTRAL_ANALYTICS_SETUP.md).
+- **Traffic Analytics Filters**: Extends traffic logs with date selectors (7 Days, 30 Days, 90 Days) and per-project filtering (Toolkit, WarishLabs, or All Ecosystem Projects).
 - **Hardened SEO & Open Graph Banners**: Configures dynamic `sitemap.xml` listing blogs, products, and categories; Organization + Person JSON-LD schema; and Edge runtime-rendered dynamic Open Graph image banner generators (`/api/og`).
 - **AI Agent Discoverability**: `public/llms.txt` index allows GPTBot, ClaudeBot, PerplexityBot, Google-Extended, and other AI crawlers to discover products, blog content, and site structure.
 - **No Repo Links Policy**: Product cards and detail pages never expose repository URLs to visitors. Live product links only — permanent architectural decision recorded in brain.md.
