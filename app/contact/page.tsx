@@ -1,4 +1,5 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Mail, Phone, MapPin, ShieldCheck, Clock, ExternalLink } from 'lucide-react';
@@ -8,6 +9,24 @@ import prisma from '@/lib/prisma';
 import ContactForm from './ContactForm';
 import FAQSection from '@/components/shared/FAQSection';
 import { cookies } from 'next/headers';
+
+export async function generateMetadata(): Promise<Metadata> {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://warishlabs.in';
+  return {
+    title: 'Contact Us — WarishLabs Support & Inquiries',
+    description: 'Get in touch with WarishLabs for support, product inquiries, technical feedback, or partnership opportunities.',
+    alternates: {
+      canonical: `${baseUrl}/contact`,
+    },
+    openGraph: {
+      title: 'Contact Us — WarishLabs Support & Inquiries',
+      description: 'Get in touch with WarishLabs for support, product inquiries, technical feedback, or partnership opportunities.',
+      url: `${baseUrl}/contact`,
+      siteName: 'WarishLabs',
+      type: 'website',
+    },
+  };
+}
 
 export default async function ContactPage() {
   // Opt-out of static rendering to query DB dynamically

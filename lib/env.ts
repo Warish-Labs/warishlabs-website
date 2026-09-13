@@ -18,6 +18,9 @@ const envSchema = z.object({
   // Database — required for Prisma to function at all
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
 
+  // Central Analytics Database (optional with fallback)
+  ANALYTICS_DATABASE_URL: z.string().optional(),
+
   // Clerk authentication keys
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z
     .string()

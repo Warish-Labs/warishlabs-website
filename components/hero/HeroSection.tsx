@@ -164,25 +164,7 @@ export default function HeroSection({ title, subtitle, config }: HeroProps) {
             </motion.div>
           </motion.div>
 
-          {/* Right Floating Console Info Cards (Desktop Only) */}
-          <div className="hidden lg:flex lg:col-span-6 flex-col gap-6 justify-center items-center h-[480px]">
-            {/* Status Card */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.5, duration: 0.6 }}
-              className="glass-panel border border-white/8 bg-white/4 backdrop-blur-md p-4 rounded-xl shadow-card flex items-center gap-4 w-72 hover:border-blue-500/30 transition-all duration-200"
-            >
-              <div className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-              </div>
-              <div>
-                <p className="text-xs font-bold text-white uppercase tracking-wider">All Systems Operational</p>
-                <p className="text-[10px] text-text-secondary">warishlabs.in · All systems live</p>
-              </div>
-            </motion.div>
-          </div>
+
         </div>
       </div>
     </section>

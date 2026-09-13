@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { FileText, Plus, Trash2, Eye, EyeOff, Edit, X, ChevronDown, ChevronUp, Search, Loader2 } from 'lucide-react';
+import { FileText, Plus, Trash2, Eye, EyeOff, Edit, X, ChevronDown, ChevronUp, Search, Loader2, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDate } from '@/utils/formatters';
 import { Button } from '@/components/ui/button';
@@ -11,8 +11,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
+interface Category {
+  id: string;
+  name: string;
+}
+
 export default function AdminBlogPage() {
   const [blogs, setBlogs] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Search, Pagination, Filter states
@@ -22,6 +28,7 @@ export default function AdminBlogPage() {
   const [totalPages, setTotalPages] = useState(1);
 
   // Form states
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [excerpt, setExcerpt] = useState('');
@@ -59,7 +66,23 @@ export default function AdminBlogPage() {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch('/api/admin/categories');
+      const data = await res.json();
+      if (data.success) {
+        setCategories(data.categories);
+        if (data.categories.length > 0 && !category) {
+          setCategory(data.categories[0].name);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  };
+
   useEffect(() => {
+    fetchCategories();
     fetchBlogs(search, filterCategory, page);
   }, [page]);
 
@@ -67,13 +90,6 @@ export default function AdminBlogPage() {
     setSearch(e.target.value);
     setPage(1);
     fetchBlogs(e.target.value, filterCategory, 1);
-  };
-
-  const handleCategoryFilterChange = (cat: string | null) => {
-    const val = cat || 'all';
-    setFilterCategory(val);
-    setPage(1);
-    fetchBlogs(search, val, 1);
   };
 
   const handleEditClick = (blog: any) => {
@@ -87,7 +103,6 @@ export default function AdminBlogPage() {
     setCoverImageWidth(blog.coverImageWidth ?? undefined);
     setCoverImageHeight(blog.coverImageHeight ?? undefined);
     
-    // Populate SEO values if they exist
     if (blog.seo) {
       setSeoTitle(blog.seo.title || '');
       setSeoDescription(blog.seo.description || '');
@@ -98,8 +113,8 @@ export default function AdminBlogPage() {
       setSeoKeywords('');
     }
     
-    // Auto-expand SEO panel if edited blog has custom SEO metadata
     setShowSeo(!!blog.seo);
+    setIsFormOpen(true);
   };
 
   const resetForm = () => {
@@ -107,7 +122,7 @@ export default function AdminBlogPage() {
     setTitle('');
     setExcerpt('');
     setContent('');
-    setCategory('Engineering');
+    setCategory(categories[0]?.name || 'Engineering');
     setPublished(false);
     setCoverImage('');
     setCoverImageWidth(undefined);
@@ -116,6 +131,7 @@ export default function AdminBlogPage() {
     setSeoDescription('');
     setSeoKeywords('');
     setShowSeo(false);
+    setIsFormOpen(false);
   };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -205,345 +221,285 @@ export default function AdminBlogPage() {
 
   return (
     <div className="space-y-8 select-none">
-      {/* Overview Card */}
-      <Card className="glass-panel border-border shadow-card overflow-hidden">
-        <CardHeader className="border-b border-border/40 pb-4">
-          <CardTitle className="text-xs font-bold uppercase tracking-widest text-text-tertiary flex items-center gap-2">
-            <FileText className="w-4 h-4 text-accent" /> Blog Articles
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
+            <FileText className="w-8 h-8 text-accent" />
+            Manage Blog Articles
+          </h1>
           <p className="text-text-secondary text-sm">
-            Publish engineering briefs, release logs, and research articles. Articles are displayed on the public lab `/blog` portal.
+            Publish guides, how-to articles, and product announcements.
           </p>
-        </CardContent>
-      </Card>
+        </div>
+        {!isFormOpen && (
+          <div className="flex items-center gap-3">
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+              <Input
+                placeholder="Search articles..."
+                value={search}
+                onChange={handleSearchChange}
+                className="pl-9 bg-bg-primary border-border focus:border-accent text-white"
+              />
+            </div>
+            <Button
+              onClick={() => setIsFormOpen(true)}
+              className="bg-accent hover:bg-accent-hover text-white font-semibold flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" /> New Article
+            </Button>
+          </div>
+        )}
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Create / Edit Form */}
-        <div className="lg:col-span-5">
-          <Card className="glass-panel border-border shadow-card overflow-hidden">
-            <CardHeader className="border-b border-border/40 pb-4 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-semibold text-white">
-                {editingId ? 'Edit Article Build' : 'Write New Article'}
-              </CardTitle>
-              {editingId && (
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="p-1 rounded bg-white/5 border border-white/10 hover:border-accent text-zinc-300 hover:text-white"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </CardHeader>
-            <CardContent className="pt-6">
-              <form onSubmit={handleFormSubmit} className="space-y-4">
+      {/* Form Panel (Dedicated Upper Section) */}
+      {isFormOpen && (
+        <Card className="glass-panel border-border shadow-card overflow-hidden">
+          <CardHeader className="border-b border-border/40 pb-4 flex flex-row items-center justify-between">
+            <CardTitle className="text-base font-bold text-white tracking-wide uppercase">
+              {editingId ? 'Edit Blog Article' : 'Write New Article'}
+            </CardTitle>
+            <button
+              onClick={resetForm}
+              className="p-1.5 rounded-lg border border-border bg-bg-card text-text-secondary hover:text-white hover:border-accent transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <form onSubmit={handleFormSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Title */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Article Title</label>
-                  <input
-                    type="text"
+                <div className="space-y-2 md:col-span-2">
+                  <Label className="text-xs font-semibold text-text-secondary">Article Title *</Label>
+                  <Input
                     required
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g. Scaling Real-Time WebGL Particle Physics"
-                    className="w-full bg-bg-secondary border border-border rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-accent"
+                    placeholder="e.g. Why Project State Beats Chat History in Agentic AI Systems"
+                    className="bg-bg-primary border-border text-white"
                   />
                 </div>
 
-                {/* Category & Cover Image */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Category</label>
-                    <select
-                      value={category}
-                      onChange={(e) => setCategory(e.target.value)}
-                      className="w-full bg-bg-secondary border border-border rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-accent"
-                    >
-                      <option value="Engineering">Engineering</option>
-                      <option value="Research">Research</option>
-                      <option value="Security">Security</option>
-                      <option value="Design">Design</option>
-                      <option value="Changelog">Changelog</option>
-                    </select>
-                  </div>
+                {/* Category Select (Shared source) */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold text-text-secondary">Category *</Label>
+                  <Select value={category} onValueChange={(val) => setCategory(val || 'Engineering')}>
+                    <SelectTrigger className="bg-bg-primary border-border text-white">
+                      <SelectValue placeholder="Select Category" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-bg-card border-border text-white">
+                      {categories.length > 0 ? (
+                        categories.map((c) => (
+                          <SelectItem key={c.id} value={c.name}>
+                            {c.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <>
+                          <SelectItem value="Engineering">Engineering</SelectItem>
+                          <SelectItem value="Research">Research</SelectItem>
+                          <SelectItem value="Product Updates">Product Updates</SelectItem>
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Cover Image</label>
-                    <BlogCoverImageField
-                      value={coverImage}
-                      onChange={(url, w, h) => {
-                        setCoverImage(url);
-                        setCoverImageWidth(w);
-                        setCoverImageHeight(h);
-                      }}
-                    />
+                {/* Status Toggle */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold text-text-secondary">Publish Status</Label>
+                  <div className="flex items-center gap-4 pt-2">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs text-white">
+                      <input
+                        type="checkbox"
+                        checked={published}
+                        onChange={(e) => setPublished(e.target.checked)}
+                        className="rounded border-border bg-bg-primary text-accent focus:ring-accent"
+                      />
+                      Publish immediately to live blog
+                    </label>
                   </div>
+                </div>
+
+                {/* Cover Image Upload & Inline Preview */}
+                <div className="space-y-2 md:col-span-2">
+                  <Label className="text-xs font-semibold text-text-secondary">Cover Image</Label>
+                  <BlogCoverImageField
+                    value={coverImage}
+                    onChange={(url, w, h) => {
+                      setCoverImage(url);
+                      setCoverImageWidth(w);
+                      setCoverImageHeight(h);
+                    }}
+                  />
                 </div>
 
                 {/* Excerpt */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Excerpt Summary</label>
+                <div className="space-y-2 md:col-span-2">
+                  <Label className="text-xs font-semibold text-text-secondary">Excerpt / Summary *</Label>
                   <textarea
                     required
+                    rows={3}
                     value={excerpt}
                     onChange={(e) => setExcerpt(e.target.value)}
-                    placeholder="Provide a short sentence summarizing the post"
-                    className="w-full bg-bg-secondary border border-border rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-accent h-16 resize-none"
+                    placeholder="Brief 2-sentence summary for search engines and post previews."
+                    className="w-full bg-bg-primary border border-border rounded-md px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
                   />
                 </div>
 
-                {/* Content */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">HTML Content</label>
+                {/* Markdown Content */}
+                <div className="space-y-2 md:col-span-2">
+                  <Label className="text-xs font-semibold text-text-secondary">Article Content (Markdown) *</Label>
                   <textarea
                     required
+                    rows={12}
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
-                    placeholder="<h2>Header</h2><p>Write HTML content here...</p>"
-                    className="w-full bg-bg-secondary border border-border rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-accent h-40 resize-none font-mono"
+                    placeholder="Write full article body in Markdown format..."
+                    className="w-full bg-bg-primary border border-border rounded-md p-3 text-xs font-mono text-white focus:outline-none focus:border-accent"
                   />
                 </div>
 
                 {/* Collapsible SEO Panel */}
-                <div className="border border-white/5 bg-black/20 rounded-lg overflow-hidden">
+                <div className="space-y-2 md:col-span-2 border-t border-border/40 pt-4">
                   <button
                     type="button"
                     onClick={() => setShowSeo(!showSeo)}
-                    className="w-full px-4 py-2.5 bg-white/5 hover:bg-white/10 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-zinc-300"
+                    className="flex items-center gap-2 text-xs font-bold text-accent uppercase tracking-wider hover:underline"
                   >
-                    <span>Collapsible SEO Metadata Settings</span>
                     {showSeo ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                    SEO Metadata Settings
                   </button>
+
                   {showSeo && (
-                    <div className="p-4 space-y-3 border-t border-white/5">
-                      <div className="space-y-1">
-                        <div className="flex justify-between items-center">
-                          <label className="text-[9px] font-bold uppercase tracking-widest text-text-tertiary">Meta Title</label>
-                          <span className={`font-mono text-[9px] ${seoTitle.length > 70 ? 'text-destructive' : 'text-text-tertiary'}`}>
-                            {seoTitle.length} / 70
-                          </span>
-                        </div>
-                        <input
-                          type="text"
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 bg-black/40 p-4 rounded-lg border border-white/10">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-text-secondary">SEO Meta Title</Label>
+                        <Input
                           value={seoTitle}
                           onChange={(e) => setSeoTitle(e.target.value)}
-                          placeholder="If left empty, defaults to article title"
-                          className="w-full bg-bg-secondary border border-border rounded-md px-2 py-1.5 text-xs text-white focus:outline-none focus:border-accent"
+                          placeholder="Article Meta Title"
+                          className="bg-bg-primary border-border text-white text-xs"
                         />
                       </div>
-                      <div className="space-y-1">
-                        <div className="flex justify-between items-center">
-                          <label className="text-[9px] font-bold uppercase tracking-widest text-text-tertiary">Meta Description</label>
-                          <span className={`font-mono text-[9px] ${seoDescription.length > 160 ? 'text-destructive' : 'text-text-tertiary'}`}>
-                            {seoDescription.length} / 160
-                          </span>
-                        </div>
-                        <textarea
-                          value={seoDescription}
-                          onChange={(e) => setSeoDescription(e.target.value)}
-                          placeholder="If left empty, defaults to excerpt summary"
-                          className="w-full bg-bg-secondary border border-border rounded-md px-2 py-1.5 text-xs text-white focus:outline-none focus:border-accent h-16 resize-none"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-bold uppercase tracking-widest text-text-tertiary">Meta Keywords</label>
-                        <input
-                          type="text"
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-text-secondary">Meta Keywords</Label>
+                        <Input
                           value={seoKeywords}
                           onChange={(e) => setSeoKeywords(e.target.value)}
-                          placeholder="comma, separated, tags"
-                          className="w-full bg-bg-secondary border border-border rounded-md px-2 py-1.5 text-xs text-white focus:outline-none focus:border-accent"
+                          placeholder="ai, agentic, forgeflow"
+                          className="bg-bg-primary border-border text-white text-xs"
+                        />
+                      </div>
+                      <div className="space-y-1.5 md:col-span-2">
+                        <Label className="text-xs text-text-secondary">Meta Description</Label>
+                        <textarea
+                          rows={2}
+                          value={seoDescription}
+                          onChange={(e) => setSeoDescription(e.target.value)}
+                          placeholder="Meta description for search engines..."
+                          className="w-full bg-bg-primary border border-border rounded-md px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
                         />
                       </div>
                     </div>
                   )}
                 </div>
-
-                {/* Publish Immediately */}
-                <div className="flex items-center gap-2 pt-2">
-                  <input
-                    type="checkbox"
-                    id="published"
-                    checked={published}
-                    onChange={(e) => setPublished(e.target.checked)}
-                    className="rounded bg-bg-secondary border-border border text-accent focus:ring-accent"
-                  />
-                  <label htmlFor="published" className="text-xs font-semibold text-white select-none cursor-pointer">
-                    Publish immediately (Make visible on site)
-                  </label>
-                </div>
-
-                {/* Actions */}
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-accent hover:bg-accent/80 text-white font-semibold text-xs uppercase tracking-wider py-2.5 rounded-md transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Submitting...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-3.5 h-3.5" /> {editingId ? 'Update Article' : 'Create Article'}
-                    </>
-                  )}
-                </button>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Articles Catalog List */}
-        <div className="lg:col-span-7">
-          <Card className="glass-panel border-border shadow-card overflow-hidden">
-            <CardHeader className="border-b border-border/40 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <CardTitle className="text-sm font-semibold text-white">Articles Catalog</CardTitle>
-              <div className="flex flex-wrap items-center gap-3">
-                {/* Search field */}
-                <div className="relative w-44">
-                  <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-zinc-500" />
-                  <Input
-                    placeholder="Search titles..."
-                    value={search}
-                    onChange={handleSearchChange}
-                    className="pl-8 h-8 bg-bg-primary border-border text-white text-xs"
-                  />
-                </div>
-                {/* Category filter dropdown */}
-                <div className="flex items-center gap-2">
-                  <Label className="text-[9px] font-bold uppercase tracking-wider text-text-tertiary shrink-0">Filter by Category</Label>
-                  <Select value={filterCategory} onValueChange={handleCategoryFilterChange}>
-                    <SelectTrigger className="bg-bg-primary border-border text-white h-8 text-xs w-32 focus:border-accent">
-                      <SelectValue placeholder="All Categories" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-bg-card border-border text-white text-xs">
-                      <SelectItem value="all">All Categories</SelectItem>
-                      <SelectItem value="Engineering">Engineering</SelectItem>
-                      <SelectItem value="Research">Research</SelectItem>
-                      <SelectItem value="Security">Security</SelectItem>
-                      <SelectItem value="Design">Design</SelectItem>
-                      <SelectItem value="Changelog">Changelog</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
-            </CardHeader>
-            <CardContent className="pt-6 px-0">
-              {loading ? (
-                <div className="px-6 py-12 flex justify-center">
-                  <Loader2 className="animate-spin h-6 w-6 text-accent" />
-                </div>
-              ) : blogs.length === 0 ? (
-                <div className="px-6 py-12 text-center text-text-tertiary text-xs">
-                  No articles found. Write one on the left or adjust filters.
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse text-left">
-                    <thead>
-                      <tr className="border-b border-border text-[10px] uppercase font-bold text-text-tertiary tracking-wider">
-                        <th className="px-6 py-3">Title / Date</th>
-                        <th className="px-6 py-3">Category</th>
-                        <th className="px-6 py-3">Status</th>
-                        <th className="px-6 py-3 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/40 text-xs text-text-secondary">
-                      {blogs.map((blog) => (
-                        <tr key={blog.id} className="hover:bg-bg-card/30 transition-colors">
-                          <td className="px-6 py-4">
-                            <p className="font-semibold text-white max-w-xs truncate">{blog.title}</p>
-                            <p className="text-[10px] text-text-tertiary">
-                              {formatDate(blog.createdAt)}
-                            </p>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="bg-accent-subtle/50 text-accent border border-accent/10 px-2 py-0.5 rounded text-[10px] font-semibold">
-                              {blog.category}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <button
-                              onClick={() => togglePublish(blog.id, blog.published)}
-                              className={`px-2 py-0.5 rounded text-[10px] font-semibold border flex items-center gap-1 cursor-pointer transition-colors ${
-                                blog.published
-                                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                                  : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
-                              }`}
-                            >
-                              {blog.published ? (
-                                <>
-                                  <Eye className="w-3 h-3" /> Published
-                                </>
-                              ) : (
-                                <>
-                                  <EyeOff className="w-3 h-3" /> Draft
-                                </>
-                              )}
-                            </button>
-                          </td>
-                          <td className="px-6 py-4 text-right space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditClick(blog)}
-                              className="border-border hover:border-accent hover:text-white p-2 h-8 w-8 cursor-pointer inline-flex"
-                              title="Edit Article"
-                            >
-                              <Edit className="w-3.5 h-3.5" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDelete(blog.id)}
-                              className="border-border hover:border-destructive hover:text-destructive p-2 h-8 w-8 text-destructive/80 cursor-pointer inline-flex"
-                              title="Delete Article"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
 
-              {/* Pagination controls */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between px-6 py-4 border-t border-border/40 bg-bg-secondary/20">
-                  <span className="text-xs text-text-secondary font-mono">
-                    Page {page} of {totalPages}
-                  </span>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={page === 1}
-                      className="border-border text-white hover:bg-bg-card text-xs font-semibold"
-                    >
-                      Previous
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                      disabled={page === totalPages}
-                      className="border-border text-white hover:bg-bg-card text-xs font-semibold"
-                    >
-                      Next
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-border/40">
+                <Button type="button" variant="outline" onClick={resetForm} className="border-border text-text-secondary">
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting} className="bg-accent hover:bg-accent-hover text-white font-semibold">
+                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : editingId ? 'Update Article' : 'Publish Article'}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Article List Table */}
+      <Card className="glass-panel border-border shadow-card overflow-hidden">
+        <CardHeader className="border-b border-border/40 pb-4">
+          <CardTitle className="text-sm font-semibold text-white">Articles Catalog ({blogs.length})</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-6 px-0">
+          {loading ? (
+            <div className="px-6 py-12 flex justify-center">
+              <Loader2 className="w-6 h-6 animate-spin text-accent" />
+            </div>
+          ) : blogs.length === 0 ? (
+            <div className="px-6 py-12 text-center text-text-tertiary text-sm">
+              No articles found. Write one above.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-border text-[10px] uppercase font-bold text-text-tertiary tracking-wider">
+                    <th className="px-6 py-3">Thumbnail &amp; Title</th>
+                    <th className="px-6 py-3">Category</th>
+                    <th className="px-6 py-3">Status</th>
+                    <th className="px-6 py-3">Date</th>
+                    <th className="px-6 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40 text-sm text-text-secondary">
+                  {blogs.map((blog) => (
+                    <tr key={blog.id} className="hover:bg-bg-card/30 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          {blog.coverImage ? (
+                            <img src={blog.coverImage} alt="" className="w-12 h-12 rounded border border-white/10 object-cover shrink-0" />
+                          ) : (
+                            <div className="w-12 h-12 rounded border border-white/10 bg-black/40 flex items-center justify-center shrink-0">
+                              <ImageIcon className="w-4 h-4 text-text-tertiary" />
+                            </div>
+                          )}
+                          <div>
+                            <p className="font-semibold text-white">{blog.title}</p>
+                            <p className="text-[10px] text-text-tertiary max-w-sm truncate">{blog.excerpt}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-xs font-semibold text-accent">
+                        {blog.category}
+                      </td>
+                      <td className="px-6 py-4">
+                        <button
+                          onClick={() => togglePublish(blog.id, blog.published)}
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold border cursor-pointer ${
+                            blog.published
+                              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                              : 'bg-zinc-500/10 border-zinc-500/20 text-zinc-400'
+                          }`}
+                        >
+                          {blog.published ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3.5 h-3.5" />}
+                          {blog.published ? 'Published' : 'Draft'}
+                        </button>
+                      </td>
+                      <td className="px-6 py-4 text-xs text-text-tertiary">
+                        {formatDate(blog.createdAt)}
+                      </td>
+                      <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
+                        <button onClick={() => handleEditClick(blog)} className="text-accent hover:bg-accent/10 p-1.5 rounded transition-colors" title="Edit Article">
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDelete(blog.id)} className="text-destructive hover:bg-destructive/10 p-1.5 rounded transition-colors" title="Delete Article">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

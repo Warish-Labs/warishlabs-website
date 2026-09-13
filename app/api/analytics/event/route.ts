@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import { AnalyticsService } from '@/services/AnalyticsService';
+import { CentralAnalyticsService } from '@/services/CentralAnalyticsService';
 import { CONFIG } from '@/constants/config';
 import { cookies, headers } from 'next/headers';
 import crypto from 'crypto';
 import { z } from 'zod';
 
 const eventSchema = z.object({
+  projectSlug: z.string().optional(),
   eventName: z.string().min(1, { message: 'eventName is required' }),
   eventData: z.record(z.string(), z.any()).optional().nullable(),
   url: z.string().url({ message: 'A valid URL is required' }),
@@ -14,7 +16,7 @@ const eventSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => ({}));
     
     // 1. Validate request body via Zod
     const validation = eventSchema.safeParse(body);
@@ -25,14 +27,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const { eventName, eventData, url, referrer } = validation.data;
+    const { projectSlug, eventName, eventData, url, referrer } = validation.data;
 
-    // 2. Retrieve or dynamically allocate visitor ID in cookies (Await cookies() in Next.js 16)
+    // 2. Retrieve or dynamically allocate visitor ID in cookies (Next.js 16 await cookies())
     const cookieStore = await cookies();
     let visitorId = cookieStore.get(CONFIG.VISITOR_COOKIE_NAME)?.value;
 
     if (!visitorId) {
-      // Allocate new visitorId if none exists (first page visit analytics)
       visitorId = crypto.randomUUID();
       cookieStore.set(CONFIG.VISITOR_COOKIE_NAME, visitorId, {
         httpOnly: true,
@@ -46,9 +47,15 @@ export async function POST(request: Request) {
     const headerStore = await headers();
     const userAgent = headerStore.get('user-agent');
     const ipAddress = headerStore.get('x-real-ip') || headerStore.get('x-forwarded-for') || '127.0.0.1';
+    
+    // Vercel Geolocation Headers
+    const country = headerStore.get('x-vercel-ip-country') || null;
+    const region = headerStore.get('x-vercel-ip-country-region') || null;
+    const city = headerStore.get('x-vercel-ip-city') || null;
 
-    // 3. Track event in DB
-    const success = await AnalyticsService.trackEvent({
+    // 3. Track event in Central Analytics DB
+    const centralSuccess = await CentralAnalyticsService.trackEvent({
+      projectSlug: projectSlug || process.env.NEXT_PUBLIC_ANALYTICS_PROJECT_ID || 'warishlabs-website',
       visitorId,
       eventName,
       eventData: eventData || undefined,
@@ -56,11 +63,25 @@ export async function POST(request: Request) {
       referrer: referrer || undefined,
       userAgent,
       ipAddress,
+      country,
+      region,
+      city,
     });
 
-    return NextResponse.json({ success });
+    // 4. Track event in Main App DB (backward compatibility)
+    await AnalyticsService.trackEvent({
+      visitorId,
+      eventName,
+      eventData: eventData || undefined,
+      url,
+      referrer: referrer || undefined,
+      userAgent,
+      ipAddress,
+    }).catch(() => null);
+
+    return NextResponse.json({ success: centralSuccess });
   } catch (error) {
-    console.error('[API Analytics Event] Error tracking event:', error);
+    // Fail silently without interrupting visitor rendering
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -34,28 +34,7 @@ export default function Footer() {
             <p className="text-text-secondary text-xs leading-relaxed max-w-sm">
               WarishLabs builds real software products — web and Android apps — that solve everyday problems. Founded and maintained by MD Warish Ansari.
             </p>
-            <div className="pt-1 space-y-0.5">
-              <p className="text-[10px] text-text-tertiary">
-                Built &amp; maintained by{' '}
-                <a
-                  href="https://www.linkedin.com/in/md-warish-ansari/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-accent hover:text-accent-hover transition-colors underline underline-offset-2"
-                >
-                  MD Warish Ansari
-                </a>
-                {' '}—{' '}Owner, WarishLabs
-              </p>
-              <a
-                href="https://portfolio.warishlabs.in/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[10px] text-text-tertiary hover:text-accent transition-colors"
-              >
-                portfolio.warishlabs.in →
-              </a>
-            </div>
+
           </div>
 
           {/* Products (2 cols) */}
