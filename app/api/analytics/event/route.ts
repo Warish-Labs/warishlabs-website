@@ -90,16 +90,18 @@ export async function POST(request: Request) {
       city,
     });
 
-    // 4. Track event in Main App DB (backward compatibility)
-    await AnalyticsService.trackEvent({
-      visitorId: finalVisitorId,
-      eventName,
-      eventData: eventData || undefined,
-      url: resolvedUrl,
-      referrer: referrer || undefined,
-      userAgent,
-      ipAddress,
-    }).catch(() => null);
+    // 4. Track event in Main App DB (only for warishlabs-website to avoid cross-project homepage metric inflation)
+    if (targetSlug === 'warishlabs-website') {
+      await AnalyticsService.trackEvent({
+        visitorId: finalVisitorId,
+        eventName: eventName || 'page_view',
+        eventData: eventData || undefined,
+        url: resolvedUrl,
+        referrer: referrer || undefined,
+        userAgent,
+        ipAddress,
+      }).catch(() => null);
+    }
 
     return NextResponse.json({ success: centralSuccess }, { headers: corsHeaders });
   } catch (error) {
