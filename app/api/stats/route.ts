@@ -7,7 +7,7 @@ export async function GET() {
   try {
     const [productsCount, visitorsCount] = await Promise.all([
       prisma.product.count({
-        where: { status: 'active' },
+        where: { status: { not: 'archived' } },
       }).catch(() => 0),
       prisma.visitor.count().catch(() => 0),
     ]);

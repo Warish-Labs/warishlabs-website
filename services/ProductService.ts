@@ -15,7 +15,7 @@ export class ProductService {
    */
   static async getAll(activeOnly = true): Promise<ProductWithDetails[]> {
     return prisma.product.findMany({
-      where: activeOnly ? { status: 'active' } : undefined,
+      where: activeOnly ? { status: { not: 'archived' } } : undefined,
       include: {
         category: true,
         media: {
@@ -35,7 +35,7 @@ export class ProductService {
    */
   static async getPopularProducts(limit = 8): Promise<ProductWithDetails[]> {
     return prisma.product.findMany({
-      where: { status: 'active' },
+      where: { status: { not: 'archived' } },
       include: {
         category: true,
         media: {

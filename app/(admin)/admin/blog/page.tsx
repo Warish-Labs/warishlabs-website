@@ -10,6 +10,7 @@ import { BlogCoverImageField } from '@/components/admin/BlogCoverImageField';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { renderMarkdown } from '@/lib/markdown';
 
 interface Category {
   id: string;
@@ -33,6 +34,8 @@ export default function AdminBlogPage() {
   const [title, setTitle] = useState('');
   const [excerpt, setExcerpt] = useState('');
   const [content, setContent] = useState('');
+  const [contentFormat, setContentFormat] = useState<'markdown' | 'html'>('markdown');
+  const [showContentPreview, setShowContentPreview] = useState(false);
   const [category, setCategory] = useState('Engineering');
   const [published, setPublished] = useState(false);
   const [coverImage, setCoverImage] = useState('');
@@ -349,17 +352,77 @@ export default function AdminBlogPage() {
                   />
                 </div>
 
-                {/* Markdown Content */}
-                <div className="space-y-2 md:col-span-2">
-                  <Label className="text-xs font-semibold text-text-secondary">Article Content (Markdown) *</Label>
+                {/* Article Content with Format Toggle & Live Preview */}
+                <div className="space-y-3 md:col-span-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-2">
+                    <Label className="text-xs font-semibold text-text-secondary">Article Content *</Label>
+
+                    <div className="flex items-center gap-3">
+                      {/* Format Mode Selector */}
+                      <div className="flex bg-black/60 border border-white/10 rounded-md overflow-hidden text-[11px]">
+                        <button
+                          type="button"
+                          onClick={() => setContentFormat('markdown')}
+                          className={`px-2.5 py-1 font-bold uppercase transition-colors ${
+                            contentFormat === 'markdown' ? 'bg-accent text-white' : 'text-zinc-400 hover:text-white'
+                          }`}
+                        >
+                          Markdown Mode
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setContentFormat('html')}
+                          className={`px-2.5 py-1 font-bold uppercase transition-colors ${
+                            contentFormat === 'html' ? 'bg-accent text-white' : 'text-zinc-400 hover:text-white'
+                          }`}
+                        >
+                          HTML Mode
+                        </button>
+                      </div>
+
+                      {/* Toggle Live Preview */}
+                      <button
+                        type="button"
+                        onClick={() => setShowContentPreview(!showContentPreview)}
+                        className={`text-xs font-bold px-2.5 py-1 rounded-md border transition-colors ${
+                          showContentPreview
+                            ? 'bg-accent/20 border-accent text-accent'
+                            : 'bg-white/5 border-white/10 text-zinc-300 hover:text-white'
+                        }`}
+                      >
+                        {showContentPreview ? 'Hide Live Preview' : 'Show Live Preview'}
+                      </button>
+                    </div>
+                  </div>
+
                   <textarea
                     required
                     rows={12}
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
-                    placeholder="Write full article body in Markdown format..."
+                    placeholder={
+                      contentFormat === 'markdown'
+                        ? "# Article Title\n\nWrite full article body using Markdown syntax...\n\n- Key point 1\n- Key point 2\n\n```ts\nconsole.log('Sample code');\n```"
+                        : "<h2>Article Title</h2><p>Write full article body using HTML markup...</p>"
+                    }
                     className="w-full bg-bg-primary border border-border rounded-md p-3 text-xs font-mono text-white focus:outline-none focus:border-accent"
                   />
+
+                  {/* Live Formatting Preview */}
+                  {showContentPreview && (
+                    <div className="mt-4 bg-zinc-950 border border-white/10 p-5 rounded-xl space-y-2">
+                      <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-3">
+                        <span className="text-[10px] font-bold text-accent uppercase tracking-wider">
+                          Live Render Preview ({contentFormat.toUpperCase()})
+                        </span>
+                        <span className="text-[10px] text-text-tertiary">Exact view as rendered on public article page</span>
+                      </div>
+                      <div
+                        className="prose prose-invert max-w-none text-text-secondary text-sm leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Collapsible SEO Panel */}
