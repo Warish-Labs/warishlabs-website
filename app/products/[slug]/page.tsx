@@ -10,7 +10,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { ArrowLeft, ExternalLink, Info } from 'lucide-react';
 import { cn } from '@/utils/cn';
-import { sanitizeServer } from '@/lib/sanitize';
+import { renderMarkdown } from '@/lib/markdown';
 import { Metadata } from 'next';
 import ProductTracker from '@/components/products/ProductTracker';
 
@@ -65,9 +65,9 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
 
           {/* Product Banner Image */}
           {product.bannerUrl && (
-            <div className="w-full h-48 md:h-80 rounded-2xl overflow-hidden border border-white/10 select-none pointer-events-none mb-12">
+            <div className="w-full h-48 md:h-80 rounded-2xl overflow-hidden border border-white/10 select-none pointer-events-none mb-12 bg-black/40 flex items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={product.bannerUrl} alt={`${product.name} Banner`} className="w-full h-full object-cover" />
+              <img src={product.bannerUrl} alt={`${product.name} Banner`} className="w-full h-full object-contain" />
             </div>
           )}
 
@@ -115,7 +115,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-6 prose prose-invert max-w-none text-text-secondary text-sm leading-relaxed space-y-4">
-                  <div dangerouslySetInnerHTML={{ __html: sanitizeServer(product.description) }} />
+                  <div dangerouslySetInnerHTML={{ __html: renderMarkdown(product.description) }} />
                 </CardContent>
               </Card>
 
